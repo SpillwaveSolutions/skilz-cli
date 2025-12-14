@@ -1,0 +1,16 @@
+# Test registry for skilz-cli
+
+spillwave/plantuml:
+  git_repo: https://github.com/SpillwaveSolutions/plantuml.git
+  skill_path: /main/SKILL.md
+  git_sha: f2489dcd47799e4aaff3ae0a34cde0ebf2288a66
+
+spillwave/design-doc-mermaid:
+  git_repo: https://github.com/SpillwaveSolutions/design-doc-mermaid.git
+  skill_path: /v1.0.0/SKILL.md
+  git_sha: e1c29a38365c254c2fb0589e7bc1a11d23fc50a8
+
+anthropics/web-artifacts-builder:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/web-artifacts-builder/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005

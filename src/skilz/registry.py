@@ -1,0 +1,164 @@
+"""Registry loading and skill resolution."""
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from skilz.errors import RegistryError, SkillNotFoundError
+
+
+@dataclass
+class SkillInfo:
+    """Information about a skill from the registry."""
+
+    skill_id: str
+    git_repo: str
+    skill_path: str
+    git_sha: str
+
+    @property
+    def skill_name(self) -> str:
+        """Extract the skill name from the skill_path or skill_id."""
+        # Try to get from skill_path first (e.g., /main/skills/web-artifacts-builder)
+        path_parts = self.skill_path.strip("/").split("/")
+
+        if len(path_parts) >= 3:
+            # e.g., /main/skills/web-artifacts-builder/SKILL.md -> web-artifacts-builder
+            name = path_parts[-1]
+            if name.endswith(".md"):
+                name = path_parts[-2]
+            if name and name != "SKILL":
+                return name
+
+        # Fall back to skill_id (e.g., anthropics/web-artifacts-builder -> web-artifacts-builder)
+        # This handles cases like /main/SKILL.md where skill is at repo root
+        return self.skill_id.split("/")[-1]
+
+
+def get_registry_paths(project_dir: Path | None = None) -> list[Path]:
+    """
+    Get the list of registry paths to search, in priority order.
+
+    Args:
+        project_dir: The project directory to check for .skilz/registry.yaml.
+                    If None, uses current working directory.
+
+    Returns:
+        List of registry paths to check, in order of priority.
+    """
+    paths = []
+
+    # Project-level registry (highest priority)
+    project = project_dir or Path.cwd()
+    project_registry = project / ".skilz" / "registry.yaml"
+    paths.append(project_registry)
+
+    # User-level registry (fallback)
+    user_registry = Path.home() / ".skilz" / "registry.yaml"
+    paths.append(user_registry)
+
+    return paths
+
+
+def load_registry(path: Path) -> dict[str, Any]:
+    """
+    Load a registry file from the given path.
+
+    Args:
+        path: Path to the registry YAML file.
+
+    Returns:
+        Dictionary mapping skill IDs to their configuration.
+
+    Raises:
+        RegistryError: If the file cannot be read or parsed.
+    """
+    if not path.exists():
+        raise RegistryError(str(path), "File not found")
+
+    try:
+        content = path.read_text()
+        data = yaml.safe_load(content)
+
+        if data is None:
+            return {}
+
+        if not isinstance(data, dict):
+            raise RegistryError(str(path), "Registry must be a YAML dictionary")
+
+        return data
+
+    except yaml.YAMLError as e:
+        raise RegistryError(str(path), f"Invalid YAML: {e}")
+    except OSError as e:
+        raise RegistryError(str(path), f"Cannot read file: {e}")
+
+
+def lookup_skill(
+    skill_id: str,
+    project_dir: Path | None = None,
+    verbose: bool = False,
+) -> SkillInfo:
+    """
+    Look up a skill by its ID in the registry.
+
+    Searches project-level registry first, then user-level registry.
+
+    Args:
+        skill_id: The skill ID to look up (e.g., "anthropics/web-artifacts-builder").
+        project_dir: The project directory to check for .skilz/registry.yaml.
+        verbose: If True, print debug information.
+
+    Returns:
+        SkillInfo with the skill's configuration.
+
+    Raises:
+        SkillNotFoundError: If the skill ID is not found in any registry.
+        RegistryError: If a registry file exists but cannot be parsed.
+    """
+    registry_paths = get_registry_paths(project_dir)
+    searched_paths: list[str] = []
+
+    for registry_path in registry_paths:
+        if not registry_path.exists():
+            if verbose:
+                print(f"  Registry not found: {registry_path}")
+            continue
+
+        searched_paths.append(str(registry_path))
+
+        if verbose:
+            print(f"  Searching registry: {registry_path}")
+
+        try:
+            registry = load_registry(registry_path)
+        except RegistryError:
+            # If registry exists but can't be parsed, re-raise
+            raise
+
+        if skill_id in registry:
+            skill_data = registry[skill_id]
+
+            # Validate required fields
+            required_fields = ["git_repo", "skill_path", "git_sha"]
+            missing = [f for f in required_fields if f not in skill_data]
+            if missing:
+                raise RegistryError(
+                    str(registry_path),
+                    f"Skill '{skill_id}' missing required fields: {', '.join(missing)}",
+                )
+
+            if verbose:
+                print(f"  Found skill '{skill_id}' in {registry_path}")
+
+            return SkillInfo(
+                skill_id=skill_id,
+                git_repo=skill_data["git_repo"],
+                skill_path=skill_data["skill_path"],
+                git_sha=skill_data["git_sha"],
+            )
+
+    # Not found in any registry
+    raise SkillNotFoundError(skill_id, searched_paths)
