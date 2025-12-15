@@ -1,14 +1,18 @@
 """Tests for the agents module."""
 
+import json
 import pytest
 from pathlib import Path
+from unittest.mock import patch
 
 from skilz.agents import (
     detect_agent,
     get_skills_dir,
     ensure_skills_dir,
     get_agent_display_name,
+    get_agent_paths,
 )
+from skilz import config
 
 
 class TestDetectAgent:
@@ -141,3 +145,107 @@ class TestGetAgentDisplayName:
     def test_unknown_returns_raw(self):
         """Unknown agent returns raw value."""
         assert get_agent_display_name("unknown") == "unknown"  # type: ignore
+
+
+class TestConfigIntegration:
+    """Tests for config integration with agents module."""
+
+    @pytest.fixture
+    def mock_config_path(self, tmp_path):
+        """Mock the config path to use temp directory."""
+        config_dir = tmp_path / ".config" / "skilz"
+        config_dir.mkdir(parents=True)
+        config_file = config_dir / "settings.json"
+        with patch.object(config, "CONFIG_DIR", config_dir):
+            with patch.object(config, "CONFIG_PATH", config_file):
+                yield config_file
+
+    def test_detect_agent_uses_config_default(self, mock_config_path, temp_dir, monkeypatch):
+        """detect_agent should return agent_default from config when set."""
+        # Set up config with opencode as default
+        mock_config_path.write_text(json.dumps({
+            "agent_default": "opencode",
+        }))
+
+        # Create fake home with nothing
+        fake_home = temp_dir / "home"
+        fake_home.mkdir()
+        monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+        # Even though nothing is detected, config should return opencode
+        project_dir = temp_dir / "project"
+        project_dir.mkdir()
+        agent = detect_agent(project_dir)
+
+        assert agent == "opencode"
+
+    def test_detect_agent_uses_config_claude_default(self, mock_config_path, temp_dir, monkeypatch):
+        """detect_agent should return claude from config when set."""
+        mock_config_path.write_text(json.dumps({
+            "agent_default": "claude",
+        }))
+
+        fake_home = temp_dir / "home"
+        (fake_home / ".config" / "opencode").mkdir(parents=True)  # OpenCode installed
+        monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+        project_dir = temp_dir / "project"
+        project_dir.mkdir()
+
+        # Config says claude, should override detection
+        agent = detect_agent(project_dir)
+        assert agent == "claude"
+
+    def test_detect_agent_ignores_invalid_config_default(self, mock_config_path, temp_dir, monkeypatch):
+        """detect_agent should ignore invalid agent_default in config."""
+        mock_config_path.write_text(json.dumps({
+            "agent_default": "invalid_agent",
+        }))
+
+        fake_home = temp_dir / "home"
+        fake_home.mkdir()
+        monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+        project_dir = temp_dir / "project"
+        project_dir.mkdir()
+
+        # Invalid config, should fall back to default
+        agent = detect_agent(project_dir)
+        assert agent == "claude"
+
+    def test_get_agent_paths_uses_config(self, mock_config_path, tmp_path):
+        """get_agent_paths should use custom paths from config."""
+        custom_claude = tmp_path / "custom_claude"
+        custom_opencode = tmp_path / "custom_opencode"
+
+        mock_config_path.write_text(json.dumps({
+            "claude_code_home": str(custom_claude),
+            "open_code_home": str(custom_opencode),
+        }))
+
+        paths = get_agent_paths()
+
+        assert paths["claude"]["user"] == custom_claude / "skills"
+        assert paths["opencode"]["user"] == custom_opencode / "skills"
+
+    def test_get_skills_dir_uses_config_paths(self, mock_config_path, tmp_path):
+        """get_skills_dir should use config paths for user-level."""
+        custom_claude = tmp_path / "custom_claude"
+
+        mock_config_path.write_text(json.dumps({
+            "claude_code_home": str(custom_claude),
+        }))
+
+        skills_dir = get_skills_dir("claude", project_level=False)
+
+        assert skills_dir == custom_claude / "skills"
+
+    def test_config_env_override_affects_agents(self, mock_config_path, monkeypatch, tmp_path):
+        """Environment variables should override config and affect agent paths."""
+        env_claude_home = tmp_path / "env_claude"
+
+        monkeypatch.setenv("CLAUDE_CODE_HOME", str(env_claude_home))
+
+        paths = get_agent_paths()
+
+        assert paths["claude"]["user"] == env_claude_home / "skills"

@@ -1,0 +1,82 @@
+```mermaid
+graph TB
+    subgraph "CLI Layer"
+        CLI[cli.py<br/>ArgumentParser]
+        MAIN[__main__.py<br/>Entry Point]
+    end
+
+    subgraph "Commands Layer"
+        INSTALL[install_cmd.py<br/>Install Handler]
+        LIST[list_cmd.py<br/>List Handler]
+        UPDATE[update_cmd.py<br/>Update Handler]
+        REMOVE[remove_cmd.py<br/>Remove Handler]
+    end
+
+    subgraph "Core Logic Layer"
+        INSTALLER[installer.py<br/>Installation Orchestrator]
+        SCANNER[scanner.py<br/>Skill Discovery]
+        REGISTRY[registry.py<br/>Registry Resolution]
+        GITOPS[git_ops.py<br/>Git Operations]
+    end
+
+    subgraph "Support Layer"
+        AGENTS[agents.py<br/>Agent Detection]
+        MANIFEST[manifest.py<br/>Manifest I/O]
+        ERRORS[errors.py<br/>Exceptions]
+    end
+
+    subgraph "External Systems"
+        FS[File System<br/>~/.claude/skills/<br/>~/.skilz/cache/]
+        GIT[Git Repositories<br/>GitHub, GitLab, etc.]
+        REG_FILE[Registry Files<br/>.skilz/registry.yaml]
+    end
+
+    MAIN --> CLI
+    CLI --> INSTALL
+    CLI --> LIST
+    CLI --> UPDATE
+    CLI --> REMOVE
+
+    INSTALL --> INSTALLER
+    LIST --> SCANNER
+    UPDATE --> SCANNER
+    UPDATE --> INSTALLER
+    REMOVE --> SCANNER
+
+    INSTALLER --> REGISTRY
+    INSTALLER --> AGENTS
+    INSTALLER --> GITOPS
+    INSTALLER --> MANIFEST
+
+    SCANNER --> AGENTS
+    SCANNER --> MANIFEST
+
+    REGISTRY --> REG_FILE
+
+    GITOPS --> GIT
+    GITOPS --> FS
+
+    MANIFEST --> FS
+    AGENTS --> FS
+
+    INSTALL -.-> ERRORS
+    LIST -.-> ERRORS
+    UPDATE -.-> ERRORS
+    REMOVE -.-> ERRORS
+    INSTALLER -.-> ERRORS
+    REGISTRY -.-> ERRORS
+    GITOPS -.-> ERRORS
+
+    style CLI fill:#e1f5ff
+    style INSTALL fill:#fff4e6
+    style LIST fill:#fff4e6
+    style UPDATE fill:#fff4e6
+    style REMOVE fill:#fff4e6
+    style INSTALLER fill:#e8f5e9
+    style SCANNER fill:#e8f5e9
+    style REGISTRY fill:#e8f5e9
+    style GITOPS fill:#e8f5e9
+    style AGENTS fill:#f3e5f5
+    style MANIFEST fill:#f3e5f5
+    style ERRORS fill:#ffebee
+```

@@ -19,9 +19,34 @@ Today, installing AI skills requires manual file copying, marketplace browsing, 
 
 ## Installation
 
+### From GitHub (recommended until PyPI release)
+
 ```bash
+# Install directly from GitHub
+pip install git+https://github.com/spillwave/skilz-cli.git
+
+# Or clone and install
+git clone https://github.com/spillwave/skilz-cli.git
+cd skilz-cli
+pip install .
+```
+
+### From PyPI (coming soon)
+
+```bash
+# Not yet available - will be:
 pip install skilz
 ```
+
+### Development Setup
+
+```bash
+git clone https://github.com/spillwave/skilz-cli.git
+cd skilz-cli
+pip install -e ".[dev]"
+```
+
+For detailed usage instructions, see the [User Manual](docs/USER_MANUAL.md).
 
 ---
 
@@ -31,10 +56,17 @@ pip install skilz
 # Install a skill
 skilz install anthropics/web-artifacts-builder
 
-# Install more skills
-skilz install seo-master
-skilz install legal-reviewer
-skilz install salesforce-connector
+# List installed skills
+skilz list
+
+# Update all skills to latest registry versions
+skilz update
+
+# Update a specific skill
+skilz update anthropics/web-artifacts-builder
+
+# Remove a skill
+skilz remove anthropics/web-artifacts-builder
 ```
 
 Each install command:
@@ -75,6 +107,63 @@ Skilz reads from a registry file that maps Skill IDs to their Git locations:
 | `~/.skilz/registry.yaml` | User-level |
 
 The registry tells Skilz exactly where to find each skill and which version to install.
+
+---
+
+## CLI Reference
+
+### `skilz install <skill-id>`
+
+Install a skill from the registry.
+
+```bash
+skilz install anthropics/web-artifacts-builder        # Auto-detect agent
+skilz install anthropics/web-artifacts-builder --agent claude
+skilz install anthropics/web-artifacts-builder --agent opencode
+skilz install anthropics/web-artifacts-builder --project  # Project-level
+```
+
+### `skilz list`
+
+Show all installed skills with their versions and status.
+
+```bash
+skilz list                   # All user-level skills
+skilz list --project         # Project-level skills
+skilz list --agent claude    # Only Claude Code skills
+skilz list --json            # Output as JSON
+```
+
+**Output example:**
+```
+Skill                             Version   Installed   Status
+────────────────────────────────────────────────────────────────────────
+anthropics/web-artifacts-builder  00756142  2025-01-15  up-to-date
+spillwave/plantuml                f2489dcd  2025-01-15  outdated
+```
+
+### `skilz update [skill-id]`
+
+Update installed skills to match registry versions.
+
+```bash
+skilz update                              # Update all skills
+skilz update anthropics/web-artifacts     # Update specific skill
+skilz update --dry-run                    # Show what would be updated
+skilz update --project                    # Update project-level skills
+```
+
+### `skilz remove <skill-id>`
+
+Remove an installed skill.
+
+```bash
+skilz remove anthropics/web-artifacts     # Prompts for confirmation
+skilz remove anthropics/web-artifacts -y  # Skip confirmation
+skilz remove plantuml --project           # Remove by name
+```
+
+For complete documentation including troubleshooting and advanced examples, see the [User Manual](docs/USER_MANUAL.md).
 
 ---
 
@@ -295,18 +384,25 @@ This enables:
 
 ## Roadmap
 
-### Phase 1 (Current)
+### Phase 1 - Core Installer (Complete)
 
 - [x] Registry-based skill resolution
 - [x] Direct Git installation
 - [x] Claude Code support
 - [x] OpenCode support
 - [x] Manifest file generation
-- [ ] `skilz list` — show installed skills
-- [ ] `skilz update` — update skills to latest pinned SHA
-- [ ] `skilz remove` — uninstall a skill
+- [x] `skilz list` — show installed skills with status
+- [x] `skilz update` — update skills to latest pinned SHA
+- [x] `skilz remove` — uninstall a skill
 
-### Phase 2
+### Phase 2 - Developer Experience (Complete)
+
+- [x] 92% test coverage
+- [x] Taskfile automation
+- [x] Documentation updates
+- [ ] PyPI publishing (pending)
+
+### Phase 3 - Plugin Support
 
 - [ ] Plugin and marketplace installation support
 - [ ] Extended registry format
@@ -344,6 +440,56 @@ cp -r skills/web-artifacts-builder ~/.claude/skills/
 ```
 
 Skilz complements these methods by providing reproducible, cross-environment installs from any Git source.
+
+---
+
+## Development
+
+Skilz uses [Task](https://taskfile.dev) for development automation.
+
+### Prerequisites
+
+- Python 3.10+
+- [Task](https://taskfile.dev) (optional but recommended)
+
+### Available Tasks
+
+```bash
+# Installation
+task install          # Install in development mode
+
+# Testing
+task test             # Run all tests
+task test:fast        # Run tests without verbose output
+task coverage         # Run tests with coverage report
+task coverage:html    # Generate HTML coverage report
+
+# Code Quality
+task lint             # Run linter (ruff)
+task lint:fix         # Auto-fix linting issues
+task format           # Format code with ruff
+task typecheck        # Run type checker (mypy)
+task check            # Run all quality checks
+
+# Build & Release
+task build            # Build distribution packages
+task clean            # Remove build artifacts
+task ci               # Run full CI pipeline locally
+
+# Shortcuts
+task t                # Alias for test
+task c                # Alias for coverage
+task l                # Alias for lint
+task f                # Alias for format
+```
+
+### Manual Commands (without Task)
+
+```bash
+PYTHONPATH=src python -m pytest tests/ -v              # Run tests
+PYTHONPATH=src python -m pytest tests/ --cov=skilz     # Coverage
+PYTHONPATH=src python -m skilz --version               # Test CLI
+```
 
 ---
 

@@ -1,0 +1,150 @@
+@startuml Skilz Core Classes
+
+!define DATACLASS <<dataclass>>
+!define LITERAL <<Literal>>
+
+package "skilz.agents" {
+    class AgentType LITERAL {
+        {static} "claude" | "opencode"
+    }
+
+    class AGENT_PATHS {
+        {static} claude: dict
+        {static} opencode: dict
+    }
+
+    class agents {
+        {static} +detect_agent(project_dir: Path): AgentType
+        {static} +get_skills_dir(agent, project_level, project_dir): Path
+        {static} +ensure_skills_dir(agent, project_level, project_dir): Path
+        {static} +get_agent_display_name(agent): str
+    }
+}
+
+package "skilz.registry" {
+    class SkillInfo DATACLASS {
+        +skill_id: str
+        +git_repo: str
+        +skill_path: str
+        +git_sha: str
+        +skill_name: str {property}
+    }
+
+    class registry {
+        {static} +lookup_skill(skill_id, project_dir, verbose): SkillInfo
+        {static} +load_registry(path: Path): dict
+        {static} +get_registry_paths(project_dir): list[Path]
+    }
+}
+
+package "skilz.manifest" {
+    class SkillManifest DATACLASS {
+        +installed_at: str
+        +skill_id: str
+        +git_repo: str
+        +skill_path: str
+        +git_sha: str
+        +skilz_version: str
+        --
+        {static} +create(...): SkillManifest
+        +to_dict(): dict
+    }
+
+    class manifest {
+        {static} +write_manifest(skill_dir, manifest): Path
+        {static} +read_manifest(skill_dir): SkillManifest | None
+        {static} +needs_install(skill_dir, registry_sha): tuple[bool, str]
+    }
+}
+
+package "skilz.scanner" {
+    class InstalledSkill DATACLASS {
+        +skill_id: str
+        +skill_name: str
+        +path: Path
+        +manifest: SkillManifest
+        +agent: AgentType
+        +project_level: bool
+        --
+        +git_sha_short: str {property}
+        +installed_at_short: str {property}
+    }
+
+    class scanner {
+        {static} +scan_installed_skills(agent, project_level, project_dir): list[InstalledSkill]
+        {static} +scan_skills_directory(skills_dir, agent, project_level): list[InstalledSkill]
+        {static} +find_installed_skill(skill_id_or_name, ...): InstalledSkill | None
+    }
+}
+
+package "skilz.git_ops" {
+    class git_ops {
+        {static} +clone_or_fetch(git_repo, verbose): Path
+        {static} +clone_repo(git_repo, verbose): Path
+        {static} +fetch_repo(cache_path, verbose): void
+        {static} +checkout_sha(cache_path, git_sha, verbose): void
+        {static} +get_skill_source_path(cache_path, skill_path): Path
+        {static} +parse_skill_path(skill_path): tuple[str, str]
+        {static} +get_cache_dir(): Path
+        {static} +get_cache_path(git_repo): Path
+        {static} +run_git_command(args, cwd, check, capture_output): CompletedProcess
+    }
+}
+
+package "skilz.installer" {
+    class installer {
+        {static} +install_skill(skill_id, agent, project_level, verbose): void
+        {static} +copy_skill_files(source_dir, target_dir, verbose): void
+    }
+}
+
+package "skilz.errors" {
+    class SkilzError extends Exception {
+    }
+
+    class SkillNotFoundError extends SkilzError {
+        +skill_id: str
+        +searched_paths: list[str]
+    }
+
+    class RegistryError extends SkilzError {
+        +path: str
+        +reason: str
+    }
+
+    class GitError extends SkilzError {
+        +operation: str
+        +reason: str
+    }
+
+    class InstallError extends SkilzError {
+        +skill_id: str
+        +reason: str
+    }
+}
+
+' Relationships
+installer ..> registry : uses
+installer ..> agents : uses
+installer ..> git_ops : uses
+installer ..> manifest : uses
+
+scanner ..> agents : uses
+scanner ..> manifest : uses
+
+InstalledSkill *-- SkillManifest
+InstalledSkill --> AgentType
+
+registry ..> SkillInfo : creates
+
+manifest ..> SkillManifest : creates/reads
+
+installer ..> SkillInfo : uses
+installer ..> InstallError : raises
+
+registry ..> RegistryError : raises
+registry ..> SkillNotFoundError : raises
+
+git_ops ..> GitError : raises
+
+@enduml

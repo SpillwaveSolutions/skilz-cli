@@ -1,4 +1,9 @@
-# Test registry for skilz-cli
+# Skilz Registry
+# Skills available for installation via `skilz install <skill-id>`
+
+# ============================================================================
+# SpillwaveSolutions Skills
+# ============================================================================
 
 spillwave/plantuml:
   git_repo: https://github.com/SpillwaveSolutions/plantuml.git
@@ -10,7 +15,112 @@ spillwave/design-doc-mermaid:
   skill_path: /v1.0.0/SKILL.md
   git_sha: e1c29a38365c254c2fb0589e7bc1a11d23fc50a8
 
+spillwave/notion-uploader-downloader:
+  git_repo: https://github.com/SpillwaveSolutions/notion_uploader_downloader.git
+  skill_path: /main/SKILL.md
+  git_sha: ba6a3d7b25c4671bb72434b6d0fe6ac5ee8ae0c6
+
+spillwave/document-specialist:
+  git_repo: https://github.com/SpillwaveSolutions/document-specialist-skill.git
+  skill_path: /main/SKILL.md
+  git_sha: f917e99f386d4fab15d6d2f9afd70a8a5c04fe00
+
+spillwave/sdd:
+  git_repo: https://github.com/SpillwaveSolutions/sdd-skill.git
+  skill_path: /main/SKILL.md
+  git_sha: eba96064a34ae68c85c0a42186cf82da12ec5ef9
+
+spillwave/gemini:
+  git_repo: https://github.com/SpillwaveSolutions/gemini-skill.git
+  skill_path: /main/SKILL.md
+  git_sha: 0c99433da7c7cdb382c0436e50268796e9f307cf
+
+spillwave/image-gen:
+  git_repo: https://github.com/SpillwaveSolutions/image_gen.git
+  skill_path: /main/SKILL.md
+  git_sha: 2b8d0c4e33902e70def9d4ddf284b4519ad1023d
+
+# ============================================================================
+# Anthropic Official Skills
+# https://github.com/anthropics/skills
+# ============================================================================
+
+anthropics/algorithmic-art:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/algorithmic-art/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/brand-guidelines:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/brand-guidelines/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/canvas-design:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/canvas-design/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/doc-coauthoring:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/doc-coauthoring/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/docx:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/docx/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/frontend-design:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/frontend-design/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/internal-comms:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/internal-comms/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/mcp-builder:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/mcp-builder/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/pdf:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/pdf/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/pptx:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/pptx/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/skill-creator:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/skill-creator/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/slack-gif-creator:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/slack-gif-creator/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/theme-factory:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/theme-factory/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
 anthropics/web-artifacts-builder:
   git_repo: https://github.com/anthropics/skills.git
   skill_path: /main/skills/web-artifacts-builder/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/webapp-testing:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/webapp-testing/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
+
+anthropics/xlsx:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/xlsx/SKILL.md
   git_sha: 00756142ab04c82a447693cf373c4e0c554d1005

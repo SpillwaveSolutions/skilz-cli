@@ -1,0 +1,81 @@
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant InstallCmd
+    participant Installer
+    participant Registry
+    participant Agents
+    participant GitOps
+    participant Manifest
+    participant FileSystem
+
+    User->>CLI: skilz install anthropics/web-artifacts-builder
+    CLI->>InstallCmd: cmd_install(args)
+
+    InstallCmd->>Installer: install_skill(skill_id, agent, project_level, verbose)
+
+    Note over Installer: Step 1: Determine target agent
+    Installer->>Agents: detect_agent()
+    Agents-->>Installer: "claude"
+
+    Note over Installer: Step 2: Look up skill in registry
+    Installer->>Registry: lookup_skill(skill_id)
+    Registry->>FileSystem: Check .skilz/registry.yaml
+    Registry->>FileSystem: Check ~/.skilz/registry.yaml
+    FileSystem-->>Registry: registry data
+    Registry-->>Installer: SkillInfo(git_repo, skill_path, git_sha)
+
+    Note over Installer: Step 3: Determine target directory
+    Installer->>Agents: ensure_skills_dir(agent, project_level)
+    Agents->>FileSystem: mkdir ~/.claude/skills
+    Agents-->>Installer: target_dir path
+
+    Note over Installer: Step 4: Check if installation needed
+    Installer->>Manifest: needs_install(target_dir, git_sha)
+    Manifest->>FileSystem: Check .skilz-manifest.yaml
+    FileSystem-->>Manifest: existing manifest or none
+    Manifest-->>Installer: (True, "not_installed")
+
+    Note over Installer: Step 5: Clone or fetch repository
+    Installer->>GitOps: clone_or_fetch(git_repo)
+    GitOps->>FileSystem: Check ~/.skilz/cache/<hash>
+    alt Repository not cached
+        GitOps->>FileSystem: git clone <repo>
+    else Repository cached
+        GitOps->>FileSystem: git fetch --all
+    end
+    FileSystem-->>GitOps: cache_path
+    GitOps-->>Installer: cache_path
+
+    Note over Installer: Step 6: Parse skill path
+    Installer->>GitOps: parse_skill_path(skill_path)
+    GitOps-->>Installer: (branch, relative_path)
+
+    Note over Installer: Step 7: Checkout specific SHA
+    Installer->>GitOps: checkout_sha(cache_path, git_sha)
+    GitOps->>FileSystem: git checkout <sha>
+    FileSystem-->>GitOps: success
+    GitOps-->>Installer: success
+
+    Note over Installer: Step 8: Get source path
+    Installer->>GitOps: get_skill_source_path(cache_path, skill_path)
+    GitOps-->>Installer: source_dir
+
+    Note over Installer: Step 9: Copy files to target
+    Installer->>Installer: copy_skill_files(source_dir, target_dir)
+    Installer->>FileSystem: shutil.copytree()
+    FileSystem-->>Installer: success
+
+    Note over Installer: Step 10: Write manifest
+    Installer->>Manifest: SkillManifest.create(...)
+    Manifest-->>Installer: manifest object
+    Installer->>Manifest: write_manifest(target_dir, manifest)
+    Manifest->>FileSystem: Write .skilz-manifest.yaml
+    FileSystem-->>Manifest: success
+    Manifest-->>Installer: manifest_path
+
+    Installer-->>InstallCmd: success
+    InstallCmd-->>CLI: 0 (exit code)
+    CLI-->>User: "Installed: anthropics/web-artifacts-builder -> Claude Code (user)"
+```

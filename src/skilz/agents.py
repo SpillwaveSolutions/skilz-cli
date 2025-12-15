@@ -5,17 +5,51 @@ from typing import Literal
 
 AgentType = Literal["claude", "opencode"]
 
-# Mapping of agent types to their skills directories
-AGENT_PATHS: dict[AgentType, dict[str, Path]] = {
+# Default agent paths (used when config module unavailable or as fallback)
+DEFAULT_AGENT_PATHS: dict[AgentType, dict[str, Path]] = {
     "claude": {
         "user": Path.home() / ".claude" / "skills",
         "project": Path(".claude") / "skills",
     },
     "opencode": {
         "user": Path.home() / ".config" / "opencode" / "skills",
-        "project": Path(".opencode") / "skills",  # Project-level for OpenCode
+        "project": Path(".opencode") / "skills",
     },
 }
+
+# Backwards compatibility alias
+AGENT_PATHS = DEFAULT_AGENT_PATHS
+
+
+def get_agent_paths() -> dict[AgentType, dict[str, Path]]:
+    """
+    Get agent paths from configuration.
+
+    Returns paths based on config values, with environment variable overrides.
+    Falls back to defaults if config module is unavailable.
+
+    Returns:
+        Dictionary mapping agent types to their user/project paths.
+    """
+    try:
+        from skilz.config import get_claude_home, get_opencode_home
+
+        claude_home = get_claude_home()
+        opencode_home = get_opencode_home()
+
+        return {
+            "claude": {
+                "user": claude_home / "skills",
+                "project": Path(".claude") / "skills",
+            },
+            "opencode": {
+                "user": opencode_home / "skills",
+                "project": Path(".opencode") / "skills",
+            },
+        }
+    except ImportError:
+        # Config module not available, use defaults
+        return DEFAULT_AGENT_PATHS
 
 
 def detect_agent(project_dir: Path | None = None) -> AgentType:
@@ -23,10 +57,11 @@ def detect_agent(project_dir: Path | None = None) -> AgentType:
     Auto-detect which AI agent is being used.
 
     Detection order:
-    1. Check for .claude/ in project directory or current directory
-    2. Check for ~/.claude/ (user has Claude Code installed)
-    3. Check for ~/.config/opencode/ (user has OpenCode installed)
-    4. Default to "claude" if ambiguous
+    1. Check config file for agent_default setting
+    2. Check for .claude/ in project directory or current directory
+    3. Check for ~/.claude/ (user has Claude Code installed)
+    4. Check for ~/.config/opencode/ (user has OpenCode installed)
+    5. Default to "claude" if ambiguous
 
     Args:
         project_dir: Project directory to check. Uses cwd if None.
@@ -34,6 +69,16 @@ def detect_agent(project_dir: Path | None = None) -> AgentType:
     Returns:
         The detected agent type ("claude" or "opencode").
     """
+    # Check config for default agent first
+    try:
+        from skilz.config import get_default_agent
+
+        default_agent = get_default_agent()
+        if default_agent is not None:
+            return default_agent
+    except ImportError:
+        pass  # Config module not available
+
     project = project_dir or Path.cwd()
 
     # Check project-level Claude
@@ -60,6 +105,8 @@ def get_skills_dir(
     """
     Get the skills directory for a given agent.
 
+    Uses configuration for custom paths, with environment variable overrides.
+
     Args:
         agent: The agent type ("claude" or "opencode").
         project_level: If True, return project-level path instead of user-level.
@@ -68,10 +115,12 @@ def get_skills_dir(
     Returns:
         Path to the skills directory.
     """
-    if agent not in AGENT_PATHS:
+    agent_paths = get_agent_paths()
+
+    if agent not in agent_paths:
         raise ValueError(f"Unknown agent type: {agent}")
 
-    paths = AGENT_PATHS[agent]
+    paths = agent_paths[agent]
 
     if project_level:
         project = project_dir or Path.cwd()

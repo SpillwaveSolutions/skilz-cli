@@ -1,0 +1,205 @@
+# Taskfile.yml - Skilz CLI Development Automation
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  PROJECT_NAME: skilz
+  PYTHON: python3
+  PYTHONPATH: src
+  COVERAGE_MIN: 80
+
+env:
+  PYTHONPATH: "{{.PYTHONPATH}}"
+
+tasks:
+  # === Installation Tasks ===
+
+  install:
+    desc: Install project in development mode
+    cmds:
+      - pip install -e ".[dev]"
+
+  install:deps:
+    desc: Install only dependencies (no editable install)
+    cmds:
+      - pip install -r requirements.txt 2>/dev/null || pip install PyYAML
+
+  # === Build Tasks ===
+
+  build:
+    desc: Build distribution packages
+    cmds:
+      - "{{.PYTHON}} -m build"
+    sources:
+      - src/**/*.py
+      - pyproject.toml
+    generates:
+      - dist/*.whl
+      - dist/*.tar.gz
+
+  clean:
+    desc: Remove build artifacts and caches
+    cmds:
+      - rm -rf dist/ build/ *.egg-info src/*.egg-info
+      - rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage
+      - rm -rf .task/
+      - find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+      - find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
+  # === Testing Tasks ===
+
+  test:
+    desc: Run all tests
+    cmds:
+      - "{{.PYTHON}} -m pytest tests/ -v"
+
+  test:fast:
+    desc: Run tests without verbose output
+    cmds:
+      - "{{.PYTHON}} -m pytest tests/"
+
+  test:watch:
+    desc: Run tests in watch mode (requires pytest-watch)
+    cmds:
+      - "{{.PYTHON}} -m pytest_watch tests/"
+
+  coverage:
+    desc: Run tests with coverage report
+    cmds:
+      - "{{.PYTHON}} -m pytest tests/ --cov={{.PROJECT_NAME}} --cov-report=term-missing"
+
+  coverage:html:
+    desc: Generate HTML coverage report
+    cmds:
+      - "{{.PYTHON}} -m pytest tests/ --cov={{.PROJECT_NAME}} --cov-report=html"
+      - echo "Coverage report available at htmlcov/index.html"
+
+  coverage:check:
+    desc: Check coverage meets minimum threshold
+    cmds:
+      - "{{.PYTHON}} -m pytest tests/ --cov={{.PROJECT_NAME}} --cov-fail-under={{.COVERAGE_MIN}}"
+
+  # === Code Quality Tasks ===
+
+  lint:
+    desc: Run linter (ruff)
+    cmds:
+      - "{{.PYTHON}} -m ruff check src/ tests/"
+
+  lint:fix:
+    desc: Run linter and auto-fix issues
+    cmds:
+      - "{{.PYTHON}} -m ruff check --fix src/ tests/"
+
+  format:
+    desc: Format code with ruff
+    cmds:
+      - "{{.PYTHON}} -m ruff format src/ tests/"
+
+  format:check:
+    desc: Check code formatting without changes
+    cmds:
+      - "{{.PYTHON}} -m ruff format --check src/ tests/"
+
+  typecheck:
+    desc: Run type checker (mypy)
+    cmds:
+      - "{{.PYTHON}} -m mypy src/{{.PROJECT_NAME}}"
+
+  check:
+    desc: Run all code quality checks
+    deps:
+      - lint
+      - format:check
+      - typecheck
+
+  # === Development Tasks ===
+
+  run:
+    desc: Run the CLI (pass args after --)
+    cmds:
+      - "{{.PYTHON}} -m {{.PROJECT_NAME}} {{.CLI_ARGS}}"
+    vars:
+      CLI_ARGS: '{{default "" .CLI_ARGS}}'
+
+  version:
+    desc: Show CLI version
+    cmds:
+      - "{{.PYTHON}} -m {{.PROJECT_NAME}} --version"
+
+  help:
+    desc: Show CLI help
+    cmds:
+      - "{{.PYTHON}} -m {{.PROJECT_NAME}} --help"
+
+  # === Release Tasks ===
+
+  release:check:
+    desc: Pre-release checks (tests + quality)
+    deps:
+      - clean
+      - check
+      - coverage:check
+
+  release:build:
+    desc: Build release artifacts
+    deps:
+      - release:check
+    cmds:
+      - "{{.PYTHON}} -m build"
+
+  publish:test:
+    desc: Publish to TestPyPI
+    deps:
+      - release:build
+    cmds:
+      - "{{.PYTHON}} -m twine upload --repository testpypi dist/*"
+
+  publish:
+    desc: Publish to PyPI
+    deps:
+      - release:build
+    cmds:
+      - "{{.PYTHON}} -m twine upload dist/*"
+
+  # === Convenience Aliases ===
+
+  t:
+    desc: Alias for test
+    deps:
+      - test
+
+  c:
+    desc: Alias for coverage
+    deps:
+      - coverage
+
+  l:
+    desc: Alias for lint
+    deps:
+      - lint
+
+  f:
+    desc: Alias for format
+    deps:
+      - format
+
+  # === CI Pipeline ===
+
+  ci:
+    desc: Run full CI pipeline locally
+    cmds:
+      - task: clean
+      - task: install
+      - task: check
+      - task: coverage:check
+      - task: build
+      - echo "CI pipeline completed successfully"
+
+  # === Default Task ===
+
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list

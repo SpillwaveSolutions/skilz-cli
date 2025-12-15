@@ -1,0 +1,57 @@
+```mermaid
+graph LR
+    subgraph "Input"
+        CMD[Command Line<br/>skilz install my-skill]
+    end
+
+    subgraph "Registry Resolution"
+        REG1[Project Registry<br/>.skilz/registry.yaml]
+        REG2[User Registry<br/>~/.skilz/registry.yaml]
+        SKILL_INFO[SkillInfo<br/>git_repo, skill_path, git_sha]
+    end
+
+    subgraph "Git Operations"
+        CACHE[Git Cache<br/>~/.skilz/cache/<hash>]
+        CLONE[Clone/Fetch<br/>Repository]
+        CHECKOUT[Checkout SHA]
+        SOURCE[Source Directory<br/>In Cache]
+    end
+
+    subgraph "Installation"
+        TARGET[Target Directory<br/>~/.claude/skills/<name>]
+        COPY[Copy Files]
+        MANIFEST_FILE[.skilz-manifest.yaml]
+    end
+
+    subgraph "Output"
+        SUCCESS[Success Message]
+        ERROR[Error Message]
+    end
+
+    CMD --> REG1
+    REG1 -->|Not Found| REG2
+    REG1 -->|Found| SKILL_INFO
+    REG2 -->|Found| SKILL_INFO
+    REG2 -->|Not Found| ERROR
+
+    SKILL_INFO --> CACHE
+    CACHE -->|Exists| CLONE
+    CACHE -->|Not Exists| CLONE
+    CLONE --> CHECKOUT
+    CHECKOUT --> SOURCE
+
+    SOURCE --> TARGET
+    TARGET --> COPY
+    COPY --> MANIFEST_FILE
+    MANIFEST_FILE --> SUCCESS
+
+    SOURCE -.->|Error| ERROR
+    COPY -.->|Error| ERROR
+
+    style CMD fill:#e3f2fd
+    style SKILL_INFO fill:#fff9c4
+    style SOURCE fill:#c8e6c9
+    style TARGET fill:#c8e6c9
+    style SUCCESS fill:#a5d6a7
+    style ERROR fill:#ef9a9a
+```
