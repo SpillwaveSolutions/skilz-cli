@@ -1,22 +1,21 @@
 """Tests for the git_ops module."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import subprocess
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from skilz.errors import GitError
 from skilz.git_ops import (
-    get_cache_dir,
-    get_cache_path,
-    run_git_command,
-    clone_repo,
-    fetch_repo,
     checkout_sha,
     clone_or_fetch,
+    clone_repo,
+    fetch_repo,
+    get_cache_path,
     get_skill_source_path,
     parse_skill_path,
+    run_git_command,
 )
-from skilz.errors import GitError
 
 
 class TestGetCachePath:

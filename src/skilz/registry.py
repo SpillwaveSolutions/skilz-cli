@@ -100,27 +100,42 @@ def lookup_skill(
     skill_id: str,
     project_dir: Path | None = None,
     verbose: bool = False,
+    use_api: bool = True,
 ) -> SkillInfo:
     """
-    Look up a skill by its ID in the registry.
+    Look up a skill by its ID in the registry or marketplace API.
 
-    Searches project-level registry first, then user-level registry.
+    Searches project-level registry first, then user-level registry,
+    then falls back to skillzwave.ai API if enabled.
 
     Args:
-        skill_id: The skill ID to look up (e.g., "anthropics/web-artifacts-builder").
+        skill_id: The skill ID to look up.
+                  Legacy format: "anthropics/web-artifacts-builder"
+                  Marketplace format: "Jamie-BitFlight_claude_skills/clang-format"
         project_dir: The project directory to check for .skilz/registry.yaml.
         verbose: If True, print debug information.
+        use_api: If True, fall back to API when not found in local registries.
 
     Returns:
         SkillInfo with the skill's configuration.
 
     Raises:
-        SkillNotFoundError: If the skill ID is not found in any registry.
+        SkillNotFoundError: If the skill ID is not found anywhere.
         RegistryError: If a registry file exists but cannot be parsed.
+        APIError: If API lookup fails (when use_api=True).
     """
+    # Import here to avoid circular imports
+    from skilz.api_client import (
+        fetch_skill_coordinates,
+        is_marketplace_skill_id,
+        parse_skill_id,
+    )
+    from skilz.git_ops import fetch_github_sha
+
     registry_paths = get_registry_paths(project_dir)
     searched_paths: list[str] = []
 
+    # Step 1: Try local registries first
     for registry_path in registry_paths:
         if not registry_path.exists():
             if verbose:
@@ -135,13 +150,11 @@ def lookup_skill(
         try:
             registry = load_registry(registry_path)
         except RegistryError:
-            # If registry exists but can't be parsed, re-raise
             raise
 
         if skill_id in registry:
             skill_data = registry[skill_id]
 
-            # Validate required fields
             required_fields = ["git_repo", "skill_path", "git_sha"]
             missing = [f for f in required_fields if f not in skill_data]
             if missing:
@@ -160,5 +173,41 @@ def lookup_skill(
                 git_sha=skill_data["git_sha"],
             )
 
-    # Not found in any registry
+    # Step 2: If marketplace format and API enabled, try API
+    if use_api and is_marketplace_skill_id(skill_id):
+        if verbose:
+            print("  Not in local registries, trying marketplace API...")
+
+        try:
+            owner, repo, skill_name = parse_skill_id(skill_id)
+            coords = fetch_skill_coordinates(owner, repo, skill_name, verbose=verbose)
+
+            # Fetch SHA from GitHub (API doesn't provide it)
+            git_sha = fetch_github_sha(owner, repo, coords.branch, verbose=verbose)
+
+            # Build git_repo URL
+            git_repo = f"https://github.com/{coords.repo_full_name}.git"
+
+            # Build skill_path in skilz format: /{branch}/{path}
+            skill_path = f"/{coords.branch}/{coords.skill_path}"
+
+            if verbose:
+                print(f"  Found via API: {coords.name}")
+                print(f"  Repo: {git_repo}")
+                print(f"  Path: {skill_path}")
+                print(f"  SHA: {git_sha[:8]}...")
+
+            return SkillInfo(
+                skill_id=skill_id,
+                git_repo=git_repo,
+                skill_path=skill_path,
+                git_sha=git_sha,
+            )
+
+        except Exception as e:
+            if verbose:
+                print(f"  API lookup failed: {e}")
+            # Fall through to raise SkillNotFoundError
+
+    # Not found anywhere
     raise SkillNotFoundError(skill_id, searched_paths)

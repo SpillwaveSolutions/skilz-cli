@@ -1,14 +1,12 @@
 """Tests for the manifest module."""
 
-import pytest
-from pathlib import Path
-
+from skilz import __version__
 from skilz.manifest import (
-    SkillManifest,
-    write_manifest,
-    read_manifest,
-    needs_install,
     MANIFEST_FILENAME,
+    SkillManifest,
+    needs_install,
+    read_manifest,
+    write_manifest,
 )
 
 
@@ -28,7 +26,7 @@ class TestSkillManifest:
         assert manifest.git_repo == "https://github.com/test/repo.git"
         assert manifest.skill_path == "/main/skills/test-skill"
         assert manifest.git_sha == "abc123def456789012345678901234567890abcd"
-        assert manifest.skilz_version == "0.1.0"
+        assert manifest.skilz_version == __version__
         assert "T" in manifest.installed_at  # ISO format has T separator
 
     def test_to_dict(self):

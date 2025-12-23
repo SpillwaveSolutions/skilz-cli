@@ -44,3 +44,11 @@ class InstallError(SkilzError):
         self.skill_id = skill_id
         self.reason = reason
         super().__init__(f"Failed to install '{skill_id}': {reason}")
+
+
+class APIError(SkilzError):
+    """Raised when an API request fails."""
+
+    def __init__(self, reason: str):
+        self.reason = reason
+        super().__init__(f"API error: {reason}")

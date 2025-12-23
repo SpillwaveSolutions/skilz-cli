@@ -74,8 +74,10 @@ def detect_agent(project_dir: Path | None = None) -> AgentType:
         from skilz.config import get_default_agent
 
         default_agent = get_default_agent()
-        if default_agent is not None:
-            return default_agent
+        if default_agent == "claude":
+            return "claude"
+        elif default_agent == "opencode":
+            return "opencode"
     except ImportError:
         pass  # Config module not available
 

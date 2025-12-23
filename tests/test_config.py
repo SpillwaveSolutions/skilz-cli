@@ -2,9 +2,10 @@
 
 import json
 import os
-import pytest
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from skilz import config
 
@@ -45,10 +46,14 @@ class TestLoadConfig:
 
     def test_loads_from_file(self, mock_config_path):
         """Should load values from config file."""
-        mock_config_path.write_text(json.dumps({
-            "claude_code_home": "/custom/claude",
-            "agent_default": "opencode",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "claude_code_home": "/custom/claude",
+                    "agent_default": "opencode",
+                }
+            )
+        )
 
         result = config.load_config()
 
@@ -78,9 +83,13 @@ class TestGetEffectiveConfig:
 
     def test_file_overrides_defaults(self, mock_config_path):
         """Config file should override defaults."""
-        mock_config_path.write_text(json.dumps({
-            "claude_code_home": "/from/file",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "claude_code_home": "/from/file",
+                }
+            )
+        )
 
         with patch.dict(os.environ, {}, clear=True):
             result = config.get_effective_config()
@@ -89,9 +98,13 @@ class TestGetEffectiveConfig:
 
     def test_env_overrides_file(self, mock_config_path):
         """Environment variables should override file."""
-        mock_config_path.write_text(json.dumps({
-            "claude_code_home": "/from/file",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "claude_code_home": "/from/file",
+                }
+            )
+        )
 
         with patch.dict(os.environ, {"CLAUDE_CODE_HOME": "/from/env"}, clear=True):
             result = config.get_effective_config()
@@ -126,9 +139,13 @@ class TestGetConfigSources:
 
     def test_shows_all_sources(self, mock_config_path):
         """Should show values from all sources."""
-        mock_config_path.write_text(json.dumps({
-            "claude_code_home": "/from/file",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "claude_code_home": "/from/file",
+                }
+            )
+        )
 
         with patch.dict(os.environ, {"CLAUDE_CODE_HOME": "/from/env"}, clear=True):
             result = config.get_config_sources()
@@ -154,10 +171,12 @@ class TestSaveConfig:
 
     def test_saves_to_file(self, mock_config_path):
         """Should save config to file."""
-        config.save_config({
-            "claude_code_home": "/custom/path",
-            "agent_default": "opencode",
-        })
+        config.save_config(
+            {
+                "claude_code_home": "/custom/path",
+                "agent_default": "opencode",
+            }
+        )
 
         with open(mock_config_path) as f:
             saved = json.load(f)
@@ -179,10 +198,12 @@ class TestSaveConfig:
 
     def test_only_saves_non_default_values(self, mock_config_path):
         """Should only save values that differ from defaults."""
-        config.save_config({
-            "claude_code_home": str(Path.home() / ".claude"),  # Same as default
-            "agent_default": "opencode",  # Different from default
-        })
+        config.save_config(
+            {
+                "claude_code_home": str(Path.home() / ".claude"),  # Same as default
+                "agent_default": "opencode",  # Different from default
+            }
+        )
 
         with open(mock_config_path) as f:
             saved = json.load(f)
@@ -198,9 +219,13 @@ class TestHelperFunctions:
 
     def test_get_claude_home(self, mock_config_path):
         """get_claude_home should return Path."""
-        mock_config_path.write_text(json.dumps({
-            "claude_code_home": "/custom/claude",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "claude_code_home": "/custom/claude",
+                }
+            )
+        )
 
         result = config.get_claude_home()
 
@@ -208,9 +233,13 @@ class TestHelperFunctions:
 
     def test_get_opencode_home(self, mock_config_path):
         """get_opencode_home should return Path."""
-        mock_config_path.write_text(json.dumps({
-            "open_code_home": "/custom/opencode",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "open_code_home": "/custom/opencode",
+                }
+            )
+        )
 
         result = config.get_opencode_home()
 
@@ -223,27 +252,39 @@ class TestHelperFunctions:
 
     def test_get_default_agent_claude(self, mock_config_path):
         """get_default_agent should return 'claude'."""
-        mock_config_path.write_text(json.dumps({
-            "agent_default": "claude",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "agent_default": "claude",
+                }
+            )
+        )
 
         result = config.get_default_agent()
         assert result == "claude"
 
     def test_get_default_agent_opencode(self, mock_config_path):
         """get_default_agent should return 'opencode'."""
-        mock_config_path.write_text(json.dumps({
-            "agent_default": "opencode",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "agent_default": "opencode",
+                }
+            )
+        )
 
         result = config.get_default_agent()
         assert result == "opencode"
 
     def test_get_default_agent_invalid_returns_none(self, mock_config_path):
         """get_default_agent should return None for invalid values."""
-        mock_config_path.write_text(json.dumps({
-            "agent_default": "invalid",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "agent_default": "invalid",
+                }
+            )
+        )
 
         result = config.get_default_agent()
         assert result is None

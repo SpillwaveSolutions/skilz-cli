@@ -1,13 +1,12 @@
 """Tests for the installer module."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-from skilz.installer import install_skill, copy_skill_files
+import pytest
+
 from skilz.errors import InstallError
+from skilz.installer import copy_skill_files, install_skill
 from skilz.registry import SkillInfo
-from skilz.manifest import SkillManifest
 
 
 class TestCopySkillFiles:
@@ -147,29 +146,31 @@ class TestInstallSkill:
         """Test installing a new skill."""
         deps = mock_dependencies
 
-        with patch("skilz.installer.detect_agent", return_value="claude"), \
-             patch("skilz.installer.get_agent_display_name", return_value="Claude Code"), \
-             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]), \
-             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]), \
-             patch("skilz.installer.needs_install", return_value=(True, "not_installed")), \
-             patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]), \
-             patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")), \
-             patch("skilz.installer.checkout_sha"), \
-             patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]), \
-             patch("skilz.installer.write_manifest"):
-
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+        ):
             install_skill("test/skill", project_level=True)
 
     def test_install_already_installed(self, mock_dependencies, capsys):
         """Test when skill is already installed."""
         deps = mock_dependencies
 
-        with patch("skilz.installer.detect_agent", return_value="claude"), \
-             patch("skilz.installer.get_agent_display_name", return_value="Claude Code"), \
-             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]), \
-             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]), \
-             patch("skilz.installer.needs_install", return_value=(False, "up_to_date")):
-
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(False, "up_to_date")),
+        ):
             install_skill("test/skill", project_level=True)
 
         captured = capsys.readouterr()
@@ -179,17 +180,18 @@ class TestInstallSkill:
         """Test updating an existing skill."""
         deps = mock_dependencies
 
-        with patch("skilz.installer.detect_agent", return_value="claude"), \
-             patch("skilz.installer.get_agent_display_name", return_value="Claude Code"), \
-             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]), \
-             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]), \
-             patch("skilz.installer.needs_install", return_value=(True, "sha_mismatch")), \
-             patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]), \
-             patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")), \
-             patch("skilz.installer.checkout_sha"), \
-             patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]), \
-             patch("skilz.installer.write_manifest"):
-
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "sha_mismatch")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+        ):
             install_skill("test/skill", project_level=True)
 
         captured = capsys.readouterr()
@@ -200,16 +202,17 @@ class TestInstallSkill:
         deps = mock_dependencies
         nonexistent = temp_dir / "nonexistent"
 
-        with patch("skilz.installer.detect_agent", return_value="claude"), \
-             patch("skilz.installer.get_agent_display_name", return_value="Claude Code"), \
-             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]), \
-             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]), \
-             patch("skilz.installer.needs_install", return_value=(True, "not_installed")), \
-             patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]), \
-             patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")), \
-             patch("skilz.installer.checkout_sha"), \
-             patch("skilz.installer.get_skill_source_path", return_value=nonexistent):
-
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=nonexistent),
+        ):
             with pytest.raises(InstallError) as exc:
                 install_skill("test/skill", project_level=True)
 
@@ -219,16 +222,17 @@ class TestInstallSkill:
         """Test installing with explicitly specified agent."""
         deps = mock_dependencies
 
-        with patch("skilz.installer.get_agent_display_name", return_value="OpenCode"), \
-             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]), \
-             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]), \
-             patch("skilz.installer.needs_install", return_value=(True, "not_installed")), \
-             patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]), \
-             patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")), \
-             patch("skilz.installer.checkout_sha"), \
-             patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]), \
-             patch("skilz.installer.write_manifest"):
-
+        with (
+            patch("skilz.installer.get_agent_display_name", return_value="OpenCode"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+        ):
             # Note: detect_agent is NOT called because agent is explicit
             install_skill("test/skill", agent="opencode", project_level=True)
 
@@ -239,17 +243,18 @@ class TestInstallSkill:
         """Test verbose output during installation."""
         deps = mock_dependencies
 
-        with patch("skilz.installer.detect_agent", return_value="claude"), \
-             patch("skilz.installer.get_agent_display_name", return_value="Claude Code"), \
-             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]), \
-             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]), \
-             patch("skilz.installer.needs_install", return_value=(True, "not_installed")), \
-             patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]), \
-             patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")), \
-             patch("skilz.installer.checkout_sha"), \
-             patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]), \
-             patch("skilz.installer.write_manifest"):
-
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+        ):
             install_skill("test/skill", project_level=True, verbose=True)
 
         captured = capsys.readouterr()
@@ -260,17 +265,18 @@ class TestInstallSkill:
         """Test verbose output for SHA mismatch update."""
         deps = mock_dependencies
 
-        with patch("skilz.installer.detect_agent", return_value="claude"), \
-             patch("skilz.installer.get_agent_display_name", return_value="Claude Code"), \
-             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]), \
-             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]), \
-             patch("skilz.installer.needs_install", return_value=(True, "sha_mismatch")), \
-             patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]), \
-             patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")), \
-             patch("skilz.installer.checkout_sha"), \
-             patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]), \
-             patch("skilz.installer.write_manifest"):
-
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "sha_mismatch")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+        ):
             install_skill("test/skill", project_level=True, verbose=True)
 
         captured = capsys.readouterr()
@@ -280,17 +286,18 @@ class TestInstallSkill:
         """Test verbose output for no manifest reinstall."""
         deps = mock_dependencies
 
-        with patch("skilz.installer.detect_agent", return_value="claude"), \
-             patch("skilz.installer.get_agent_display_name", return_value="Claude Code"), \
-             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]), \
-             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]), \
-             patch("skilz.installer.needs_install", return_value=(True, "no_manifest")), \
-             patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]), \
-             patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")), \
-             patch("skilz.installer.checkout_sha"), \
-             patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]), \
-             patch("skilz.installer.write_manifest"):
-
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "no_manifest")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+        ):
             install_skill("test/skill", project_level=True, verbose=True)
 
         captured = capsys.readouterr()
@@ -300,17 +307,18 @@ class TestInstallSkill:
         """Test user-level installation."""
         deps = mock_dependencies
 
-        with patch("skilz.installer.detect_agent", return_value="claude"), \
-             patch("skilz.installer.get_agent_display_name", return_value="Claude Code"), \
-             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]), \
-             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]), \
-             patch("skilz.installer.needs_install", return_value=(True, "not_installed")), \
-             patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]), \
-             patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")), \
-             patch("skilz.installer.checkout_sha"), \
-             patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]), \
-             patch("skilz.installer.write_manifest"):
-
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+        ):
             install_skill("test/skill", project_level=False)
 
         captured = capsys.readouterr()
@@ -320,17 +328,18 @@ class TestInstallSkill:
         """Test that manifest is written after installation."""
         deps = mock_dependencies
 
-        with patch("skilz.installer.detect_agent", return_value="claude"), \
-             patch("skilz.installer.get_agent_display_name", return_value="Claude Code"), \
-             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]), \
-             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]), \
-             patch("skilz.installer.needs_install", return_value=(True, "not_installed")), \
-             patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]), \
-             patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")), \
-             patch("skilz.installer.checkout_sha"), \
-             patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]), \
-             patch("skilz.installer.write_manifest") as mock_write:
-
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest") as mock_write,
+        ):
             install_skill("test/skill", project_level=True)
 
             mock_write.assert_called_once()

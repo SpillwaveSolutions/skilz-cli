@@ -3,10 +3,9 @@
 import argparse
 import json
 import sys
-from pathlib import Path
 
 from skilz.agents import AgentType, get_agent_display_name
-from skilz.registry import lookup_skill, get_registry_paths
+from skilz.registry import lookup_skill
 from skilz.scanner import InstalledSkill, scan_installed_skills
 
 
@@ -55,12 +54,14 @@ def format_table_output(skills: list[InstalledSkill], verbose: bool = False) -> 
     rows: list[tuple[str, str, str, str]] = []
     for skill in skills:
         status = get_skill_status(skill, verbose=verbose)
-        rows.append((
-            skill.skill_id,
-            skill.git_sha_short,
-            skill.installed_at_short,
-            status,
-        ))
+        rows.append(
+            (
+                skill.skill_id,
+                skill.git_sha_short,
+                skill.installed_at_short,
+                status,
+            )
+        )
 
     # Calculate column widths
     col_widths = [
@@ -74,9 +75,7 @@ def format_table_output(skills: list[InstalledSkill], verbose: bool = False) -> 
     lines: list[str] = []
 
     # Header line
-    header_line = "  ".join(
-        h.ljust(col_widths[i]) for i, h in enumerate(headers)
-    )
+    header_line = "  ".join(h.ljust(col_widths[i]) for i, h in enumerate(headers))
     lines.append(header_line)
 
     # Separator line
@@ -85,9 +84,7 @@ def format_table_output(skills: list[InstalledSkill], verbose: bool = False) -> 
 
     # Data rows
     for row in rows:
-        row_line = "  ".join(
-            val.ljust(col_widths[i]) for i, val in enumerate(row)
-        )
+        row_line = "  ".join(val.ljust(col_widths[i]) for i, val in enumerate(row))
         lines.append(row_line)
 
     return "\n".join(lines)
@@ -108,16 +105,18 @@ def format_json_output(skills: list[InstalledSkill], verbose: bool = False) -> s
 
     for skill in skills:
         status = get_skill_status(skill, verbose=verbose)
-        output.append({
-            "skill_id": skill.skill_id,
-            "skill_name": skill.skill_name,
-            "git_sha": skill.manifest.git_sha,
-            "installed_at": skill.manifest.installed_at,
-            "status": status,
-            "path": str(skill.path),
-            "agent": skill.agent,
-            "project_level": skill.project_level,
-        })
+        output.append(
+            {
+                "skill_id": skill.skill_id,
+                "skill_name": skill.skill_name,
+                "git_sha": skill.manifest.git_sha,
+                "installed_at": skill.manifest.installed_at,
+                "status": status,
+                "path": str(skill.path),
+                "agent": skill.agent,
+                "project_level": skill.project_level,
+            }
+        )
 
     return json.dumps(output, indent=2)
 

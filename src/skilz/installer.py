@@ -112,15 +112,15 @@ def install_skill(
 
     if verbose:
         if reason == "sha_mismatch":
-            print(f"  Updating: SHA changed")
+            print("  Updating: SHA changed")
         elif reason == "no_manifest":
-            print(f"  Reinstalling: no manifest found")
+            print("  Reinstalling: no manifest found")
         else:
             print(f"  Installing: {reason}")
 
     # Step 5: Clone or fetch repository
     if verbose:
-        print(f"Fetching repository...")
+        print("Fetching repository...")
 
     cache_path = clone_or_fetch(skill_info.git_repo, verbose=verbose)
 

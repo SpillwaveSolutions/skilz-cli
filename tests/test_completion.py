@@ -1,18 +1,16 @@
 """Tests for the completion module."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 from skilz.completion import (
-    get_shell_type,
+    BASH_COMPLETION,
+    ZSH_COMPLETION,
+    get_completion_dir,
     get_completion_script,
     get_rc_file,
-    get_completion_dir,
+    get_shell_type,
     install_completion,
     print_completion_script,
-    ZSH_COMPLETION,
-    BASH_COMPLETION,
 )
 
 

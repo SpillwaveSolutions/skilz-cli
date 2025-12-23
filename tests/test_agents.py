@@ -1,18 +1,19 @@
 """Tests for the agents module."""
 
 import json
-import pytest
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
+from skilz import config
 from skilz.agents import (
     detect_agent,
-    get_skills_dir,
     ensure_skills_dir,
     get_agent_display_name,
     get_agent_paths,
+    get_skills_dir,
 )
-from skilz import config
 
 
 class TestDetectAgent:
@@ -163,9 +164,13 @@ class TestConfigIntegration:
     def test_detect_agent_uses_config_default(self, mock_config_path, temp_dir, monkeypatch):
         """detect_agent should return agent_default from config when set."""
         # Set up config with opencode as default
-        mock_config_path.write_text(json.dumps({
-            "agent_default": "opencode",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "agent_default": "opencode",
+                }
+            )
+        )
 
         # Create fake home with nothing
         fake_home = temp_dir / "home"
@@ -181,9 +186,13 @@ class TestConfigIntegration:
 
     def test_detect_agent_uses_config_claude_default(self, mock_config_path, temp_dir, monkeypatch):
         """detect_agent should return claude from config when set."""
-        mock_config_path.write_text(json.dumps({
-            "agent_default": "claude",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "agent_default": "claude",
+                }
+            )
+        )
 
         fake_home = temp_dir / "home"
         (fake_home / ".config" / "opencode").mkdir(parents=True)  # OpenCode installed
@@ -196,11 +205,17 @@ class TestConfigIntegration:
         agent = detect_agent(project_dir)
         assert agent == "claude"
 
-    def test_detect_agent_ignores_invalid_config_default(self, mock_config_path, temp_dir, monkeypatch):
+    def test_detect_agent_ignores_invalid_config_default(
+        self, mock_config_path, temp_dir, monkeypatch
+    ):
         """detect_agent should ignore invalid agent_default in config."""
-        mock_config_path.write_text(json.dumps({
-            "agent_default": "invalid_agent",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "agent_default": "invalid_agent",
+                }
+            )
+        )
 
         fake_home = temp_dir / "home"
         fake_home.mkdir()
@@ -218,10 +233,14 @@ class TestConfigIntegration:
         custom_claude = tmp_path / "custom_claude"
         custom_opencode = tmp_path / "custom_opencode"
 
-        mock_config_path.write_text(json.dumps({
-            "claude_code_home": str(custom_claude),
-            "open_code_home": str(custom_opencode),
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "claude_code_home": str(custom_claude),
+                    "open_code_home": str(custom_opencode),
+                }
+            )
+        )
 
         paths = get_agent_paths()
 
@@ -232,9 +251,13 @@ class TestConfigIntegration:
         """get_skills_dir should use config paths for user-level."""
         custom_claude = tmp_path / "custom_claude"
 
-        mock_config_path.write_text(json.dumps({
-            "claude_code_home": str(custom_claude),
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "claude_code_home": str(custom_claude),
+                }
+            )
+        )
 
         skills_dir = get_skills_dir("claude", project_level=False)
 

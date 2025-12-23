@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from skilz.agents import AgentType, get_skills_dir, AGENT_PATHS
+from skilz.agents import AGENT_PATHS, AgentType, get_skills_dir
 from skilz.manifest import SkillManifest, read_manifest
 
 
@@ -106,9 +106,7 @@ def scan_installed_skills(
     installed: list[InstalledSkill] = []
 
     # Determine which agents to scan
-    agents_to_scan: list[AgentType] = (
-        [agent] if agent else list(AGENT_PATHS.keys())
-    )
+    agents_to_scan: list[AgentType] = [agent] if agent else list(AGENT_PATHS.keys())
 
     for scan_agent in agents_to_scan:
         skills_dir = get_skills_dir(
@@ -169,10 +167,7 @@ def find_installed_skill(
             return skill
 
     # Try partial match on skill_name (for convenience)
-    matches = [
-        s for s in installed
-        if skill_id_or_name.lower() in s.skill_name.lower()
-    ]
+    matches = [s for s in installed if skill_id_or_name.lower() in s.skill_name.lower()]
 
     if len(matches) == 1:
         return matches[0]

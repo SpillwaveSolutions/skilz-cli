@@ -1,14 +1,14 @@
 """Tests for the update command."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import argparse
+from unittest.mock import patch
 
-from skilz.commands.update_cmd import cmd_update, check_skill_update
-from skilz.scanner import InstalledSkill
-from skilz.manifest import SkillManifest, write_manifest
+import pytest
+
+from skilz.commands.update_cmd import check_skill_update, cmd_update
+from skilz.manifest import SkillManifest
 from skilz.registry import SkillInfo
+from skilz.scanner import InstalledSkill
 
 
 @pytest.fixture

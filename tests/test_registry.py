@@ -1,15 +1,17 @@
 """Tests for the registry module."""
 
-import pytest
 from pathlib import Path
+from unittest.mock import patch
 
+import pytest
+
+from skilz.errors import RegistryError, SkillNotFoundError
 from skilz.registry import (
     SkillInfo,
     get_registry_paths,
     load_registry,
     lookup_skill,
 )
-from skilz.errors import RegistryError, SkillNotFoundError
 
 
 class TestSkillInfo:
@@ -150,3 +152,54 @@ incomplete/skill:
         with pytest.raises(RegistryError) as exc_info:
             lookup_skill("incomplete/skill", project_dir=temp_dir)
         assert "missing required fields" in str(exc_info.value)
+
+
+class TestLookupSkillWithAPI:
+    """Tests for lookup_skill with API fallback."""
+
+    @patch("skilz.api_client.fetch_skill_coordinates")
+    @patch("skilz.git_ops.fetch_github_sha")
+    @patch("skilz.api_client.is_marketplace_skill_id")
+    def test_api_fallback_when_not_in_registry(
+        self, mock_is_marketplace, mock_fetch_sha, mock_fetch_coords, tmp_path
+    ):
+        """Test that API is called when skill not in local registry."""
+        from skilz.api_client import SkillCoordinates
+
+        mock_is_marketplace.return_value = True
+        mock_fetch_coords.return_value = SkillCoordinates(
+            slug="test__repo__skill__SKILL",
+            name="skill",
+            description="Test",
+            repo_full_name="test/repo",
+            skill_path="skill/SKILL.md",
+            branch="main",
+            github_url="https://github.com/test/repo",
+            raw_file_url="",
+            score=50.0,
+        )
+        mock_fetch_sha.return_value = "a" * 40
+
+        result = lookup_skill("test_repo/skill", project_dir=tmp_path)
+
+        assert result.skill_id == "test_repo/skill"
+        assert result.git_repo == "https://github.com/test/repo.git"
+        assert result.git_sha == "a" * 40
+        mock_fetch_coords.assert_called_once()
+
+    def test_api_not_called_for_legacy_format(self, tmp_path):
+        """Test that API is not called for legacy skill ID format."""
+        # Legacy format should raise SkillNotFoundError without trying API
+        with pytest.raises(SkillNotFoundError):
+            lookup_skill("anthropics/web-artifacts", project_dir=tmp_path)
+
+    @patch("skilz.api_client.fetch_skill_coordinates")
+    @patch("skilz.api_client.is_marketplace_skill_id")
+    def test_api_disabled(self, mock_is_marketplace, mock_fetch_coords, tmp_path):
+        """Test that API is not called when use_api=False."""
+        mock_is_marketplace.return_value = True
+
+        with pytest.raises(SkillNotFoundError):
+            lookup_skill("test_repo/skill", project_dir=tmp_path, use_api=False)
+
+        mock_fetch_coords.assert_not_called()

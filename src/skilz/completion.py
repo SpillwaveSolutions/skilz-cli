@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 # Zsh completion script
-ZSH_COMPLETION = '''#compdef skilz
+ZSH_COMPLETION = """#compdef skilz
 
 _skilz() {
     local -a commands
@@ -76,10 +76,10 @@ _skilz() {
 }
 
 _skilz "$@"
-'''
+"""
 
 # Bash completion script
-BASH_COMPLETION = '''# Bash completion for skilz
+BASH_COMPLETION = """# Bash completion for skilz
 
 _skilz_completion() {
     local cur prev words cword
@@ -139,7 +139,7 @@ _skilz_completion() {
 }
 
 complete -F _skilz_completion skilz
-'''
+"""
 
 
 def get_shell_type() -> str | None:
@@ -249,10 +249,10 @@ def install_completion(shell: str) -> tuple[bool, str]:
             # Add to .zshrc if not already present
             if rc_file and rc_file.exists():
                 rc_content = rc_file.read_text()
-                fpath_line = f'fpath=({completion_dir} $fpath)'
+                fpath_line = f"fpath=({completion_dir} $fpath)"
                 if str(completion_dir) not in rc_content:
                     with open(rc_file, "a") as f:
-                        f.write(f"\n# Skilz CLI completion\n")
+                        f.write("\n# Skilz CLI completion\n")
                         f.write(f"{fpath_line}\n")
                         f.write("autoload -Uz compinit && compinit\n")
                     return True, f"Added completion to {rc_file}"
@@ -269,7 +269,7 @@ def install_completion(shell: str) -> tuple[bool, str]:
                 source_line = f"source {script_path}"
                 if str(script_path) not in rc_content:
                     with open(rc_file, "a") as f:
-                        f.write(f"\n# Skilz CLI completion\n")
+                        f.write("\n# Skilz CLI completion\n")
                         f.write(f"[[ -f {script_path} ]] && {source_line}\n")
                     return True, f"Added completion to {rc_file}"
                 return True, f"Completion script written to {script_path}"

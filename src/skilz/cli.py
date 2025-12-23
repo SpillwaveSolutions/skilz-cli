@@ -179,22 +179,27 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "install":
         from skilz.commands.install_cmd import cmd_install
+
         return cmd_install(args)
 
     if args.command == "list":
         from skilz.commands.list_cmd import cmd_list
+
         return cmd_list(args)
 
     if args.command == "update":
         from skilz.commands.update_cmd import cmd_update
+
         return cmd_update(args)
 
     if args.command == "remove":
         from skilz.commands.remove_cmd import cmd_remove
+
         return cmd_remove(args)
 
     if args.command == "config":
         from skilz.commands.config_cmd import cmd_config
+
         return cmd_config(args)
 
     # Unknown command (shouldn't happen with subparsers)

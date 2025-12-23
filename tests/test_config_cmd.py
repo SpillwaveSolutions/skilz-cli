@@ -1,20 +1,20 @@
 """Tests for the config command."""
 
+import argparse
 import json
-import pytest
-from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from skilz import config
 from skilz.commands.config_cmd import (
     cmd_config,
-    cmd_config_show,
     cmd_config_init,
+    cmd_config_show,
     format_value,
-    prompt_value,
     prompt_choice,
+    prompt_value,
 )
-import argparse
 
 
 @pytest.fixture
@@ -111,9 +111,13 @@ class TestCmdConfigShow:
 
     def test_show_with_config_file(self, mock_config_path, capsys):
         """Should show config when file exists."""
-        mock_config_path.write_text(json.dumps({
-            "agent_default": "opencode",
-        }))
+        mock_config_path.write_text(
+            json.dumps(
+                {
+                    "agent_default": "opencode",
+                }
+            )
+        )
 
         args = argparse.Namespace(verbose=False)
         result = cmd_config_show(args)
@@ -180,12 +184,14 @@ class TestCmdConfigInit:
         args = argparse.Namespace(verbose=False, yes=False, yes_all=False)
 
         # Simulate entering values (including shell completion choice)
-        inputs = iter([
-            "/custom/claude",  # Claude Code home
-            "/custom/opencode",  # OpenCode home
-            "opencode",  # Default agent
-            "3",  # Skip shell completion
-        ])
+        inputs = iter(
+            [
+                "/custom/claude",  # Claude Code home
+                "/custom/opencode",  # OpenCode home
+                "opencode",  # Default agent
+                "3",  # Skip shell completion
+            ]
+        )
 
         with patch("builtins.input", side_effect=lambda _: next(inputs)):
             result = cmd_config_init(args)

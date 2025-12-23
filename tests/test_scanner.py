@@ -1,15 +1,13 @@
 """Tests for the scanner module."""
 
 import pytest
-from pathlib import Path
 
-from skilz.scanner import (
-    InstalledSkill,
-    scan_skills_directory,
-    scan_installed_skills,
-    find_installed_skill,
-)
 from skilz.manifest import SkillManifest, write_manifest
+from skilz.scanner import (
+    find_installed_skill,
+    scan_installed_skills,
+    scan_skills_directory,
+)
 
 
 @pytest.fixture
