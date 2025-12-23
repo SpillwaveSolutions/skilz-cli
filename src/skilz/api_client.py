@@ -88,6 +88,55 @@ def is_marketplace_skill_id(skill_id: str) -> bool:
     return "_" in owner_repo
 
 
+def fetch_skill_by_name(
+    owner: str,
+    repo: str,
+    skill_name: str,
+    verbose: bool = False,
+) -> SkillCoordinates:
+    """
+    Fetch skill coordinates by repository and skill name (path-agnostic).
+
+    This uses the /api/skills/byname endpoint which searches by name,
+    making it work for deeply nested skills regardless of path depth.
+
+    Args:
+        owner: Repository owner (e.g., "manutej")
+        repo: Repository name (e.g., "luxor-claude-marketplace")
+        skill_name: Skill name (e.g., "pytest-patterns")
+        verbose: If True, print debug information
+
+    Returns:
+        SkillCoordinates with the skill's location data
+
+    Raises:
+        APIError: If the API request fails or skill not found
+    """
+    repo_full_name = f"{owner}/{repo}"
+    url = (
+        f"{API_BASE_URL}/skills/byname"
+        f"?repo={urllib.parse.quote(repo_full_name)}"
+        f"&name={urllib.parse.quote(skill_name)}"
+    )
+
+    if verbose:
+        print(f"  API lookup by name: {url}")
+
+    result = _make_api_request(url, verbose)
+
+    return SkillCoordinates(
+        slug=result.get("slug", ""),
+        name=result.get("name", skill_name),
+        description=result.get("description", ""),
+        repo_full_name=result.get("repoFullName", repo_full_name),
+        skill_path=result.get("skillPath", ""),
+        branch=result.get("branch", "main"),
+        github_url=result.get("githubUrl", f"https://github.com/{repo_full_name}"),
+        raw_file_url=result.get("rawFileUrl", ""),
+        score=result.get("score", 0.0),
+    )
+
+
 def fetch_skill_coordinates(
     owner: str,
     repo: str,
@@ -96,6 +145,9 @@ def fetch_skill_coordinates(
 ) -> SkillCoordinates:
     """
     Fetch skill coordinates from the skillzwave.ai API.
+
+    First tries the byname endpoint (works for any path depth),
+    then falls back to coordinate lookup with path guessing.
 
     Args:
         owner: Repository owner (e.g., "Jamie-BitFlight")
@@ -109,11 +161,16 @@ def fetch_skill_coordinates(
     Raises:
         APIError: If the API request fails or skill not found
     """
-    # Build query for coordinate lookup
-    # The API expects skillPath which includes the skill folder and SKILL.md
-    # We try common patterns: {skill_name}/SKILL.md, skills/{skill_name}/SKILL.md, SKILL.md
-
     repo_full_name = f"{owner}/{repo}"
+
+    # First try the byname endpoint - works for any path depth
+    try:
+        return fetch_skill_by_name(owner, repo, skill_name, verbose)
+    except APIError as e:
+        if verbose:
+            print(f"  Byname lookup failed: {e}, trying path patterns...")
+
+    # Fallback: try coordinate lookup with common path patterns
     skill_paths_to_try = [
         f"{skill_name}/SKILL.md",
         f"skills/{skill_name}/SKILL.md",
@@ -154,7 +211,7 @@ def fetch_skill_coordinates(
     # None of the paths worked
     raise APIError(
         f"Skill '{skill_name}' not found in repository '{repo_full_name}'. "
-        f"Tried paths: {skill_paths_to_try}"
+        f"Tried byname lookup and paths: {skill_paths_to_try}"
     )
 
 
