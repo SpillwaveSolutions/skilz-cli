@@ -115,7 +115,7 @@ def fetch_skill_by_name(
     repo_full_name = f"{owner}/{repo}"
     url = (
         f"{API_BASE_URL}/skills/byname"
-        f"?repo={urllib.parse.quote(repo_full_name)}"
+        f"?repoFullName={urllib.parse.quote(repo_full_name)}"
         f"&name={urllib.parse.quote(skill_name)}"
     )
 
