@@ -50,10 +50,17 @@ def copy_skill_files(source_dir: Path, target_dir: Path, verbose: bool = False) 
         target_dir.parent.mkdir(parents=True, exist_ok=True)
 
         # Copy the skill directory
+        # Use symlinks=True to preserve symlinks instead of following them
+        # Use ignore_dangling_symlinks=True to skip broken symlinks
         if verbose:
             print(f"  Copying {source_dir} -> {target_dir}")
 
-        shutil.copytree(source_dir, target_dir)
+        shutil.copytree(
+            source_dir,
+            target_dir,
+            symlinks=True,
+            ignore_dangling_symlinks=True,
+        )
 
     except OSError as e:
         raise InstallError(str(source_dir), f"Failed to copy files: {e}")
@@ -112,15 +119,15 @@ def install_skill(
 
     if verbose:
         if reason == "sha_mismatch":
-            print(f"  Updating: SHA changed")
+            print("  Updating: SHA changed")
         elif reason == "no_manifest":
-            print(f"  Reinstalling: no manifest found")
+            print("  Reinstalling: no manifest found")
         else:
             print(f"  Installing: {reason}")
 
     # Step 5: Clone or fetch repository
     if verbose:
-        print(f"Fetching repository...")
+        print("Fetching repository...")
 
     cache_path = clone_or_fetch(skill_info.git_repo, verbose=verbose)
 

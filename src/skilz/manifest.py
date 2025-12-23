@@ -86,7 +86,14 @@ def read_manifest(skill_dir: Path) -> SkillManifest | None:
             return None
 
         # Validate required fields
-        required = ["installed_at", "skill_id", "git_repo", "skill_path", "git_sha", "skilz_version"]
+        required = [
+            "installed_at",
+            "skill_id",
+            "git_repo",
+            "skill_path",
+            "git_sha",
+            "skilz_version",
+        ]
         if not all(field in data for field in required):
             return None
 

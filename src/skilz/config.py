@@ -113,6 +113,7 @@ def get_config_sources() -> dict[str, dict[str, Any]]:
         env_value = os.environ.get(env_var) if env_var else None
 
         # Determine effective value (priority: env > file > default)
+        effective: str | None
         if env_value is not None:
             effective = env_value
         elif key in file_config:
@@ -159,13 +160,15 @@ def save_config(config: dict[str, str | None]) -> None:
 def get_claude_home() -> Path:
     """Get the Claude Code home directory from config."""
     config = get_effective_config()
-    return Path(config["claude_code_home"]).expanduser()
+    claude_home = config["claude_code_home"] or str(Path.home() / ".claude")
+    return Path(claude_home).expanduser()
 
 
 def get_opencode_home() -> Path:
     """Get the OpenCode home directory from config."""
     config = get_effective_config()
-    return Path(config["open_code_home"]).expanduser()
+    opencode_home = config["open_code_home"] or str(Path.home() / ".config" / "opencode")
+    return Path(opencode_home).expanduser()
 
 
 def get_default_agent() -> str | None:

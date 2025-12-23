@@ -1,6 +1,5 @@
 """Tests for the CLI module."""
 
-import pytest
 from unittest.mock import patch
 
 from skilz.cli import create_parser, main
@@ -13,10 +12,7 @@ class TestCreateParser:
         """Parser should have --version option."""
         parser = create_parser()
         # Test version action exists
-        assert any(
-            action.option_strings == ["-V", "--version"]
-            for action in parser._actions
-        )
+        assert any(action.option_strings == ["-V", "--version"] for action in parser._actions)
 
     def test_parser_has_verbose(self):
         """Parser should have --verbose option."""

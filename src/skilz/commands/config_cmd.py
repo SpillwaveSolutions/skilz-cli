@@ -2,19 +2,18 @@
 
 import argparse
 import sys
-from pathlib import Path
+from collections.abc import Callable
 
-from skilz import config
+from skilz.completion import get_shell_type, install_completion
 from skilz.config import (
     CONFIG_PATH,
     DEFAULTS,
+    VALID_AGENTS,
+    config_exists,
     get_config_sources,
     get_effective_config,
     save_config,
-    config_exists,
-    VALID_AGENTS,
 )
-from skilz.completion import get_shell_type, install_completion
 
 
 def format_value(value: str | None, max_len: int = 30) -> str:
@@ -23,7 +22,7 @@ def format_value(value: str | None, max_len: int = 30) -> str:
         return "(not set)"
     val_str = str(value)
     if len(val_str) > max_len:
-        return val_str[:max_len - 3] + "..."
+        return val_str[: max_len - 3] + "..."
     return val_str
 
 
@@ -69,7 +68,9 @@ def cmd_config_show(args: argparse.Namespace) -> int:
     return 0
 
 
-def prompt_value(prompt: str, default: str | None, validator=None) -> str | None:
+def prompt_value(
+    prompt: str, default: str | None, validator: Callable[[str], bool] | None = None
+) -> str | None:
     """
     Prompt user for a value with a default.
 

@@ -1,20 +1,20 @@
 """Tests for the list command."""
 
-import json
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import argparse
+import json
+from unittest.mock import patch
+
+import pytest
 
 from skilz.commands.list_cmd import (
     cmd_list,
-    format_table_output,
     format_json_output,
+    format_table_output,
     get_skill_status,
 )
-from skilz.scanner import InstalledSkill
 from skilz.manifest import SkillManifest, write_manifest
 from skilz.registry import SkillInfo
+from skilz.scanner import InstalledSkill
 
 
 @pytest.fixture

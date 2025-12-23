@@ -3,10 +3,10 @@
 import argparse
 import sys
 
-from skilz.agents import AgentType, get_agent_display_name
+from skilz.agents import AgentType
 from skilz.installer import install_skill
 from skilz.registry import lookup_skill
-from skilz.scanner import InstalledSkill, scan_installed_skills, find_installed_skill
+from skilz.scanner import InstalledSkill, find_installed_skill, scan_installed_skills
 
 
 def check_skill_update(skill: InstalledSkill, verbose: bool = False) -> tuple[bool, str | None]:

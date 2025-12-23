@@ -1,11 +1,10 @@
 """Tests for the install command."""
 
 import argparse
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from skilz.commands.install_cmd import cmd_install
-from skilz.errors import SkilzError, SkillNotFoundError, GitError, InstallError
+from skilz.errors import GitError, InstallError, SkillNotFoundError
 
 
 class TestCmdInstall:

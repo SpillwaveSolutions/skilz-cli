@@ -1,13 +1,13 @@
 """Tests for the remove command."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import argparse
+from unittest.mock import patch
+
+import pytest
 
 from skilz.commands.remove_cmd import cmd_remove, confirm_remove
-from skilz.scanner import InstalledSkill
 from skilz.manifest import SkillManifest, write_manifest
+from skilz.scanner import InstalledSkill
 
 
 @pytest.fixture

@@ -238,3 +238,64 @@ def parse_skill_path(skill_path: str) -> tuple[str, str]:
     branch = parts[0] if parts else "main"
     path = parts[1] if len(parts) > 1 else ""
     return branch, path
+
+
+def fetch_github_sha(
+    owner: str,
+    repo: str,
+    branch: str = "main",
+    verbose: bool = False,
+) -> str:
+    """
+    Fetch the latest commit SHA for a branch from GitHub API.
+
+    Args:
+        owner: Repository owner
+        repo: Repository name
+        branch: Branch name (default: "main")
+        verbose: If True, print debug information
+
+    Returns:
+        The 40-character commit SHA
+
+    Raises:
+        GitError: If the request fails
+    """
+    import json
+    import urllib.error
+    import urllib.request
+
+    url = f"https://api.github.com/repos/{owner}/{repo}/commits/{branch}"
+
+    if verbose:
+        print(f"  Fetching SHA from GitHub: {url}")
+
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "skilz-cli/0.1.0",
+            },
+        )
+
+        with urllib.request.urlopen(req, timeout=30) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            sha: str = data.get("sha", "")
+
+            if not sha or len(sha) != 40:
+                raise GitError("fetch_sha", f"Invalid SHA returned: {sha}")
+
+            if verbose:
+                print(f"  Got SHA: {sha[:8]}...")
+
+            return sha
+
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            raise GitError("fetch_sha", f"Repository or branch not found: {owner}/{repo}@{branch}")
+        raise GitError("fetch_sha", f"GitHub API error: HTTP {e.code}")
+    except urllib.error.URLError as e:
+        raise GitError("fetch_sha", f"Cannot connect to GitHub: {e.reason}")
+    except json.JSONDecodeError:
+        raise GitError("fetch_sha", "Invalid response from GitHub API")
