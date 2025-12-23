@@ -50,10 +50,17 @@ def copy_skill_files(source_dir: Path, target_dir: Path, verbose: bool = False) 
         target_dir.parent.mkdir(parents=True, exist_ok=True)
 
         # Copy the skill directory
+        # Use symlinks=True to preserve symlinks instead of following them
+        # Use ignore_dangling_symlinks=True to skip broken symlinks
         if verbose:
             print(f"  Copying {source_dir} -> {target_dir}")
 
-        shutil.copytree(source_dir, target_dir)
+        shutil.copytree(
+            source_dir,
+            target_dir,
+            symlinks=True,
+            ignore_dangling_symlinks=True,
+        )
 
     except OSError as e:
         raise InstallError(str(source_dir), f"Failed to copy files: {e}")
