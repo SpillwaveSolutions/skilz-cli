@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +11,7 @@ from skilz.commands.list_cmd import (
     cmd_list,
     format_json_output,
     format_table_output,
+    get_mode_display,
     get_skill_status,
 )
 from skilz.manifest import SkillManifest, write_manifest
@@ -40,6 +42,7 @@ def sample_installed_skill(temp_dir, sample_manifest):
         manifest=sample_manifest,
         agent="claude",
         project_level=False,
+        install_mode="copy",
     )
 
 
@@ -127,7 +130,7 @@ class TestFormatTableOutput:
 
         assert "Skill" in output
         assert "Version" in output
-        assert "Installed" in output
+        assert "Mode" in output
         assert "Status" in output
 
     def test_table_has_skill_data(self, sample_installed_skill):
@@ -222,3 +225,137 @@ class TestCmdList:
         assert result == 1
         captured = capsys.readouterr()
         assert "Error:" in captured.err
+
+
+class TestSymlinkDisplay:
+    """Tests for symlink-related display functionality."""
+
+    @pytest.fixture
+    def copy_skill(self, temp_dir):
+        """Create a copy-mode installed skill."""
+        manifest = SkillManifest.create(
+            skill_id="test/copy-skill",
+            git_repo="https://github.com/test/copy-skill.git",
+            skill_path="/main/SKILL.md",
+            git_sha="abc123",
+            install_mode="copy",
+        )
+        return InstalledSkill(
+            skill_id="test/copy-skill",
+            skill_name="copy-skill",
+            path=temp_dir / "copy-skill",
+            manifest=manifest,
+            agent="claude",
+            project_level=False,
+            install_mode="copy",
+        )
+
+    @pytest.fixture
+    def symlink_skill(self, temp_dir):
+        """Create a symlink-mode installed skill."""
+        manifest = SkillManifest.create(
+            skill_id="test/symlink-skill",
+            git_repo="https://github.com/test/symlink-skill.git",
+            skill_path="/main/SKILL.md",
+            git_sha="def456",
+            install_mode="symlink",
+            canonical_path="/home/user/.skilz/skills/symlink-skill",
+        )
+        return InstalledSkill(
+            skill_id="test/symlink-skill",
+            skill_name="symlink-skill",
+            path=temp_dir / "symlink-skill",
+            manifest=manifest,
+            agent="opencode",
+            project_level=False,
+            install_mode="symlink",
+            canonical_path=Path("/home/user/.skilz/skills/symlink-skill"),
+        )
+
+    @pytest.fixture
+    def broken_symlink_skill(self, temp_dir):
+        """Create a broken symlink installed skill."""
+        manifest = SkillManifest.create(
+            skill_id="test/broken-skill",
+            git_repo="https://github.com/test/broken-skill.git",
+            skill_path="/main/SKILL.md",
+            git_sha="ghi789",
+            install_mode="symlink",
+            canonical_path="/nonexistent/path",
+        )
+        return InstalledSkill(
+            skill_id="test/broken-skill",
+            skill_name="broken-skill",
+            path=temp_dir / "broken-skill",
+            manifest=manifest,
+            agent="claude",
+            project_level=False,
+            install_mode="symlink",
+            canonical_path=Path("/nonexistent/path"),
+            is_broken=True,
+        )
+
+    def test_get_mode_display_copy(self, copy_skill):
+        """Test mode display for copy skill."""
+        assert get_mode_display(copy_skill) == "[copy]"
+
+    def test_get_mode_display_symlink(self, symlink_skill):
+        """Test mode display for symlinked skill."""
+        assert get_mode_display(symlink_skill) == "[symlink]"
+
+    def test_get_mode_display_broken(self, broken_symlink_skill):
+        """Test mode display for broken symlink."""
+        assert get_mode_display(broken_symlink_skill) == "[ERROR]"
+
+    def test_table_shows_mode_column(self, copy_skill):
+        """Test that table includes Mode column."""
+        with patch("skilz.commands.list_cmd.get_skill_status", return_value="up-to-date"):
+            output = format_table_output([copy_skill])
+
+        assert "Mode" in output
+        assert "[copy]" in output
+
+    def test_table_shows_symlink_mode(self, symlink_skill):
+        """Test that table shows symlink mode."""
+        with patch("skilz.commands.list_cmd.get_skill_status", return_value="up-to-date"):
+            output = format_table_output([symlink_skill])
+
+        assert "[symlink]" in output
+
+    def test_table_shows_broken_symlink_warning(self, broken_symlink_skill):
+        """Test that table shows broken symlink warning."""
+        output = format_table_output([broken_symlink_skill])
+
+        assert "[ERROR]" in output
+        assert "broken" in output.lower()
+        assert "Broken symlinks detected" in output
+
+    def test_table_shows_summary_with_counts(self, copy_skill, symlink_skill):
+        """Test that table shows summary with mode counts."""
+        with patch("skilz.commands.list_cmd.get_skill_status", return_value="up-to-date"):
+            output = format_table_output([copy_skill, symlink_skill])
+
+        assert "Total:" in output
+        assert "1 copied" in output
+        assert "1 symlinked" in output
+
+    def test_json_includes_mode_fields(self, symlink_skill):
+        """Test that JSON output includes mode fields."""
+        with patch("skilz.commands.list_cmd.get_skill_status", return_value="up-to-date"):
+            output = format_json_output([symlink_skill])
+
+        parsed = json.loads(output)
+        skill = parsed[0]
+        assert skill["install_mode"] == "symlink"
+        assert skill["is_symlink"] is True
+        assert skill["is_broken"] is False
+        assert "canonical_path" in skill
+
+    def test_json_shows_broken_symlink_status(self, broken_symlink_skill):
+        """Test that JSON output shows broken status."""
+        output = format_json_output([broken_symlink_skill])
+
+        parsed = json.loads(output)
+        skill = parsed[0]
+        assert skill["status"] == "broken"
+        assert skill["is_broken"] is True

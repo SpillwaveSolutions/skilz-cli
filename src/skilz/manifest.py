@@ -3,13 +3,16 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 
 from skilz import __version__
 
 MANIFEST_FILENAME = ".skilz-manifest.yaml"
+
+# Type alias for installation mode
+InstallMode = Literal["copy", "symlink"]
 
 
 @dataclass
@@ -22,6 +25,8 @@ class SkillManifest:
     skill_path: str
     git_sha: str
     skilz_version: str
+    install_mode: InstallMode = "copy"
+    canonical_path: str | None = None
 
     @classmethod
     def create(
@@ -30,8 +35,19 @@ class SkillManifest:
         git_repo: str,
         skill_path: str,
         git_sha: str,
+        install_mode: InstallMode = "copy",
+        canonical_path: str | None = None,
     ) -> "SkillManifest":
-        """Create a new manifest with current timestamp and skilz version."""
+        """Create a new manifest with current timestamp and skilz version.
+
+        Args:
+            skill_id: The skill identifier (e.g., "anthropics/pdf").
+            git_repo: The git repository URL.
+            skill_path: The path within the repository.
+            git_sha: The git commit SHA.
+            install_mode: How the skill was installed ("copy" or "symlink").
+            canonical_path: For symlinks, the path to the canonical source.
+        """
         return cls(
             installed_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
             skill_id=skill_id,
@@ -39,6 +55,8 @@ class SkillManifest:
             skill_path=skill_path,
             git_sha=git_sha,
             skilz_version=__version__,
+            install_mode=install_mode,
+            canonical_path=canonical_path,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -104,6 +122,9 @@ def read_manifest(skill_dir: Path) -> SkillManifest | None:
             skill_path=data["skill_path"],
             git_sha=data["git_sha"],
             skilz_version=data["skilz_version"],
+            # Optional fields with backward-compatible defaults
+            install_mode=data.get("install_mode", "copy"),
+            canonical_path=data.get("canonical_path"),
         )
 
     except (yaml.YAMLError, OSError):

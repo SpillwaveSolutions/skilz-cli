@@ -347,3 +347,179 @@ class TestInstallSkill:
             manifest = args[0][1]
             assert manifest.skill_id == "test/skill"
             assert manifest.git_sha == deps["skill_info"].git_sha
+
+
+class TestInstallMode:
+    """Tests for install mode (copy vs symlink) support."""
+
+    @pytest.fixture
+    def mock_skill_info(self):
+        """Create a mock SkillInfo for testing."""
+        return SkillInfo(
+            skill_id="test/skill",
+            git_repo="https://github.com/test/repo.git",
+            skill_path="/main/skills/test-skill",
+            git_sha="abc123def456789012345678901234567890abcd",
+        )
+
+    @pytest.fixture
+    def mock_dependencies(self, temp_dir, mock_skill_info):
+        """Set up common mocks for install_skill."""
+        cache_path = temp_dir / "cache" / "repo"
+        cache_path.mkdir(parents=True)
+
+        source_path = cache_path / "skills" / "test-skill"
+        source_path.mkdir(parents=True)
+        (source_path / "SKILL.md").write_text("# Test Skill")
+
+        skills_dir = temp_dir / ".claude" / "skills"
+        skills_dir.mkdir(parents=True)
+
+        return {
+            "cache_path": cache_path,
+            "source_path": source_path,
+            "skills_dir": skills_dir,
+            "skill_info": mock_skill_info,
+            "temp_dir": temp_dir,
+        }
+
+    def test_install_with_explicit_copy_mode(self, mock_dependencies, capsys):
+        """Test installing with explicit copy mode."""
+        deps = mock_dependencies
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.get_agent_default_mode", return_value="symlink"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest") as mock_write,
+        ):
+            # Explicit mode="copy" should override agent default
+            install_skill("test/skill", project_level=True, mode="copy")
+
+            # Verify manifest has install_mode="copy"
+            mock_write.assert_called_once()
+            manifest = mock_write.call_args[0][1]
+            assert manifest.install_mode == "copy"
+
+    def test_install_with_explicit_symlink_mode(self, mock_dependencies, capsys):
+        """Test installing with explicit symlink mode."""
+        deps = mock_dependencies
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.get_agent_default_mode", return_value="copy"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.ensure_canonical_copy") as mock_canonical,
+            patch("skilz.installer.create_symlink"),
+            patch("skilz.installer.write_manifest") as mock_write,
+        ):
+            canonical_path = deps["temp_dir"] / ".skilz" / "skills" / "test-skill"
+            canonical_path.mkdir(parents=True)
+            mock_canonical.return_value = canonical_path
+
+            # Explicit mode="symlink" should override agent default
+            install_skill("test/skill", project_level=True, mode="symlink")
+
+            # Verify ensure_canonical_copy was called
+            mock_canonical.assert_called_once()
+
+            # Verify manifest has install_mode="symlink"
+            mock_write.assert_called_once()
+            manifest = mock_write.call_args[0][1]
+            assert manifest.install_mode == "symlink"
+            assert manifest.canonical_path is not None
+
+    def test_install_symlink_creates_canonical_copy(self, mock_dependencies):
+        """Test that symlink mode creates canonical copy in ~/.skilz/skills/."""
+        deps = mock_dependencies
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="opencode"),
+            patch("skilz.installer.get_agent_display_name", return_value="OpenCode"),
+            patch("skilz.installer.get_agent_default_mode", return_value="symlink"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.ensure_canonical_copy") as mock_canonical,
+            patch("skilz.installer.create_symlink") as mock_symlink,
+            patch("skilz.installer.write_manifest"),
+        ):
+            canonical_path = deps["temp_dir"] / ".skilz" / "skills" / "test-skill"
+            canonical_path.mkdir(parents=True)
+            mock_canonical.return_value = canonical_path
+
+            install_skill("test/skill", project_level=True)
+
+            # Verify ensure_canonical_copy was called with correct args
+            mock_canonical.assert_called_once()
+            call_kwargs = mock_canonical.call_args[1]
+            assert call_kwargs["skill_name"] == "test-skill"
+            assert call_kwargs["global_install"] is True
+
+            # Verify create_symlink was called
+            mock_symlink.assert_called_once()
+
+    def test_install_verbose_shows_mode(self, mock_dependencies, capsys):
+        """Test verbose output includes install mode."""
+        deps = mock_dependencies
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.get_agent_default_mode", return_value="copy"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+        ):
+            install_skill("test/skill", project_level=True, verbose=True)
+
+        captured = capsys.readouterr()
+        assert "Install mode: copy" in captured.out
+        assert "agent default" in captured.out
+
+    def test_install_manifest_includes_install_mode(self, mock_dependencies):
+        """Test that manifest includes install_mode field."""
+        deps = mock_dependencies
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.get_agent_default_mode", return_value="copy"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest") as mock_write,
+        ):
+            install_skill("test/skill", project_level=True, mode="copy")
+
+            mock_write.assert_called_once()
+            manifest = mock_write.call_args[0][1]
+            assert hasattr(manifest, "install_mode")
+            assert manifest.install_mode == "copy"

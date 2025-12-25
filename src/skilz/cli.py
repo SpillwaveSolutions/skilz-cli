@@ -14,6 +14,7 @@ def _get_agent_choices() -> list[str]:
     """
     try:
         from skilz.agent_registry import get_agent_choices
+
         return get_agent_choices()
     except ImportError:
         return ["claude", "opencode"]
@@ -23,7 +24,10 @@ def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser for the CLI."""
     # Get dynamic agent choices
     agent_choices = _get_agent_choices()
-    agents_str = ", ".join(agent_choices[:5]) + ", ..." if len(agent_choices) > 5 else ", ".join(agent_choices)
+    if len(agent_choices) > 5:
+        agents_str = ", ".join(agent_choices[:5]) + ", ..."
+    else:
+        agents_str = ", ".join(agent_choices)
 
     parser = argparse.ArgumentParser(
         prog="skilz",
@@ -44,7 +48,7 @@ Common options (available on most commands):
                               Target agent (auto-detected if not specified)
   --project                   Use project-level instead of user-level
 
-Supported agents: {', '.join(agent_choices)}
+Supported agents: {", ".join(agent_choices)}
         """,
     )
 
@@ -80,6 +84,8 @@ Supported agents: {', '.join(agent_choices)}
     )
     install_parser.add_argument(
         "skill_id",
+        nargs="?",
+        default=None,
         help="The skill ID to install (e.g., anthropics/web-artifacts-builder)",
     )
     install_parser.add_argument(
@@ -93,6 +99,33 @@ Supported agents: {', '.join(agent_choices)}
         "--project",
         action="store_true",
         help="Install to project directory instead of user directory",
+    )
+
+    # Installation mode flags (mutually exclusive)
+    mode_group = install_parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "--copy",
+        action="store_true",
+        help="Copy files directly to agent's skills directory",
+    )
+    mode_group.add_argument(
+        "--symlink",
+        action="store_true",
+        help="Create symlink to canonical copy in ~/.skilz/skills/",
+    )
+
+    # Source options (mutually exclusive with skill_id, handled in cmd)
+    install_parser.add_argument(
+        "-f",
+        "--file",
+        metavar="PATH",
+        help="Install from a local filesystem path",
+    )
+    install_parser.add_argument(
+        "-g",
+        "--git",
+        metavar="URL",
+        help="Install from a git repository URL",
     )
 
     # List command

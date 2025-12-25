@@ -3,6 +3,7 @@
 from skilz import __version__
 from skilz.manifest import (
     MANIFEST_FILENAME,
+    InstallMode,
     SkillManifest,
     needs_install,
     read_manifest,
@@ -43,6 +44,48 @@ class TestSkillManifest:
         assert data["skill_id"] == "test/skill"
         assert data["git_repo"] == "https://github.com/test/repo.git"
         assert "installed_at" in data
+
+    def test_create_with_default_install_mode(self):
+        """Create manifest defaults to copy install mode."""
+        manifest = SkillManifest.create(
+            skill_id="test/skill",
+            git_repo="https://github.com/test/repo.git",
+            skill_path="/main/skills/test-skill",
+            git_sha="abc123",
+        )
+
+        assert manifest.install_mode == "copy"
+        assert manifest.canonical_path is None
+
+    def test_create_with_symlink_mode(self):
+        """Create manifest with symlink mode and canonical path."""
+        manifest = SkillManifest.create(
+            skill_id="test/skill",
+            git_repo="https://github.com/test/repo.git",
+            skill_path="/main/skills/test-skill",
+            git_sha="abc123",
+            install_mode="symlink",
+            canonical_path="/home/user/.skilz/skills/test-skill",
+        )
+
+        assert manifest.install_mode == "symlink"
+        assert manifest.canonical_path == "/home/user/.skilz/skills/test-skill"
+
+    def test_to_dict_includes_new_fields(self):
+        """to_dict includes install_mode and canonical_path."""
+        manifest = SkillManifest.create(
+            skill_id="test/skill",
+            git_repo="https://github.com/test/repo.git",
+            skill_path="/main/skills/test-skill",
+            git_sha="abc123",
+            install_mode="symlink",
+            canonical_path="/path/to/canonical",
+        )
+
+        data = manifest.to_dict()
+
+        assert data["install_mode"] == "symlink"
+        assert data["canonical_path"] == "/path/to/canonical"
 
 
 class TestWriteManifest:
@@ -119,6 +162,64 @@ class TestReadManifest:
         result = read_manifest(skill_dir)
 
         assert result is None
+
+    def test_read_manifest_with_new_fields(self, temp_dir):
+        """Read manifest with install_mode and canonical_path."""
+        skill_dir = temp_dir / "my-skill"
+        skill_dir.mkdir()
+
+        # Write a manifest with new fields
+        manifest = SkillManifest.create(
+            skill_id="test/skill",
+            git_repo="https://github.com/test/repo.git",
+            skill_path="/main/skills/test-skill",
+            git_sha="abc123",
+            install_mode="symlink",
+            canonical_path="/home/user/.skilz/skills/test-skill",
+        )
+        write_manifest(skill_dir, manifest)
+
+        result = read_manifest(skill_dir)
+
+        assert result is not None
+        assert result.install_mode == "symlink"
+        assert result.canonical_path == "/home/user/.skilz/skills/test-skill"
+
+    def test_read_old_manifest_without_new_fields(self, temp_dir):
+        """Old manifests default to copy mode and no canonical path."""
+        skill_dir = temp_dir / "my-skill"
+        skill_dir.mkdir()
+
+        # Write an old-style manifest (without install_mode and canonical_path)
+        old_manifest_content = """\
+installed_at: "2024-01-01T00:00:00+00:00"
+skill_id: test/skill
+git_repo: https://github.com/test/repo.git
+skill_path: /main/skills/test-skill
+git_sha: abc123
+skilz_version: 0.1.0
+"""
+        (skill_dir / MANIFEST_FILENAME).write_text(old_manifest_content)
+
+        result = read_manifest(skill_dir)
+
+        assert result is not None
+        assert result.install_mode == "copy"  # Default for backward compatibility
+        assert result.canonical_path is None  # Default for backward compatibility
+
+
+class TestInstallModeType:
+    """Tests for InstallMode type alias."""
+
+    def test_copy_is_valid(self):
+        """'copy' is a valid install mode."""
+        mode: InstallMode = "copy"
+        assert mode == "copy"
+
+    def test_symlink_is_valid(self):
+        """'symlink' is a valid install mode."""
+        mode: InstallMode = "symlink"
+        assert mode == "symlink"
 
 
 class TestNeedsInstall:

@@ -82,8 +82,18 @@ def cmd_update(args: argparse.Namespace) -> int:
         up_to_date = 0
         failed = 0
         unknown = 0
+        broken = 0
+
+        # Track already-updated canonical paths to avoid duplicate updates
+        updated_canonicals: set[str] = set()
 
         for skill in skills:
+            # Handle broken symlinks
+            if skill.is_broken:
+                print(f"  {skill.skill_id}: broken symlink (target: {skill.canonical_path})")
+                broken += 1
+                continue
+
             needs_update, new_sha = check_skill_update(skill, verbose=verbose)
 
             if new_sha is None and not needs_update:
@@ -91,7 +101,8 @@ def cmd_update(args: argparse.Namespace) -> int:
                 try:
                     lookup_skill(skill.skill_id, verbose=False)
                     # Found in registry, must be up-to-date
-                    print(f"  {skill.skill_id}: up-to-date ({skill.git_sha_short})")
+                    mode_info = f" [{skill.install_mode}]" if verbose else ""
+                    print(f"  {skill.skill_id}: up-to-date ({skill.git_sha_short}){mode_info}")
                     up_to_date += 1
                 except Exception:
                     # Not in registry
@@ -102,21 +113,43 @@ def cmd_update(args: argparse.Namespace) -> int:
             if needs_update:
                 old_sha = skill.git_sha_short
                 new_sha_short = new_sha[:8] if new_sha else "?"
+                is_symlink = skill.install_mode == "symlink"
+
+                # For symlinks, check if canonical was already updated
+                if is_symlink and skill.canonical_path:
+                    canonical_key = str(skill.canonical_path)
+                    if canonical_key in updated_canonicals:
+                        # Canonical already updated, symlink auto-reflects
+                        mode_info = " [symlink - auto-updated]" if verbose else ""
+                        print(f"  {skill.skill_id}: updated via canonical{mode_info}")
+                        updated += 1
+                        continue
+
+                mode_info = f" [{skill.install_mode}]" if verbose else ""
 
                 if dry_run:
-                    print(f"  {skill.skill_id}: would update {old_sha} -> {new_sha_short}")
+                    msg = f"  {skill.skill_id}: would update {old_sha} -> {new_sha_short}"
+                    print(f"{msg}{mode_info}")
                     updated += 1
                 else:
-                    print(f"  {skill.skill_id}: updating {old_sha} -> {new_sha_short}")
+                    msg = f"  {skill.skill_id}: updating {old_sha} -> {new_sha_short}"
+                    print(f"{msg}{mode_info}")
 
                     try:
+                        # Pass mode to preserve install mode during update
                         install_skill(
                             skill_id=skill.skill_id,
                             agent=skill.agent,
                             project_level=skill.project_level,
                             verbose=verbose,
+                            mode=skill.install_mode,
                         )
                         updated += 1
+
+                        # Track updated canonical for symlinked skills
+                        if is_symlink and skill.canonical_path:
+                            updated_canonicals.add(str(skill.canonical_path))
+
                     except Exception as e:
                         print(f"    Failed: {e}", file=sys.stderr)
                         failed += 1
@@ -132,6 +165,8 @@ def cmd_update(args: argparse.Namespace) -> int:
             print(f", {failed} failed", end="")
         if unknown > 0:
             print(f", {unknown} not in registry", end="")
+        if broken > 0:
+            print(f", {broken} broken", end="")
         print()
 
         return 0 if failed == 0 else 1

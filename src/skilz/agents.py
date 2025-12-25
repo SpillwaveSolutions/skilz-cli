@@ -7,8 +7,13 @@ actual agent configurations.
 Supports 14+ AI coding assistants following the agentskills.io standard.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from skilz.agent_registry import AgentConfig
 
 # Backward-compatible AgentType (original two agents)
 # New code should use get_all_agent_types() or agent_registry directly
@@ -16,9 +21,20 @@ AgentType = Literal["claude", "opencode"]
 
 # Extended agent type including all supported agents
 ExtendedAgentType = Literal[
-    "claude", "opencode", "codex", "gemini", "copilot",
-    "aider", "cursor", "windsurf", "qwen", "crush",
-    "kimi", "plandex", "zed", "universal"
+    "claude",
+    "opencode",
+    "codex",
+    "gemini",
+    "copilot",
+    "aider",
+    "cursor",
+    "windsurf",
+    "qwen",
+    "crush",
+    "kimi",
+    "plandex",
+    "zed",
+    "universal",
 ]
 
 # Default agent paths (used as fallback when registry unavailable)
@@ -45,6 +61,7 @@ def get_all_agent_types() -> list[str]:
     """
     try:
         from skilz.agent_registry import get_registry
+
         return get_registry().list_agents()
     except ImportError:
         return list(DEFAULT_AGENT_PATHS.keys())
@@ -67,6 +84,7 @@ def get_agent_paths() -> dict[str, dict[str, Path]]:
 
     try:
         from skilz.config import get_claude_home, get_opencode_home
+
         claude_home = get_claude_home()
         opencode_home = get_opencode_home()
     except ImportError:
@@ -277,7 +295,7 @@ def get_agent_display_name(agent: str) -> str:
     return names.get(agent, agent)
 
 
-def get_agent_config(agent: str):
+def get_agent_config(agent: str) -> AgentConfig | None:
     """Get the full AgentConfig for an agent.
 
     Args:
@@ -291,6 +309,7 @@ def get_agent_config(agent: str):
     """
     try:
         from skilz.agent_registry import get_registry
+
         return get_registry().get(agent)
     except ImportError:
         return None

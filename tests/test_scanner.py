@@ -4,6 +4,7 @@ import pytest
 
 from skilz.manifest import SkillManifest, write_manifest
 from skilz.scanner import (
+    _create_broken_skill_placeholder,
     find_installed_skill,
     scan_installed_skills,
     scan_skills_directory,
@@ -244,3 +245,130 @@ class TestFindInstalledSkill:
 
         # Should return None for ambiguous matches
         assert skill is None
+
+
+class TestSymlinkScanning:
+    """Tests for symlink detection in scanner."""
+
+    def test_scan_detects_symlinked_skill(self, temp_dir):
+        """Test that symlinked skills are detected with correct install_mode."""
+        # Create canonical location
+        canonical_dir = temp_dir / ".skilz" / "skills" / "pdf"
+        canonical_dir.mkdir(parents=True)
+        (canonical_dir / "SKILL.md").write_text("# PDF Skill")
+        manifest = SkillManifest.create(
+            skill_id="anthropics/pdf",
+            git_repo="https://github.com/anthropics/pdf.git",
+            skill_path="/main/SKILL.md",
+            git_sha="abc123def456",
+            install_mode="symlink",
+            canonical_path=str(canonical_dir),
+        )
+        write_manifest(canonical_dir, manifest)
+
+        # Create symlink in agent directory
+        agent_skills = temp_dir / ".claude" / "skills"
+        agent_skills.mkdir(parents=True)
+        symlink_path = agent_skills / "pdf"
+        symlink_path.symlink_to(canonical_dir)
+
+        # Scan and verify
+        skills = scan_skills_directory(agent_skills, "claude", False)
+
+        assert len(skills) == 1
+        skill = skills[0]
+        assert skill.skill_name == "pdf"
+        assert skill.install_mode == "symlink"
+        assert skill.canonical_path is not None
+        assert skill.is_broken is False
+
+    def test_scan_detects_copy_skill(self, temp_dir):
+        """Test that regular (non-symlink) skills have install_mode='copy'."""
+        skills_dir = temp_dir / ".claude" / "skills"
+        skill_dir = skills_dir / "pdf"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("# PDF Skill")
+        manifest = SkillManifest.create(
+            skill_id="anthropics/pdf",
+            git_repo="https://github.com/anthropics/pdf.git",
+            skill_path="/main/SKILL.md",
+            git_sha="abc123def456",
+        )
+        write_manifest(skill_dir, manifest)
+
+        skills = scan_skills_directory(skills_dir, "claude", False)
+
+        assert len(skills) == 1
+        skill = skills[0]
+        assert skill.install_mode == "copy"
+        assert skill.canonical_path is None
+        assert skill.is_broken is False
+
+    def test_scan_detects_broken_symlink(self, temp_dir):
+        """Test that broken symlinks are detected and reported."""
+        # Create canonical that will be deleted
+        canonical_dir = temp_dir / ".skilz" / "skills" / "broken-skill"
+        canonical_dir.mkdir(parents=True)
+
+        # Create symlink
+        agent_skills = temp_dir / ".claude" / "skills"
+        agent_skills.mkdir(parents=True)
+        symlink_path = agent_skills / "broken-skill"
+        symlink_path.symlink_to(canonical_dir)
+
+        # Break the symlink by removing canonical
+        canonical_dir.rmdir()
+
+        # Scan and verify
+        skills = scan_skills_directory(agent_skills, "claude", False)
+
+        assert len(skills) == 1
+        skill = skills[0]
+        assert skill.skill_name == "broken-skill"
+        assert skill.is_broken is True
+        assert skill.install_mode == "symlink"
+        assert "unknown" in skill.skill_id
+
+    def test_installed_skill_to_dict(self, temp_dir):
+        """Test InstalledSkill.to_dict includes new fields."""
+        skills_dir = temp_dir / ".claude" / "skills"
+        skill_dir = skills_dir / "test-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("# Test")
+        manifest = SkillManifest.create(
+            skill_id="test/skill",
+            git_repo="https://github.com/test/skill.git",
+            skill_path="/main/SKILL.md",
+            git_sha="abc123",
+            install_mode="symlink",
+            canonical_path="/path/to/canonical",
+        )
+        write_manifest(skill_dir, manifest)
+
+        skills = scan_skills_directory(skills_dir, "claude", False)
+        skill = skills[0]
+
+        data = skill.to_dict()
+
+        assert "install_mode" in data
+        assert "canonical_path" in data
+        assert "is_broken" in data
+        assert data["is_broken"] is False
+
+    def test_create_broken_skill_placeholder(self, temp_dir):
+        """Test _create_broken_skill_placeholder creates valid placeholder."""
+        skill_dir = temp_dir / "broken-link"
+        canonical = temp_dir / "missing-canonical"
+
+        placeholder = _create_broken_skill_placeholder(
+            skill_dir=skill_dir,
+            canonical_path=canonical,
+            agent="claude",
+            project_level=False,
+        )
+
+        assert placeholder.is_broken is True
+        assert placeholder.skill_name == "broken-link"
+        assert placeholder.install_mode == "symlink"
+        assert placeholder.canonical_path == canonical
+        assert "unknown" in placeholder.skill_id

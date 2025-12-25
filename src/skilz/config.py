@@ -9,7 +9,7 @@ This module handles loading, saving, and merging configuration from:
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 # Configuration file location (XDG standard)
 CONFIG_DIR = Path.home() / ".config" / "skilz"
@@ -218,7 +218,7 @@ def load_registry_config() -> dict[str, Any] | None:
 
     try:
         with open(REGISTRY_CONFIG_PATH) as f:
-            return json.load(f)
+            return cast(dict[str, Any], json.load(f))
     except (json.JSONDecodeError, OSError):
         # Corrupted or unreadable file
         return None

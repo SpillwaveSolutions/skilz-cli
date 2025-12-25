@@ -13,7 +13,7 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 # Validation constants (from agentskills.io spec)
 MAX_SKILL_NAME_LENGTH = 64
@@ -485,7 +485,7 @@ class AgentRegistry:
         """
         try:
             with open(config_path) as f:
-                return json.load(f)
+                return cast(dict[str, Any], json.load(f))
         except (json.JSONDecodeError, OSError):
             # Corrupted or unreadable file - use defaults
             return None
@@ -563,9 +563,7 @@ class AgentRegistry:
         """
         return [name for name, agent in self._agents.items() if agent.supports_home]
 
-    def get_agents_by_native_support(
-        self, level: Literal["all", "home", "none"]
-    ) -> list[str]:
+    def get_agents_by_native_support(self, level: Literal["all", "home", "none"]) -> list[str]:
         """Get agents by their native skill support level.
 
         Args:
@@ -574,10 +572,7 @@ class AgentRegistry:
         Returns:
             List of agent names with the specified support level
         """
-        return [
-            name for name, agent in self._agents.items()
-            if agent.native_skill_support == level
-        ]
+        return [name for name, agent in self._agents.items() if agent.native_skill_support == level]
 
 
 # Module-level singleton

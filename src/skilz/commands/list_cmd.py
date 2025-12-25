@@ -33,6 +33,23 @@ def get_skill_status(skill: InstalledSkill, verbose: bool = False) -> str:
         return "unknown"
 
 
+def get_mode_display(skill: InstalledSkill) -> str:
+    """
+    Get display string for install mode.
+
+    Args:
+        skill: The installed skill.
+
+    Returns:
+        Mode string with formatting for broken symlinks.
+    """
+    if skill.is_broken:
+        return "[ERROR]"
+    if skill.install_mode == "symlink":
+        return "[symlink]"
+    return "[copy]"
+
+
 def format_table_output(skills: list[InstalledSkill], verbose: bool = False) -> str:
     """
     Format skills as a table for terminal output.
@@ -48,17 +65,25 @@ def format_table_output(skills: list[InstalledSkill], verbose: bool = False) -> 
         return "No skills installed."
 
     # Column headers
-    headers = ["Skill", "Version", "Installed", "Status"]
+    headers = ["Skill", "Version", "Mode", "Status"]
 
     # Build rows
     rows: list[tuple[str, str, str, str]] = []
+    broken_skills: list[InstalledSkill] = []
+
     for skill in skills:
-        status = get_skill_status(skill, verbose=verbose)
+        if skill.is_broken:
+            status = "broken"
+            broken_skills.append(skill)
+        else:
+            status = get_skill_status(skill, verbose=verbose)
+
+        mode = get_mode_display(skill)
         rows.append(
             (
                 skill.skill_id,
                 skill.git_sha_short,
-                skill.installed_at_short,
+                mode,
                 status,
             )
         )
@@ -87,6 +112,31 @@ def format_table_output(skills: list[InstalledSkill], verbose: bool = False) -> 
         row_line = "  ".join(val.ljust(col_widths[i]) for i, val in enumerate(row))
         lines.append(row_line)
 
+    # Add broken symlink warnings
+    if broken_skills:
+        lines.append("")
+        lines.append("⚠️  Broken symlinks detected:")
+        for skill in broken_skills:
+            target = skill.canonical_path or "unknown"
+            lines.append(f"   - {skill.skill_id}: target missing ({target})")
+
+    # Summary line with mode counts
+    copy_count = sum(1 for s in skills if s.install_mode == "copy" and not s.is_broken)
+    symlink_count = sum(1 for s in skills if s.install_mode == "symlink" and not s.is_broken)
+    broken_count = len(broken_skills)
+
+    summary_parts = []
+    if copy_count:
+        summary_parts.append(f"{copy_count} copied")
+    if symlink_count:
+        summary_parts.append(f"{symlink_count} symlinked")
+    if broken_count:
+        summary_parts.append(f"{broken_count} broken")
+
+    if summary_parts:
+        lines.append("")
+        lines.append(f"Total: {len(skills)} skills ({', '.join(summary_parts)})")
+
     return "\n".join(lines)
 
 
@@ -104,19 +154,29 @@ def format_json_output(skills: list[InstalledSkill], verbose: bool = False) -> s
     output = []
 
     for skill in skills:
-        status = get_skill_status(skill, verbose=verbose)
-        output.append(
-            {
-                "skill_id": skill.skill_id,
-                "skill_name": skill.skill_name,
-                "git_sha": skill.manifest.git_sha,
-                "installed_at": skill.manifest.installed_at,
-                "status": status,
-                "path": str(skill.path),
-                "agent": skill.agent,
-                "project_level": skill.project_level,
-            }
-        )
+        if skill.is_broken:
+            status = "broken"
+        else:
+            status = get_skill_status(skill, verbose=verbose)
+
+        skill_data = {
+            "skill_id": skill.skill_id,
+            "skill_name": skill.skill_name,
+            "git_sha": skill.manifest.git_sha,
+            "installed_at": skill.manifest.installed_at,
+            "status": status,
+            "path": str(skill.path),
+            "agent": skill.agent,
+            "project_level": skill.project_level,
+            "install_mode": skill.install_mode,
+            "is_symlink": skill.install_mode == "symlink",
+            "is_broken": skill.is_broken,
+        }
+
+        if skill.canonical_path:
+            skill_data["canonical_path"] = str(skill.canonical_path)
+
+        output.append(skill_data)
 
     return json.dumps(output, indent=2)
 

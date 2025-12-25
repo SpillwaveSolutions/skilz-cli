@@ -2,14 +2,28 @@
 
 import shutil
 from pathlib import Path
+from typing import cast
 
-from skilz.agents import AgentType, detect_agent, ensure_skills_dir, get_agent_display_name
+from skilz.agents import (
+    AgentType,
+    detect_agent,
+    ensure_skills_dir,
+    get_agent_default_mode,
+    get_agent_display_name,
+)
 from skilz.errors import InstallError
 from skilz.git_ops import (
     checkout_sha,
     clone_or_fetch,
     get_skill_source_path,
     parse_skill_path,
+)
+from skilz.link_ops import (
+    InstallMode,
+    create_symlink,
+    determine_install_mode,
+    ensure_canonical_copy,
+    remove_skill,
 )
 from skilz.manifest import SkillManifest, needs_install, write_manifest
 from skilz.registry import SkillInfo, lookup_skill
@@ -71,6 +85,7 @@ def install_skill(
     agent: AgentType | None = None,
     project_level: bool = False,
     verbose: bool = False,
+    mode: InstallMode | None = None,
 ) -> None:
     """
     Install a skill from the registry.
@@ -80,6 +95,9 @@ def install_skill(
         agent: Target agent ("claude" or "opencode"). Auto-detected if None.
         project_level: If True, install to project directory instead of user directory.
         verbose: If True, print detailed progress information.
+        mode: Installation mode ("copy" or "symlink"). If None, uses agent's default.
+              - copy: Copies files directly to agent's skills directory.
+              - symlink: Creates canonical copy in ~/.skilz/skills/, then symlinks.
 
     Raises:
         SkillNotFoundError: If the skill ID is not found in any registry.
@@ -87,13 +105,23 @@ def install_skill(
         InstallError: If installation fails for other reasons.
     """
     # Step 1: Determine target agent
+    resolved_agent: AgentType
     if agent is None:
-        agent = detect_agent()
+        resolved_agent = cast(AgentType, detect_agent())
         if verbose:
-            print(f"Auto-detected agent: {get_agent_display_name(agent)}")
+            print(f"Auto-detected agent: {get_agent_display_name(resolved_agent)}")
     else:
+        resolved_agent = agent
         if verbose:
-            print(f"Using specified agent: {get_agent_display_name(agent)}")
+            print(f"Using specified agent: {get_agent_display_name(resolved_agent)}")
+
+    # Step 1b: Determine installation mode
+    agent_default: InstallMode = cast(InstallMode, get_agent_default_mode(resolved_agent))
+    install_mode = determine_install_mode(mode, agent_default)
+
+    if verbose:
+        mode_source = "explicit" if mode else "agent default"
+        print(f"Install mode: {install_mode} ({mode_source})")
 
     # Step 2: Look up skill in registry
     if verbose:
@@ -107,7 +135,7 @@ def install_skill(
         print(f"  SHA: {skill_info.git_sha[:8]}...")
 
     # Step 3: Determine target directory
-    skills_dir = ensure_skills_dir(agent, project_level)
+    skills_dir = ensure_skills_dir(resolved_agent, project_level)
     target_dir = skills_dir / skill_info.skill_name
 
     # Step 4: Check if installation is needed
@@ -150,23 +178,64 @@ def install_skill(
             f"Expected at: {source_dir}",
         )
 
-    # Step 9: Copy files to target
-    if verbose:
-        print(f"Installing to {target_dir}...")
+    # Step 9: Install files based on mode
+    canonical_path: Path | None = None
 
-    copy_skill_files(source_dir, target_dir, verbose=verbose)
+    if install_mode == "symlink":
+        # Symlink mode: create canonical copy, then symlink
+        if verbose:
+            print(f"Creating canonical copy in ~/.skilz/skills/{skill_info.skill_name}...")
 
-    # Step 10: Write manifest
-    manifest = SkillManifest.create(
-        skill_id=skill_info.skill_id,
-        git_repo=skill_info.git_repo,
-        skill_path=skill_info.skill_path,
-        git_sha=skill_info.git_sha,
-    )
-    write_manifest(target_dir, manifest)
+        # Ensure canonical copy exists in ~/.skilz/skills/
+        canonical_path = ensure_canonical_copy(
+            source=source_dir,
+            skill_name=skill_info.skill_name,
+            global_install=True,  # Always use ~/.skilz/skills/
+        )
+
+        # Write manifest to canonical location first
+        canonical_manifest = SkillManifest.create(
+            skill_id=skill_info.skill_id,
+            git_repo=skill_info.git_repo,
+            skill_path=skill_info.skill_path,
+            git_sha=skill_info.git_sha,
+            install_mode="symlink",
+            canonical_path=str(canonical_path),
+        )
+        write_manifest(canonical_path, canonical_manifest)
+
+        # Remove existing target (symlink or directory)
+        if target_dir.exists() or target_dir.is_symlink():
+            if verbose:
+                print(f"Removing existing installation: {target_dir}")
+            remove_skill(target_dir)
+
+        # Create symlink from agent's skills dir to canonical
+        if verbose:
+            print(f"Creating symlink: {target_dir} -> {canonical_path}")
+
+        create_symlink(source=canonical_path, target=target_dir)
+
+    else:
+        # Copy mode: copy directly to target
+        if verbose:
+            print(f"Copying to {target_dir}...")
+
+        copy_skill_files(source_dir, target_dir, verbose=verbose)
+
+        # Step 10: Write manifest
+        manifest = SkillManifest.create(
+            skill_id=skill_info.skill_id,
+            git_repo=skill_info.git_repo,
+            skill_path=skill_info.skill_path,
+            git_sha=skill_info.git_sha,
+            install_mode="copy",
+        )
+        write_manifest(target_dir, manifest)
 
     # Success message
     action = "Updated" if reason == "sha_mismatch" else "Installed"
-    agent_name = get_agent_display_name(agent)
+    agent_name = get_agent_display_name(resolved_agent)
     location = "project" if project_level else "user"
-    print(f"{action}: {skill_id} -> {agent_name} ({location})")
+    mode_suffix = f" [{install_mode}]" if verbose else ""
+    print(f"{action}: {skill_id} -> {agent_name} ({location}){mode_suffix}")

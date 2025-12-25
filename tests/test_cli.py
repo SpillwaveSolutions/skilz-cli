@@ -62,6 +62,34 @@ class TestCreateParser:
         assert args.project is True
         assert args.skill_id == "test/skill"
 
+    def test_install_command_copy_flag(self):
+        """Install command should have --copy flag."""
+        parser = create_parser()
+        args = parser.parse_args(["install", "test/skill", "--copy"])
+        assert args.copy is True
+        assert args.symlink is False
+
+    def test_install_command_symlink_flag(self):
+        """Install command should have --symlink flag."""
+        parser = create_parser()
+        args = parser.parse_args(["install", "test/skill", "--symlink"])
+        assert args.symlink is True
+        assert args.copy is False
+
+    def test_install_command_file_option(self):
+        """Install command should have -f/--file option."""
+        parser = create_parser()
+        args = parser.parse_args(["install", "-f", "/path/to/skill"])
+        assert args.file == "/path/to/skill"
+        assert args.skill_id is None
+
+    def test_install_command_git_option(self):
+        """Install command should have -g/--git option."""
+        parser = create_parser()
+        args = parser.parse_args(["install", "-g", "https://github.com/test/skill.git"])
+        assert args.git == "https://github.com/test/skill.git"
+        assert args.skill_id is None
+
     def test_parser_has_list_command(self):
         """Parser should have list subcommand."""
         parser = create_parser()

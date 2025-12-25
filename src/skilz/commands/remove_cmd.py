@@ -1,10 +1,10 @@
 """Remove command implementation."""
 
 import argparse
-import shutil
 import sys
 
 from skilz.agents import AgentType, get_agent_display_name
+from skilz.link_ops import remove_skill
 from skilz.scanner import find_installed_skill
 
 
@@ -59,18 +59,45 @@ def cmd_remove(args: argparse.Namespace) -> int:
 
         agent_name = get_agent_display_name(skill.agent)
 
+        # Check if it's a broken symlink
+        if skill.is_broken:
+            if verbose:
+                print(f"Skill is a broken symlink (target: {skill.canonical_path})")
+
+        # Check if it's a symlink
+        is_symlink = skill.install_mode == "symlink"
+
         # Confirm removal
         if not skip_confirm:
-            if not confirm_remove(skill.skill_id, agent_name):
-                print("Cancelled.")
-                return 0
+            if is_symlink:
+                confirm_msg = (
+                    f"Remove symlink {skill_id} from {agent_name}? "
+                    f"(Canonical copy at {skill.canonical_path} will be preserved)"
+                )
+                try:
+                    response = input(f"{confirm_msg} [y/N] ")
+                    if response.strip().lower() not in ("y", "yes"):
+                        print("Cancelled.")
+                        return 0
+                except (EOFError, KeyboardInterrupt):
+                    print()
+                    return 0
+            else:
+                if not confirm_remove(skill.skill_id, agent_name):
+                    print("Cancelled.")
+                    return 0
 
-        # Remove the directory
+        # Remove the skill using link_ops (handles symlink vs copy correctly)
         if verbose:
-            print(f"Removing {skill.path}...")
+            mode = "symlink" if is_symlink else "copy"
+            print(f"Removing {skill.path} (mode: {mode})...")
 
-        shutil.rmtree(skill.path)
-        print(f"Removed: {skill.skill_id}")
+        remove_skill(skill.path)
+
+        if is_symlink:
+            print(f"Removed symlink: {skill.skill_id}")
+        else:
+            print(f"Removed: {skill.skill_id}")
 
         return 0
 

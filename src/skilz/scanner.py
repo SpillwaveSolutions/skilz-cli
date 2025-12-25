@@ -2,9 +2,11 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 from skilz.agents import AGENT_PATHS, AgentType, get_skills_dir
-from skilz.manifest import SkillManifest, read_manifest
+from skilz.link_ops import get_symlink_target, is_broken_symlink, is_symlink
+from skilz.manifest import InstallMode, SkillManifest, read_manifest
 
 
 @dataclass
@@ -17,6 +19,9 @@ class InstalledSkill:
     manifest: SkillManifest
     agent: AgentType
     project_level: bool
+    install_mode: InstallMode = "copy"
+    canonical_path: Path | None = None
+    is_broken: bool = False
 
     @property
     def git_sha_short(self) -> str:
@@ -31,6 +36,19 @@ class InstalledSkill:
             return self.manifest.installed_at[:10]
         return ""
 
+    def to_dict(self) -> dict:
+        """Convert to dictionary for serialization."""
+        return {
+            "skill_id": self.skill_id,
+            "skill_name": self.skill_name,
+            "path": str(self.path),
+            "agent": self.agent,
+            "project_level": self.project_level,
+            "install_mode": self.install_mode,
+            "canonical_path": str(self.canonical_path) if self.canonical_path else None,
+            "is_broken": self.is_broken,
+        }
+
 
 def scan_skills_directory(
     skills_dir: Path,
@@ -39,6 +57,10 @@ def scan_skills_directory(
 ) -> list[InstalledSkill]:
     """
     Scan a skills directory for installed skills with manifests.
+
+    Handles both regular directories and symlinks. For symlinked skills,
+    reads the manifest from the canonical (target) location and tracks
+    the symlink status. Broken symlinks are detected and reported.
 
     Args:
         skills_dir: Path to the skills directory to scan.
@@ -56,16 +78,45 @@ def scan_skills_directory(
     # Iterate over subdirectories in the skills directory
     try:
         for skill_dir in skills_dir.iterdir():
+            # Check for broken symlink first (before is_dir check)
+            if is_broken_symlink(skill_dir):
+                # Create a placeholder for broken symlinks
+                canonical = get_symlink_target(skill_dir)
+                installed.append(
+                    _create_broken_skill_placeholder(
+                        skill_dir=skill_dir,
+                        canonical_path=canonical,
+                        agent=agent,
+                        project_level=project_level,
+                    )
+                )
+                continue
+
             if not skill_dir.is_dir():
                 continue
 
+            # Determine if this is a symlink
+            skill_is_symlink = is_symlink(skill_dir)
+            canonical_path: Path | None = None
+            manifest_dir = skill_dir
+
+            if skill_is_symlink:
+                # Get the symlink target for symlinked skills
+                canonical_path = get_symlink_target(skill_dir)
+                # Read manifest from the canonical (target) location
+                if canonical_path:
+                    manifest_dir = canonical_path
+
             # Try to read the manifest
-            manifest = read_manifest(skill_dir)
+            manifest = read_manifest(manifest_dir)
             if manifest is None:
                 continue
 
             # Extract skill name from directory name
             skill_name = skill_dir.name
+
+            # Determine install mode from manifest or symlink status
+            install_mode: InstallMode = "symlink" if skill_is_symlink else "copy"
 
             installed.append(
                 InstalledSkill(
@@ -75,6 +126,9 @@ def scan_skills_directory(
                     manifest=manifest,
                     agent=agent,
                     project_level=project_level,
+                    install_mode=install_mode,
+                    canonical_path=canonical_path,
+                    is_broken=False,
                 )
             )
 
@@ -83,6 +137,48 @@ def scan_skills_directory(
         pass
 
     return installed
+
+
+def _create_broken_skill_placeholder(
+    skill_dir: Path,
+    canonical_path: Path | None,
+    agent: AgentType,
+    project_level: bool,
+) -> InstalledSkill:
+    """Create a placeholder InstalledSkill for a broken symlink.
+
+    Args:
+        skill_dir: Path to the broken symlink.
+        canonical_path: The target path the symlink points to.
+        agent: The agent type.
+        project_level: Whether this is project-level.
+
+    Returns:
+        An InstalledSkill with is_broken=True and placeholder manifest.
+    """
+    # Create a minimal placeholder manifest for broken symlinks
+    placeholder_manifest = SkillManifest(
+        installed_at="unknown",
+        skill_id=f"unknown/{skill_dir.name}",
+        git_repo="unknown",
+        skill_path="unknown",
+        git_sha="unknown",
+        skilz_version="unknown",
+        install_mode="symlink",
+        canonical_path=str(canonical_path) if canonical_path else None,
+    )
+
+    return InstalledSkill(
+        skill_id=f"unknown/{skill_dir.name}",
+        skill_name=skill_dir.name,
+        path=skill_dir,
+        manifest=placeholder_manifest,
+        agent=agent,
+        project_level=project_level,
+        install_mode="symlink",
+        canonical_path=canonical_path,
+        is_broken=True,
+    )
 
 
 def scan_installed_skills(
@@ -106,7 +202,9 @@ def scan_installed_skills(
     installed: list[InstalledSkill] = []
 
     # Determine which agents to scan
-    agents_to_scan: list[AgentType] = [agent] if agent else list(AGENT_PATHS.keys())
+    agents_to_scan: list[AgentType] = (
+        [agent] if agent else cast(list[AgentType], list(AGENT_PATHS.keys()))
+    )
 
     for scan_agent in agents_to_scan:
         skills_dir = get_skills_dir(

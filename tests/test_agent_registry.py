@@ -9,7 +9,6 @@ import pytest
 from skilz.agent_registry import (
     AgentConfig,
     AgentRegistry,
-    SkillNameValidation,
     check_skill_directory_name,
     get_agent_choices,
     get_builtin_agents,
@@ -122,9 +121,20 @@ class TestBuiltinAgents:
         agents = get_builtin_agents()
 
         expected_agents = [
-            "claude", "opencode", "codex", "gemini", "copilot",
-            "aider", "cursor", "windsurf", "qwen", "crush",
-            "kimi", "plandex", "zed", "universal"
+            "claude",
+            "opencode",
+            "codex",
+            "gemini",
+            "copilot",
+            "aider",
+            "cursor",
+            "windsurf",
+            "qwen",
+            "crush",
+            "kimi",
+            "plandex",
+            "zed",
+            "universal",
         ]
 
         assert len(agents) == 14
@@ -259,15 +269,19 @@ class TestAgentRegistry:
     def test_registry_loads_user_config(self, tmp_path):
         """Registry merges user configuration on top of built-ins."""
         config_file = tmp_path / "config.json"
-        config_file.write_text(json.dumps({
-            "agents": {
-                "claude": {
-                    "display_name": "My Custom Claude",
-                    "project_dir": ".my-claude/skills",
-                    "default_mode": "symlink",
+        config_file.write_text(
+            json.dumps(
+                {
+                    "agents": {
+                        "claude": {
+                            "display_name": "My Custom Claude",
+                            "project_dir": ".my-claude/skills",
+                            "default_mode": "symlink",
+                        }
+                    }
                 }
-            }
-        }))
+            )
+        )
 
         registry = AgentRegistry(config_path=config_file)
 
@@ -279,14 +293,18 @@ class TestAgentRegistry:
     def test_registry_ignores_invalid_user_config(self, tmp_path):
         """Registry ignores invalid user configuration entries."""
         config_file = tmp_path / "config.json"
-        config_file.write_text(json.dumps({
-            "agents": {
-                "invalid_agent": {
-                    # Missing required fields
-                    "display_name": "Invalid"
+        config_file.write_text(
+            json.dumps(
+                {
+                    "agents": {
+                        "invalid_agent": {
+                            # Missing required fields
+                            "display_name": "Invalid"
+                        }
+                    }
                 }
-            }
-        }))
+            )
+        )
 
         # Should not raise, just skip invalid entry
         registry = AgentRegistry(config_path=config_file)
@@ -325,7 +343,8 @@ class TestSkillNameValidation:
         result = validate_skill_name("2pdf")
 
         assert result.is_valid is False
-        assert "must start with a letter" in result.errors[0].lower() or "must be lowercase" in result.errors[0].lower()
+        error_msg = result.errors[0].lower()
+        assert "must start with a letter" in error_msg or "must be lowercase" in error_msg
 
     def test_invalid_uppercase(self):
         """Uppercase is normalized to lowercase."""
