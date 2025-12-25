@@ -39,6 +39,7 @@ Examples:
   skilz install some-skill --agent opencode
   skilz install some-skill --agent gemini --project
   skilz list --agent claude
+  skilz read extracting-keywords        # Load skill content for AI agents
   skilz -y remove skill-id              # Skip confirmation (scripting)
   skilz config                          # Show configuration
   skilz --version
@@ -223,6 +224,29 @@ Supported agents: {", ".join(agent_choices)}
         help="Run interactive configuration setup (or use -y for defaults)",
     )
 
+    # Read command
+    read_parser = subparsers.add_parser(
+        "read",
+        help="Read and output skill content",
+        description="Load a skill's SKILL.md content for AI agent consumption.",
+    )
+    read_parser.add_argument(
+        "skill_name",
+        help="The skill name or ID to read (e.g., 'extracting-keywords')",
+    )
+    read_parser.add_argument(
+        "--agent",
+        choices=agent_choices,
+        default=None,
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (searches all if not specified)",
+    )
+    read_parser.add_argument(
+        "--project",
+        action="store_true",
+        help="Search project-level skills only",
+    )
+
     return parser
 
 
@@ -259,6 +283,11 @@ def main(argv: list[str] | None = None) -> int:
         from skilz.commands.config_cmd import cmd_config
 
         return cmd_config(args)
+
+    if args.command == "read":
+        from skilz.commands.read_cmd import cmd_read
+
+        return cmd_read(args)
 
     # Unknown command (shouldn't happen with subparsers)
     parser.print_help()

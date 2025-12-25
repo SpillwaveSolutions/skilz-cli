@@ -10,7 +10,9 @@ from skilz.agents import (
     ensure_skills_dir,
     get_agent_default_mode,
     get_agent_display_name,
+    supports_home_install,
 )
+from skilz.config_sync import SkillReference, sync_skill_to_configs
 from skilz.errors import InstallError
 from skilz.git_ops import (
     checkout_sha,
@@ -114,6 +116,15 @@ def install_skill(
         resolved_agent = agent
         if verbose:
             print(f"Using specified agent: {get_agent_display_name(resolved_agent)}")
+
+    # Step 1a: Auto-detect project-level for agents without home support
+    if not project_level and not supports_home_install(resolved_agent):
+        project_level = True
+        if verbose:
+            print(
+                f"  Note: {get_agent_display_name(resolved_agent)} only supports "
+                "project-level installation"
+            )
 
     # Step 1b: Determine installation mode
     agent_default: InstallMode = cast(InstallMode, get_agent_default_mode(resolved_agent))
@@ -239,3 +250,34 @@ def install_skill(
     location = "project" if project_level else "user"
     mode_suffix = f" [{install_mode}]" if verbose else ""
     print(f"{action}: {skill_id} -> {agent_name} ({location}){mode_suffix}")
+
+    # Step 11: Sync skill reference to agent config files (project-level only)
+    if project_level:
+        project_dir = Path.cwd()
+        skill_ref = SkillReference(
+            skill_id=skill_info.skill_id,
+            skill_name=skill_info.skill_name,
+            skill_path=target_dir,
+        )
+
+        if verbose:
+            print("Syncing skill to config files...")
+
+        # If agent was explicitly specified, only update that agent's config
+        # Otherwise, update all existing config files in the project
+        sync_results = sync_skill_to_configs(
+            skill=skill_ref,
+            project_dir=project_dir,
+            agent=resolved_agent if agent else None,
+            verbose=verbose,
+        )
+
+        # Report what was updated
+        for result in sync_results:
+            if result.error:
+                print(f"  Warning: Could not update {result.config_file}: {result.error}")
+            elif result.created:
+                print(f"  Created: {result.config_file}")
+            elif result.updated:
+                if verbose:
+                    print(f"  Updated: {result.config_file}")
