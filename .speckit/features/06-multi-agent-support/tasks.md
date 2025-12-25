@@ -4,21 +4,21 @@
 
 | Phase | Status | Tests |
 |-------|--------|-------|
-| 6a: AgentConfig dataclass | ⬜ Pending | - |
-| 6b: Built-in agent definitions | ⬜ Pending | - |
-| 6c: AgentRegistry class | ⬜ Pending | - |
-| 6d: Config integration | ⬜ Pending | - |
-| 6e: Refactor agents.py | ⬜ Pending | - |
-| 6f: Dynamic CLI choices | ⬜ Pending | - |
-| 6g: Tests & validation | ⬜ Pending | - |
-| **Total** | **⬜ Pending** | **0 tests** |
+| 6a: AgentConfig dataclass | ✅ Complete | 8 |
+| 6b: Built-in agent definitions | ✅ Complete | 6 |
+| 6c: AgentRegistry class | ✅ Complete | 12 |
+| 6d: Config integration | ✅ Complete | 2 |
+| 6e: Refactor agents.py | ✅ Complete | 5 |
+| 6f: Dynamic CLI choices | ✅ Complete | 3 |
+| 6g: Tests & validation | ✅ Complete | 5 |
+| **Total** | **✅ Complete** | **41 tests** |
 
 ---
 
 ## Phase 6a: AgentConfig Dataclass
 
-- [ ] Create `src/skilz/agent_registry.py`
-- [ ] Define `AgentConfig` frozen dataclass with fields:
+- [x] Create `src/skilz/agent_registry.py`
+- [x] Define `AgentConfig` frozen dataclass with fields:
   - `name: str`
   - `display_name: str`
   - `home_dir: Path | None`
@@ -29,9 +29,9 @@
   - `native_skill_support: Literal["all", "home", "none"]`
   - `uses_folder_rules: bool = False`
   - `invocation: str | None = None`
-- [ ] Add `from_dict()` class method for JSON loading
-- [ ] Add path expansion logic for `~` in paths
-- [ ] Add basic validation (required fields, valid enums)
+- [x] Add `from_dict()` class method for JSON loading
+- [x] Add path expansion logic for `~` in paths
+- [x] Add basic validation (required fields, valid enums)
 
 **Files:** `src/skilz/agent_registry.py`
 
@@ -41,23 +41,23 @@
 
 ## Phase 6b: Built-in Agent Definitions
 
-- [ ] Define `BUILTIN_AGENTS` dictionary with all 14 agents:
-  - [ ] claude (home + project, copy, native=all)
-  - [ ] opencode (home + project, copy, native=home)
-  - [ ] codex (home + project, copy, native=all)
-  - [ ] gemini (project only, symlink, native=none)
-  - [ ] copilot (project only, symlink, native=none)
-  - [ ] aider (project only, symlink, native=none)
-  - [ ] cursor (project only, symlink, native=none, folder_rules=true)
-  - [ ] windsurf (project only, symlink, native=none)
-  - [ ] qwen (project only, symlink, native=none)
-  - [ ] crush (project only, symlink, native=none)
-  - [ ] kimi (project only, symlink, native=none)
-  - [ ] plandex (project only, symlink, native=none)
-  - [ ] zed (project only, symlink, native=none)
-  - [ ] universal (home + project, copy)
-- [ ] Define `DEFAULT_SKILLS_DIR` constant (defaults to ~/.claude/skills)
-- [ ] Verify all paths match docs/plans/support_more_code_agents.md
+- [x] Define `BUILTIN_AGENTS` dictionary with all 14 agents:
+  - [x] claude (home + project, copy, native=all)
+  - [x] opencode (home + project, copy, native=home)
+  - [x] codex (home + project, copy, native=all)
+  - [x] gemini (project only, symlink, native=none)
+  - [x] copilot (project only, symlink, native=none)
+  - [x] aider (project only, symlink, native=none)
+  - [x] cursor (project only, symlink, native=none, folder_rules=true)
+  - [x] windsurf (project only, symlink, native=none)
+  - [x] qwen (project only, symlink, native=none)
+  - [x] crush (project only, symlink, native=none)
+  - [x] kimi (project only, symlink, native=none)
+  - [x] plandex (project only, symlink, native=none)
+  - [x] zed (project only, symlink, native=none)
+  - [x] universal (home + project, copy)
+- [x] Define `DEFAULT_SKILLS_DIR` constant (defaults to ~/.claude/skills)
+- [x] Verify all paths match docs/plans/support_more_code_agents.md
 
 **Files:** `src/skilz/agent_registry.py`
 
@@ -67,18 +67,18 @@
 
 ## Phase 6c: AgentRegistry Class
 
-- [ ] Create `AgentRegistry` class
-- [ ] Implement `__init__(config_path: Path | None = None)`
-- [ ] Implement `_load(config_path)` - load and merge configs
-- [ ] Implement `_load_user_config(path)` - parse JSON file
-- [ ] Implement `_merge_user_config(user_config)` - override built-ins
-- [ ] Implement `get(name: str) -> AgentConfig | None`
-- [ ] Implement `get_or_raise(name: str) -> AgentConfig`
-- [ ] Implement `list_agents() -> list[str]`
-- [ ] Implement `get_default_skills_dir() -> Path`
-- [ ] Create module-level singleton `_registry`
-- [ ] Implement `get_registry() -> AgentRegistry` function
-- [ ] Add `reset_registry()` for testing
+- [x] Create `AgentRegistry` class
+- [x] Implement `__init__(config_path: Path | None = None)`
+- [x] Implement `_load(config_path)` - load and merge configs
+- [x] Implement `_load_user_config(path)` - parse JSON file
+- [x] Implement `_merge_user_config(user_config)` - override built-ins
+- [x] Implement `get(name: str) -> AgentConfig | None`
+- [x] Implement `get_or_raise(name: str) -> AgentConfig`
+- [x] Implement `list_agents() -> list[str]`
+- [x] Implement `get_default_skills_dir() -> Path`
+- [x] Create module-level singleton `_registry`
+- [x] Implement `get_registry() -> AgentRegistry` function
+- [x] Add `reset_registry()` for testing
 
 **Files:** `src/skilz/agent_registry.py`
 
@@ -88,12 +88,12 @@
 
 ## Phase 6d: Config Integration
 
-- [ ] Add `REGISTRY_CONFIG_PATH` to `config.py`
-- [ ] Implement `get_registry_config_path() -> Path`
-- [ ] Implement `load_registry_config() -> dict | None`
-- [ ] Handle JSON parse errors gracefully
-- [ ] Handle missing file gracefully
-- [ ] Update `agent_registry.py` to use config functions
+- [x] Add `REGISTRY_CONFIG_PATH` to `config.py`
+- [x] Implement `get_registry_config_path() -> Path`
+- [x] Implement `load_registry_config() -> dict | None`
+- [x] Handle JSON parse errors gracefully
+- [x] Handle missing file gracefully
+- [x] Update `agent_registry.py` to use config functions
 
 **Files:** `src/skilz/config.py`, `src/skilz/agent_registry.py`
 
@@ -103,16 +103,16 @@
 
 ## Phase 6e: Refactor agents.py
 
-- [ ] Keep `AgentType` for backward compatibility
-- [ ] Keep `DEFAULT_AGENT_PATHS` as fallback
-- [ ] Keep `AGENT_PATHS` alias
-- [ ] Refactor `get_agent_paths()` to delegate to registry
-- [ ] Refactor `detect_agent()` to use registry
-- [ ] Refactor `get_skills_dir()` to use registry
-- [ ] Refactor `ensure_skills_dir()` to use registry
-- [ ] Update `get_agent_display_name()` to use registry
-- [ ] Add try/except for ImportError fallback
-- [ ] Verify all existing tests still pass
+- [x] Keep `AgentType` for backward compatibility
+- [x] Keep `DEFAULT_AGENT_PATHS` as fallback
+- [x] Keep `AGENT_PATHS` alias
+- [x] Refactor `get_agent_paths()` to delegate to registry
+- [x] Refactor `detect_agent()` to use registry
+- [x] Refactor `get_skills_dir()` to use registry
+- [x] Refactor `ensure_skills_dir()` to use registry
+- [x] Update `get_agent_display_name()` to use registry
+- [x] Add try/except for ImportError fallback
+- [x] Verify all existing tests still pass
 
 **Files:** `src/skilz/agents.py`
 
@@ -122,14 +122,14 @@
 
 ## Phase 6f: Dynamic CLI Choices
 
-- [ ] Add `get_agent_choices() -> list[str]` function
-- [ ] Update install command `--agent` choices
-- [ ] Update list command `--agent` choices
-- [ ] Update update command `--agent` choices
-- [ ] Update remove command `--agent` choices
-- [ ] Update config command if applicable
-- [ ] Verify help text shows all agents
-- [ ] Add fallback to ["claude", "opencode"] if registry fails
+- [x] Add `get_agent_choices() -> list[str]` function
+- [x] Update install command `--agent` choices
+- [x] Update list command `--agent` choices
+- [x] Update update command `--agent` choices
+- [x] Update remove command `--agent` choices
+- [x] Update config command if applicable
+- [x] Verify help text shows all agents
+- [x] Add fallback to ["claude", "opencode"] if registry fails
 
 **Files:** `src/skilz/cli.py`
 
@@ -141,38 +141,38 @@
 
 ### Unit Tests
 
-- [ ] Create `tests/test_agent_registry.py`
-- [ ] Test `AgentConfig` frozen immutability
-- [ ] Test `AgentConfig.from_dict()` with valid data
-- [ ] Test `AgentConfig.from_dict()` with missing fields
-- [ ] Test `AgentConfig.from_dict()` with invalid enum values
-- [ ] Test path expansion for `~`
-- [ ] Test `AgentRegistry` with no config file
-- [ ] Test `AgentRegistry` with valid config file
-- [ ] Test `AgentRegistry` with corrupted config file
-- [ ] Test `AgentRegistry.get()` for existing agent
-- [ ] Test `AgentRegistry.get()` for unknown agent
-- [ ] Test `AgentRegistry.get_or_raise()` success
-- [ ] Test `AgentRegistry.get_or_raise()` failure
-- [ ] Test `AgentRegistry.list_agents()` returns all 14
-- [ ] Test user config overrides built-in values
-- [ ] Test `get_registry()` singleton behavior
-- [ ] Test `reset_registry()` clears singleton
+- [x] Create `tests/test_agent_registry.py`
+- [x] Test `AgentConfig` frozen immutability
+- [x] Test `AgentConfig.from_dict()` with valid data
+- [x] Test `AgentConfig.from_dict()` with missing fields
+- [x] Test `AgentConfig.from_dict()` with invalid enum values
+- [x] Test path expansion for `~`
+- [x] Test `AgentRegistry` with no config file
+- [x] Test `AgentRegistry` with valid config file
+- [x] Test `AgentRegistry` with corrupted config file
+- [x] Test `AgentRegistry.get()` for existing agent
+- [x] Test `AgentRegistry.get()` for unknown agent
+- [x] Test `AgentRegistry.get_or_raise()` success
+- [x] Test `AgentRegistry.get_or_raise()` failure
+- [x] Test `AgentRegistry.list_agents()` returns all 14
+- [x] Test user config overrides built-in values
+- [x] Test `get_registry()` singleton behavior
+- [x] Test `reset_registry()` clears singleton
 
 ### Integration Tests
 
-- [ ] Test `agents.py` backward compatibility
-- [ ] Test `get_agent_paths()` returns all agents
-- [ ] Test `detect_agent()` still works
-- [ ] Test CLI help shows all agent choices
-- [ ] Test `skilz install --agent gemini` is valid
-- [ ] Test `skilz list --agent cursor` is valid
+- [x] Test `agents.py` backward compatibility
+- [x] Test `get_agent_paths()` returns all agents
+- [x] Test `detect_agent()` still works
+- [x] Test CLI help shows all agent choices
+- [x] Test `skilz install --agent gemini` is valid
+- [x] Test `skilz list --agent cursor` is valid
 
 ### Coverage
 
-- [ ] Verify 90%+ coverage on agent_registry.py
-- [ ] Run full test suite: `task test`
-- [ ] Verify no regressions in existing tests
+- [x] Verify 90%+ coverage on agent_registry.py
+- [x] Run full test suite: `task test`
+- [x] Verify no regressions in existing tests
 
 **Files:** `tests/test_agent_registry.py`, existing test files
 
@@ -195,16 +195,16 @@
 
 Before marking complete:
 
-- [ ] All 14 agents listed in `skilz install --help`
-- [ ] `skilz install skill --agent gemini --project` works
-- [ ] `skilz list --agent cursor` works
-- [ ] Existing `skilz install skill` still defaults to claude
-- [ ] Existing `skilz install skill --agent opencode` works
-- [ ] No performance regression (CLI startup <100ms)
-- [ ] 90%+ test coverage on new code
-- [ ] All 239+ existing tests still pass
-- [ ] Code passes `task lint`
-- [ ] Code passes `task check`
+- [x] All 14 agents listed in `skilz install --help`
+- [x] `skilz install skill --agent gemini --project` works
+- [x] `skilz list --agent cursor` works
+- [x] Existing `skilz install skill` still defaults to claude
+- [x] Existing `skilz install skill --agent opencode` works
+- [x] No performance regression (CLI startup <100ms)
+- [x] 90%+ test coverage on new code
+- [x] All 254 existing tests still pass (295 total with 41 new)
+- [x] Code passes `task lint`
+- [x] Code passes `task check`
 
 ---
 
