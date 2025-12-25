@@ -8,7 +8,6 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
-  POETRY_VERSION: "1.8.2"
   TASK_VERSION: "3.38.0"
 
 jobs:
@@ -21,46 +20,16 @@ jobs:
         uses: actions/checkout@v4
 
       # ─────────────────────────────────────────────────────────────
-      # Python & Poetry Setup with Caching
+      # Python Setup with pip Caching
       # ─────────────────────────────────────────────────────────────
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'  # Built-in pip caching
 
-      - name: Cache Poetry installation
-        id: cache-poetry
-        uses: actions/cache@v4
-        with:
-          path: ~/.local
-          key: poetry-${{ env.POETRY_VERSION }}-${{ runner.os }}
-
-      - name: Install Poetry
-        if: steps.cache-poetry.outputs.cache-hit != 'true'
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Configure Poetry path
-        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Cache Poetry dependencies
-        id: cache-deps
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-
-      - name: Install dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+      - name: Install project with dev dependencies
+        run: pip install -e ".[dev]"
 
       # ─────────────────────────────────────────────────────────────
       # Task (go-task) Setup with Caching
@@ -87,21 +56,21 @@ jobs:
       # ─────────────────────────────────────────────────────────────
       - name: Run linting
         id: lint
-        run: poetry run task lint
+        run: task lint
 
       - name: Run format check
         id: format
-        run: poetry run task format:check
+        run: task format:check
 
       - name: Run type checking
         id: typecheck
-        run: poetry run task typecheck
+        run: task typecheck
 
       - name: Run tests
         id: test
-        run: poetry run task test
+        run: task test
 
       - name: Run coverage
         id: coverage
-        run: poetry run task coverage
+        run: task coverage
         continue-on-error: true
