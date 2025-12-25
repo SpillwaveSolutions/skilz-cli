@@ -6,24 +6,45 @@ import sys
 from skilz import __version__
 
 
+def _get_agent_choices() -> list[str]:
+    """Get list of valid agent names for CLI choices.
+
+    Returns list of all registered agents, falling back to ["claude", "opencode"]
+    if the registry is unavailable.
+    """
+    try:
+        from skilz.agent_registry import get_agent_choices
+        return get_agent_choices()
+    except ImportError:
+        return ["claude", "opencode"]
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser for the CLI."""
+    # Get dynamic agent choices
+    agent_choices = _get_agent_choices()
+    agents_str = ", ".join(agent_choices[:5]) + ", ..." if len(agent_choices) > 5 else ", ".join(agent_choices)
+
     parser = argparse.ArgumentParser(
         prog="skilz",
         description="The universal package manager for AI skills.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog=f"""
 Examples:
   skilz install anthropics/web-artifacts-builder
   skilz install some-skill --agent opencode
+  skilz install some-skill --agent gemini --project
   skilz list --agent claude
   skilz -y remove skill-id              # Skip confirmation (scripting)
   skilz config                          # Show configuration
   skilz --version
 
 Common options (available on most commands):
-  --agent {claude,opencode}   Target agent (auto-detected if not specified)
+  --agent {{{agents_str}}}
+                              Target agent (auto-detected if not specified)
   --project                   Use project-level instead of user-level
+
+Supported agents: {', '.join(agent_choices)}
         """,
     )
 
@@ -63,9 +84,10 @@ Common options (available on most commands):
     )
     install_parser.add_argument(
         "--agent",
-        choices=["claude", "opencode"],
+        choices=agent_choices,
         default=None,
-        help="Target agent (auto-detected if not specified)",
+        metavar="AGENT",
+        help=f"Target agent: {{{agents_str}}} (auto-detected if not specified)",
     )
     install_parser.add_argument(
         "--project",
@@ -81,9 +103,10 @@ Common options (available on most commands):
     )
     list_parser.add_argument(
         "--agent",
-        choices=["claude", "opencode"],
+        choices=agent_choices,
         default=None,
-        help="Filter by agent type (auto-detected if not specified)",
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     list_parser.add_argument(
         "--project",
@@ -110,9 +133,10 @@ Common options (available on most commands):
     )
     update_parser.add_argument(
         "--agent",
-        choices=["claude", "opencode"],
+        choices=agent_choices,
         default=None,
-        help="Filter by agent type (auto-detected if not specified)",
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     update_parser.add_argument(
         "--project",
@@ -137,9 +161,10 @@ Common options (available on most commands):
     )
     remove_parser.add_argument(
         "--agent",
-        choices=["claude", "opencode"],
+        choices=agent_choices,
         default=None,
-        help="Filter by agent type (auto-detected if not specified)",
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     remove_parser.add_argument(
         "--project",

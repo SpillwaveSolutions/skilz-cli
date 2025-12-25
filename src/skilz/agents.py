@@ -1,19 +1,35 @@
-"""Agent detection and path resolution."""
+"""Agent detection and path resolution.
+
+This module provides backward-compatible functions for agent detection
+and path resolution. It delegates to the agent_registry module for the
+actual agent configurations.
+
+Supports 14+ AI coding assistants following the agentskills.io standard.
+"""
 
 from pathlib import Path
 from typing import Literal
 
+# Backward-compatible AgentType (original two agents)
+# New code should use get_all_agent_types() or agent_registry directly
 AgentType = Literal["claude", "opencode"]
 
-# Default agent paths (used when config module unavailable or as fallback)
-DEFAULT_AGENT_PATHS: dict[AgentType, dict[str, Path]] = {
+# Extended agent type including all supported agents
+ExtendedAgentType = Literal[
+    "claude", "opencode", "codex", "gemini", "copilot",
+    "aider", "cursor", "windsurf", "qwen", "crush",
+    "kimi", "plandex", "zed", "universal"
+]
+
+# Default agent paths (used as fallback when registry unavailable)
+DEFAULT_AGENT_PATHS: dict[str, dict[str, Path]] = {
     "claude": {
         "user": Path.home() / ".claude" / "skills",
         "project": Path(".claude") / "skills",
     },
     "opencode": {
         "user": Path.home() / ".config" / "opencode" / "skills",
-        "project": Path(".opencode") / "skills",
+        "project": Path(".skilz") / "skills",
     },
 }
 
@@ -21,44 +37,82 @@ DEFAULT_AGENT_PATHS: dict[AgentType, dict[str, Path]] = {
 AGENT_PATHS = DEFAULT_AGENT_PATHS
 
 
-def get_agent_paths() -> dict[AgentType, dict[str, Path]]:
-    """
-    Get agent paths from configuration.
+def get_all_agent_types() -> list[str]:
+    """Get all registered agent type names.
 
-    Returns paths based on config values, with environment variable overrides.
-    Falls back to defaults if config module is unavailable.
+    Returns:
+        List of all agent identifiers from the registry.
+    """
+    try:
+        from skilz.agent_registry import get_registry
+        return get_registry().list_agents()
+    except ImportError:
+        return list(DEFAULT_AGENT_PATHS.keys())
+
+
+def get_agent_paths() -> dict[str, dict[str, Path]]:
+    """
+    Get agent paths from the registry with config overrides.
+
+    Returns paths for all registered agents, applying configuration
+    overrides from environment variables (CLAUDE_CODE_HOME, OPEN_CODE_HOME)
+    and config file settings.
 
     Returns:
         Dictionary mapping agent types to their user/project paths.
     """
+    # Get config overrides first (for backward compatibility)
+    claude_home: Path | None = None
+    opencode_home: Path | None = None
+
     try:
         from skilz.config import get_claude_home, get_opencode_home
-
         claude_home = get_claude_home()
         opencode_home = get_opencode_home()
-
-        return {
-            "claude": {
-                "user": claude_home / "skills",
-                "project": Path(".claude") / "skills",
-            },
-            "opencode": {
-                "user": opencode_home / "skills",
-                "project": Path(".opencode") / "skills",
-            },
-        }
     except ImportError:
-        # Config module not available, use defaults
-        return DEFAULT_AGENT_PATHS
+        pass
+
+    try:
+        from skilz.agent_registry import get_registry
+
+        registry = get_registry()
+        result: dict[str, dict[str, Path]] = {}
+
+        for name in registry.list_agents():
+            agent = registry.get(name)
+            if agent is None:
+                continue
+
+            paths: dict[str, Path] = {"project": agent.project_dir}
+            if agent.supports_home and agent.home_dir:
+                # Apply config overrides for claude and opencode
+                if name == "claude" and claude_home:
+                    paths["user"] = claude_home / "skills"
+                elif name == "opencode" and opencode_home:
+                    paths["user"] = opencode_home / "skills"
+                else:
+                    paths["user"] = agent.home_dir
+
+            result[name] = paths
+
+        return result
+    except ImportError:
+        # Registry module not available, use defaults with config overrides
+        result = dict(DEFAULT_AGENT_PATHS)
+        if claude_home:
+            result["claude"]["user"] = claude_home / "skills"
+        if opencode_home:
+            result["opencode"]["user"] = opencode_home / "skills"
+        return result
 
 
-def detect_agent(project_dir: Path | None = None) -> AgentType:
+def detect_agent(project_dir: Path | None = None) -> str:
     """
     Auto-detect which AI agent is being used.
 
     Detection order:
     1. Check config file for agent_default setting
-    2. Check for .claude/ in project directory or current directory
+    2. Check for .claude/ in project directory
     3. Check for ~/.claude/ (user has Claude Code installed)
     4. Check for ~/.config/opencode/ (user has OpenCode installed)
     5. Default to "claude" if ambiguous
@@ -67,27 +121,25 @@ def detect_agent(project_dir: Path | None = None) -> AgentType:
         project_dir: Project directory to check. Uses cwd if None.
 
     Returns:
-        The detected agent type ("claude" or "opencode").
+        The detected agent type (e.g., "claude", "opencode", "gemini").
     """
     # Check config for default agent first
     try:
         from skilz.config import get_default_agent
 
         default_agent = get_default_agent()
-        if default_agent == "claude":
-            return "claude"
-        elif default_agent == "opencode":
-            return "opencode"
+        if default_agent:
+            return default_agent
     except ImportError:
         pass  # Config module not available
 
     project = project_dir or Path.cwd()
 
-    # Check project-level Claude
+    # Check project-level Claude first
     if (project / ".claude").exists():
         return "claude"
 
-    # Check user-level Claude
+    # Check user-level Claude (use Path.home() at detection time, not cached)
     if (Path.home() / ".claude").exists():
         return "claude"
 
@@ -95,45 +147,91 @@ def detect_agent(project_dir: Path | None = None) -> AgentType:
     if (Path.home() / ".config" / "opencode").exists():
         return "opencode"
 
+    # Check other project-level agent directories
+    try:
+        from skilz.agent_registry import get_registry
+
+        registry = get_registry()
+
+        # Check less common agents
+        for agent_name in registry.list_agents():
+            if agent_name in ("claude", "opencode"):
+                continue  # Already checked above
+            agent = registry.get(agent_name)
+            if agent:
+                project_marker = agent.project_dir.parts[0] if agent.project_dir.parts else None
+                if project_marker and (project / project_marker).exists():
+                    return agent_name
+
+    except ImportError:
+        pass
+
     # Default to Claude
     return "claude"
 
 
 def get_skills_dir(
-    agent: AgentType,
+    agent: str,
     project_level: bool = False,
     project_dir: Path | None = None,
 ) -> Path:
     """
     Get the skills directory for a given agent.
 
-    Uses configuration for custom paths, with environment variable overrides.
+    Uses registry configuration for paths, with user overrides from
+    environment variables (CLAUDE_CODE_HOME, OPEN_CODE_HOME) and config file.
 
     Args:
-        agent: The agent type ("claude" or "opencode").
+        agent: The agent type (e.g., "claude", "opencode", "gemini").
         project_level: If True, return project-level path instead of user-level.
         project_dir: Project directory for project-level installs.
 
     Returns:
         Path to the skills directory.
+
+    Raises:
+        ValueError: If agent is unknown or doesn't support the requested level.
     """
-    agent_paths = get_agent_paths()
+    # For user-level, use get_agent_paths() which applies config overrides
+    if not project_level:
+        agent_paths = get_agent_paths()
 
-    if agent not in agent_paths:
-        raise ValueError(f"Unknown agent type: {agent}")
+        if agent not in agent_paths:
+            raise ValueError(f"Unknown agent type: {agent}")
 
-    paths = agent_paths[agent]
+        paths = agent_paths[agent]
 
-    if project_level:
-        project = project_dir or Path.cwd()
-        # Return absolute path for project-level
-        return (project / paths["project"]).resolve()
-    else:
+        if "user" not in paths:
+            raise ValueError(
+                f"Agent '{agent}' does not support user-level installation. "
+                "Use --project flag for project-level installation."
+            )
         return paths["user"]
+
+    # For project-level, use registry directly
+    try:
+        from skilz.agent_registry import get_registry
+
+        registry = get_registry()
+        agent_config = registry.get(agent)
+
+        if agent_config is None:
+            raise ValueError(f"Unknown agent type: {agent}")
+
+        project = project_dir or Path.cwd()
+        return (project / agent_config.project_dir).resolve()
+
+    except ImportError:
+        # Fallback to old behavior
+        if agent not in DEFAULT_AGENT_PATHS:
+            raise ValueError(f"Unknown agent type: {agent}")
+
+        project = project_dir or Path.cwd()
+        return (project / DEFAULT_AGENT_PATHS[agent]["project"]).resolve()
 
 
 def ensure_skills_dir(
-    agent: AgentType,
+    agent: str,
     project_level: bool = False,
     project_dir: Path | None = None,
 ) -> Path:
@@ -141,7 +239,7 @@ def ensure_skills_dir(
     Get the skills directory, creating it if it doesn't exist.
 
     Args:
-        agent: The agent type ("claude" or "opencode").
+        agent: The agent type (e.g., "claude", "opencode", "gemini").
         project_level: If True, use project-level path.
         project_dir: Project directory for project-level installs.
 
@@ -153,10 +251,90 @@ def ensure_skills_dir(
     return skills_dir
 
 
-def get_agent_display_name(agent: AgentType) -> str:
-    """Get a human-readable name for the agent."""
+def get_agent_display_name(agent: str) -> str:
+    """Get a human-readable name for the agent.
+
+    Args:
+        agent: The agent identifier
+
+    Returns:
+        Human-readable display name
+    """
+    try:
+        from skilz.agent_registry import get_registry
+
+        agent_config = get_registry().get(agent)
+        if agent_config:
+            return agent_config.display_name
+    except ImportError:
+        pass
+
+    # Fallback for known agents
     names = {
         "claude": "Claude Code",
         "opencode": "OpenCode",
     }
     return names.get(agent, agent)
+
+
+def get_agent_config(agent: str):
+    """Get the full AgentConfig for an agent.
+
+    Args:
+        agent: The agent identifier
+
+    Returns:
+        AgentConfig or None if not found
+
+    Note:
+        Returns None instead of raising to allow graceful degradation.
+    """
+    try:
+        from skilz.agent_registry import get_registry
+        return get_registry().get(agent)
+    except ImportError:
+        return None
+
+
+def get_agent_default_mode(agent: str) -> str:
+    """Get the default installation mode for an agent.
+
+    Args:
+        agent: The agent identifier
+
+    Returns:
+        "copy" or "symlink"
+    """
+    try:
+        from skilz.agent_registry import get_registry
+
+        agent_config = get_registry().get(agent)
+        if agent_config:
+            return agent_config.default_mode
+    except ImportError:
+        pass
+
+    # Claude uses copy by default, others use symlink
+    return "copy" if agent == "claude" else "symlink"
+
+
+def supports_home_install(agent: str) -> bool:
+    """Check if an agent supports user-level installation.
+
+    Args:
+        agent: The agent identifier
+
+    Returns:
+        True if agent supports home directory installation
+    """
+    try:
+        from skilz.agent_registry import get_registry
+
+        agent_config = get_registry().get(agent)
+        if agent_config:
+            return agent_config.supports_home
+    except ImportError:
+        pass
+
+    # Fallback: only claude and opencode support home
+    return agent in ("claude", "opencode", "codex", "universal")
