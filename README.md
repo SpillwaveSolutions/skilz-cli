@@ -53,17 +53,23 @@ For detailed usage instructions, see the [User Manual](docs/USER_MANUAL.md).
 ## Quick Start
 
 ```bash
-# Install a skill
+# Install a skill (defaults to Claude Code, user-level)
 skilz install anthropics/web-artifacts-builder
+
+# Install for a specific agent
+skilz install spillwave/plantuml --agent gemini
+
+# Install at project level (for sandboxed agents)
+skilz install spillwave/plantuml --agent copilot --project
 
 # List installed skills
 skilz list
 
+# Read skill content (for agents without native skill loading)
+skilz read plantuml
+
 # Update all skills to latest registry versions
 skilz update
-
-# Update a specific skill
-skilz update anthropics/web-artifacts-builder
 
 # Remove a skill
 skilz remove anthropics/web-artifacts-builder
@@ -167,14 +173,28 @@ For complete documentation including troubleshooting and advanced examples, see 
 
 ---
 
-## Supported Environments
+## Supported Agents
 
-Skilz auto-detects and installs skills into:
+Skilz supports 14 AI coding assistants:
 
-| Environment | Skills Directory |
-|-------------|------------------|
-| Claude Code | `~/.claude/skills/` (personal) or `.claude/skills/` (project) |
-| OpenCode | `~/.config/opencode/skills/` |
+| Agent | User-Level | Project-Level | Default Mode |
+|-------|------------|---------------|--------------|
+| Claude Code | `~/.claude/skills/` | `.claude/skills/` | copy |
+| OpenAI Codex | `~/.codex/skills/` | `.codex/skills/` | copy |
+| OpenCode CLI | `~/.config/opencode/skills/` | `.skilz/skills/` | copy |
+| Universal | `~/.skilz/skills/` | `.skilz/skills/` | copy |
+| Gemini CLI | - | `.skilz/skills/` | copy |
+| GitHub Copilot | - | `.github/copilot/skills/` | copy |
+| Cursor | - | `.skills/skills/` | copy |
+| Aider | - | `.skills/skills/` | copy |
+| Windsurf | - | `.skills/skills/` | copy |
+| Qwen CLI | - | `.skills/skills/` | copy |
+| Kimi CLI | - | `.skills/skills/` | copy |
+| Crush | - | `.skills/skills/` | copy |
+| Plandex | - | `.skills/skills/` | copy |
+| Zed AI | - | `.skills/skills/` | copy |
+
+For detailed agent-specific instructions, see the [Comprehensive User Guide](docs/COMPREHENSIVE_USER_GUIDE.md)
 
 ---
 
@@ -377,14 +397,14 @@ This enables:
 | Private repositories | ✓ | ✗ | ✓ |
 | Version pinning | ✓ | ✗ | Manual |
 | Install manifest | ✓ | ✗ | ✗ |
-| Cross-agent support | ✓ | ✗ | ✗ |
-| Local development (symlinks) | Planned | ✗ | ✓ |
+| Cross-agent support | ✓ (14 agents) | ✗ | ✗ |
+| Symlink mode | ✓ | ✗ | ✓ |
 
 ---
 
 ## Roadmap
 
-### Phase 1 - Core Installer (Complete)
+### Phase 1-3 - Core Installer (Complete)
 
 - [x] Registry-based skill resolution
 - [x] Direct Git installation
@@ -394,26 +414,24 @@ This enables:
 - [x] `skilz list` — show installed skills with status
 - [x] `skilz update` — update skills to latest pinned SHA
 - [x] `skilz remove` — uninstall a skill
-
-### Phase 2 - Developer Experience (Complete)
-
-- [x] 92% test coverage
+- [x] 92% test coverage (418 tests)
 - [x] Taskfile automation
 - [x] Documentation updates
-- [ ] PyPI publishing (pending)
 
-### Phase 3 - Plugin Support
+### Phase 6-7 - Multi-Agent Support (Complete)
 
-- [ ] Plugin and marketplace installation support
-- [ ] Extended registry format
-- [ ] `skilz search` — search skillzwave.ai from CLI
+- [x] 14 AI agent support (Claude, Codex, Gemini, Copilot, Cursor, Aider, etc.)
+- [x] Universal skills directory (`~/.skilz/skills/`)
+- [x] Copy vs symlink installation modes
+- [x] Config file sync (agentskills.io standard)
+- [x] `skilz read` command for agents without native skill loading
+- [x] Comprehensive User Guide
 
 ### Future
 
-- [ ] Cursor support
-- [ ] Codex support
-- [ ] Gemini support (proof of concept complete)
-- [ ] Symlink mode for local development
+- [ ] PyPI publishing
+- [ ] Plugin and marketplace installation support
+- [ ] `skilz search` — search skillzwave.ai from CLI
 - [ ] Skill dependency resolution
 
 ---
