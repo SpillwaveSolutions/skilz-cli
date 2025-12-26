@@ -6,24 +6,50 @@ import sys
 from skilz import __version__
 
 
+def _get_agent_choices() -> list[str]:
+    """Get list of valid agent names for CLI choices.
+
+    Returns list of all registered agents, falling back to ["claude", "opencode"]
+    if the registry is unavailable.
+    """
+    try:
+        from skilz.agent_registry import get_agent_choices
+
+        return get_agent_choices()
+    except ImportError:
+        return ["claude", "opencode"]
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser for the CLI."""
+    # Get dynamic agent choices
+    agent_choices = _get_agent_choices()
+    if len(agent_choices) > 5:
+        agents_str = ", ".join(agent_choices[:5]) + ", ..."
+    else:
+        agents_str = ", ".join(agent_choices)
+
     parser = argparse.ArgumentParser(
         prog="skilz",
         description="The universal package manager for AI skills.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog=f"""
 Examples:
   skilz install anthropics/web-artifacts-builder
   skilz install some-skill --agent opencode
+  skilz install some-skill --agent gemini --project
   skilz list --agent claude
+  skilz read extracting-keywords        # Load skill content for AI agents
   skilz -y remove skill-id              # Skip confirmation (scripting)
   skilz config                          # Show configuration
   skilz --version
 
 Common options (available on most commands):
-  --agent {claude,opencode}   Target agent (auto-detected if not specified)
+  --agent {{{agents_str}}}
+                              Target agent (auto-detected if not specified)
   --project                   Use project-level instead of user-level
+
+Supported agents: {", ".join(agent_choices)}
         """,
     )
 
@@ -59,18 +85,59 @@ Common options (available on most commands):
     )
     install_parser.add_argument(
         "skill_id",
+        nargs="?",
+        default=None,
         help="The skill ID to install (e.g., anthropics/web-artifacts-builder)",
     )
     install_parser.add_argument(
         "--agent",
-        choices=["claude", "opencode"],
+        choices=agent_choices,
         default=None,
-        help="Target agent (auto-detected if not specified)",
+        metavar="AGENT",
+        help=f"Target agent: {{{agents_str}}} (auto-detected if not specified)",
     )
     install_parser.add_argument(
         "--project",
         action="store_true",
         help="Install to project directory instead of user directory",
+    )
+
+    # Installation mode flags (mutually exclusive)
+    mode_group = install_parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "--copy",
+        action="store_true",
+        help="Copy files directly to agent's skills directory",
+    )
+    mode_group.add_argument(
+        "--symlink",
+        action="store_true",
+        help="Create symlink to canonical copy in ~/.skilz/skills/",
+    )
+
+    # Source options (mutually exclusive with skill_id, handled in cmd)
+    install_parser.add_argument(
+        "-f",
+        "--file",
+        metavar="PATH",
+        help="Install from a local filesystem path",
+    )
+    install_parser.add_argument(
+        "-g",
+        "--git",
+        metavar="URL",
+        help="Install from a git repository URL",
+    )
+    install_parser.add_argument(
+        "--version",
+        dest="version_spec",
+        metavar="VERSION",
+        help=(
+            "Version to install: 'latest' (latest from main), "
+            "'branch:NAME' (latest from branch), "
+            "SHA (specific commit), or TAG (e.g., 1.0.1 -> v1.0.1). "
+            "Default: use marketplace version"
+        ),
     )
 
     # List command
@@ -81,9 +148,10 @@ Common options (available on most commands):
     )
     list_parser.add_argument(
         "--agent",
-        choices=["claude", "opencode"],
+        choices=agent_choices,
         default=None,
-        help="Filter by agent type (auto-detected if not specified)",
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     list_parser.add_argument(
         "--project",
@@ -110,9 +178,10 @@ Common options (available on most commands):
     )
     update_parser.add_argument(
         "--agent",
-        choices=["claude", "opencode"],
+        choices=agent_choices,
         default=None,
-        help="Filter by agent type (auto-detected if not specified)",
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     update_parser.add_argument(
         "--project",
@@ -137,9 +206,10 @@ Common options (available on most commands):
     )
     remove_parser.add_argument(
         "--agent",
-        choices=["claude", "opencode"],
+        choices=agent_choices,
         default=None,
-        help="Filter by agent type (auto-detected if not specified)",
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     remove_parser.add_argument(
         "--project",
@@ -163,6 +233,29 @@ Common options (available on most commands):
         "--init",
         action="store_true",
         help="Run interactive configuration setup (or use -y for defaults)",
+    )
+
+    # Read command
+    read_parser = subparsers.add_parser(
+        "read",
+        help="Read and output skill content",
+        description="Load a skill's SKILL.md content for AI agent consumption.",
+    )
+    read_parser.add_argument(
+        "skill_name",
+        help="The skill name or ID to read (e.g., 'extracting-keywords')",
+    )
+    read_parser.add_argument(
+        "--agent",
+        choices=agent_choices,
+        default=None,
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (searches all if not specified)",
+    )
+    read_parser.add_argument(
+        "--project",
+        action="store_true",
+        help="Search project-level skills only",
     )
 
     return parser
@@ -201,6 +294,11 @@ def main(argv: list[str] | None = None) -> int:
         from skilz.commands.config_cmd import cmd_config
 
         return cmd_config(args)
+
+    if args.command == "read":
+        from skilz.commands.read_cmd import cmd_read
+
+        return cmd_read(args)
 
     # Unknown command (shouldn't happen with subparsers)
     parser.print_help()

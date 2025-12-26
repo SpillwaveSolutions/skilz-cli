@@ -189,6 +189,60 @@ def clone_or_fetch(git_repo: str, verbose: bool = False) -> Path:
     return cache_path
 
 
+def get_branch_sha(cache_path: Path, branch: str = "main", verbose: bool = False) -> str:
+    """
+    Get the current SHA for a branch in a cached repository.
+
+    Tries the specified branch first, then falls back to origin/HEAD (default branch),
+    then tries common default branch names (main, master).
+
+    Args:
+        cache_path: Path to the cached repository.
+        branch: Branch name to get SHA for (default: main).
+        verbose: If True, print progress information.
+
+    Returns:
+        The 40-character commit SHA.
+
+    Raises:
+        GitError: If no branch can be resolved.
+    """
+    if verbose:
+        print(f"  Resolving HEAD for branch '{branch}'...")
+
+    # Try branches in order of preference
+    branches_to_try = [
+        f"origin/{branch}",  # Remote specified branch
+        branch,  # Local specified branch
+        "origin/HEAD",  # Remote default branch
+        "HEAD",  # Local HEAD
+    ]
+
+    # Add common defaults if not already the specified branch
+    if branch != "main":
+        branches_to_try.append("origin/main")
+    if branch != "master":
+        branches_to_try.append("origin/master")
+
+    for ref in branches_to_try:
+        result = run_git_command(
+            ["rev-parse", ref],
+            cwd=cache_path,
+            check=False,
+        )
+
+        if result.returncode == 0:
+            sha: str = result.stdout.strip()
+            if len(sha) == 40:
+                if verbose:
+                    if ref != f"origin/{branch}" and ref != branch:
+                        print(f"  Note: Branch '{branch}' not found, using '{ref}'")
+                    print(f"  Resolved to: {sha[:8]}...")
+                return sha
+
+    raise GitError("rev-parse", f"Could not resolve SHA for branch '{branch}'")
+
+
 def get_skill_source_path(cache_path: Path, skill_path: str) -> Path:
     """
     Get the source path for a skill within a cached repository.
@@ -222,6 +276,81 @@ def get_skill_source_path(cache_path: Path, skill_path: str) -> Path:
             relative_path = relative_path[:-1]
 
     return cache_path / relative_path if relative_path else cache_path
+
+
+def find_skill_by_name(cache_path: Path, skill_name: str, verbose: bool = False) -> Path | None:
+    """
+    Search for a skill by name when the expected path doesn't exist.
+
+    This handles cases where skills have been reorganized in the repo
+    but the registry/API has stale path data.
+
+    Args:
+        cache_path: Path to the cached repository.
+        skill_name: The skill name to search for (e.g., "web-artifacts-builder").
+        verbose: If True, print progress information.
+
+    Returns:
+        Path to the skill directory if found, None otherwise.
+    """
+    if verbose:
+        print(f"  Searching for skill '{skill_name}' in repository...")
+
+    # Find all SKILL.md files in the repo
+    skill_files = list(cache_path.rglob("SKILL.md"))
+
+    # Filter out .git directory matches
+    skill_files = [p for p in skill_files if ".git" not in p.parts]
+
+    if verbose:
+        print(f"  Found {len(skill_files)} SKILL.md files")
+
+    # Look for exact directory name match
+    matches = []
+    for skill_file in skill_files:
+        skill_dir = skill_file.parent
+        if skill_dir.name == skill_name:
+            matches.append(skill_dir)
+
+    if len(matches) == 1:
+        if verbose:
+            rel_path = matches[0].relative_to(cache_path)
+            print(f"  Found skill at: {rel_path}")
+        return matches[0]
+    elif len(matches) > 1:
+        if verbose:
+            print(f"  Warning: Multiple matches found for '{skill_name}':")
+            for match in matches:
+                print(f"    - {match.relative_to(cache_path)}")
+        # Return the first match (could be improved with more heuristics)
+        return matches[0]
+
+    # No exact match - try partial matching
+    if verbose:
+        print("  No exact match, checking SKILL.md files for name field...")
+
+    for skill_file in skill_files:
+        try:
+            content = skill_file.read_text()
+            # Check YAML frontmatter for name field
+            if content.startswith("---"):
+                end_idx = content.find("---", 3)
+                if end_idx > 0:
+                    frontmatter = content[3:end_idx]
+                    for line in frontmatter.split("\n"):
+                        if line.startswith("name:"):
+                            name_value = line.split(":", 1)[1].strip().strip("'\"")
+                            if name_value == skill_name:
+                                if verbose:
+                                    rel_path = skill_file.parent.relative_to(cache_path)
+                                    print(f"  Found skill by name field at: {rel_path}")
+                                return skill_file.parent
+        except OSError:
+            continue
+
+    if verbose:
+        print(f"  Could not find skill '{skill_name}' in repository")
+    return None
 
 
 def parse_skill_path(skill_path: str) -> tuple[str, str]:
@@ -299,3 +428,160 @@ def fetch_github_sha(
         raise GitError("fetch_sha", f"Cannot connect to GitHub: {e.reason}")
     except json.JSONDecodeError:
         raise GitError("fetch_sha", "Invalid response from GitHub API")
+
+
+def fetch_github_tag_sha(
+    owner: str,
+    repo: str,
+    tag: str,
+    verbose: bool = False,
+) -> str:
+    """
+    Fetch the commit SHA for a specific tag from GitHub.
+
+    Tries both 'tag' and 'v{tag}' formats.
+
+    Args:
+        owner: Repository owner.
+        repo: Repository name.
+        tag: Tag name (e.g., "1.0.1" or "v1.0.1").
+        verbose: If True, print progress information.
+
+    Returns:
+        The commit SHA for the tag.
+
+    Raises:
+        GitError: If the tag is not found or API request fails.
+    """
+    import json
+    import urllib.error
+    import urllib.request
+
+    # Try the tag as-is first, then with 'v' prefix
+    tags_to_try = [tag]
+    if not tag.startswith("v"):
+        tags_to_try.append(f"v{tag}")
+
+    for try_tag in tags_to_try:
+        url = f"https://api.github.com/repos/{owner}/{repo}/git/refs/tags/{try_tag}"
+
+        if verbose:
+            print(f"  Fetching tag SHA from GitHub: {url}")
+
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "skilz-cli/1.0.2",
+                },
+            )
+
+            with urllib.request.urlopen(req, timeout=30) as response:
+                data = json.loads(response.read().decode("utf-8"))
+
+                # The ref object contains the SHA
+                obj = data.get("object", {})
+                obj_type = str(obj.get("type", ""))
+                sha: str = str(obj.get("sha", ""))
+
+                # If it's a tag object (annotated tag), we need to dereference it
+                if obj_type == "tag":
+                    # Fetch the tag object to get the commit SHA
+                    tag_url = obj.get("url", "")
+                    if tag_url:
+                        req2 = urllib.request.Request(
+                            tag_url,
+                            headers={
+                                "Accept": "application/vnd.github.v3+json",
+                                "User-Agent": "skilz-cli/1.0.2",
+                            },
+                        )
+                        with urllib.request.urlopen(req2, timeout=30) as tag_response:
+                            tag_data = json.loads(tag_response.read().decode("utf-8"))
+                            sha = str(tag_data.get("object", {}).get("sha", ""))
+
+                if sha and len(sha) == 40:
+                    if verbose:
+                        print(f"  Got SHA for tag '{try_tag}': {sha[:8]}...")
+                    return sha
+
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                continue  # Try next tag format
+            raise GitError("fetch_tag_sha", f"GitHub API error: HTTP {e.code}")
+        except urllib.error.URLError as e:
+            raise GitError("fetch_tag_sha", f"Cannot connect to GitHub: {e.reason}")
+        except json.JSONDecodeError:
+            raise GitError("fetch_tag_sha", "Invalid response from GitHub API")
+
+    raise GitError("fetch_tag_sha", f"Tag not found: {tag} (tried: {', '.join(tags_to_try)})")
+
+
+def resolve_version_spec(
+    owner: str,
+    repo: str,
+    version_spec: str | None,
+    default_sha: str,
+    verbose: bool = False,
+) -> str:
+    """
+    Resolve a version specification to a commit SHA.
+
+    Version spec formats:
+    - None: Use default_sha (from marketplace)
+    - "latest": Get latest commit from main branch
+    - "branch:NAME": Get latest commit from specified branch
+    - 40-char hex string: Use as-is (commit SHA)
+    - Other: Treat as tag (tries both "X" and "vX" formats)
+
+    Args:
+        owner: Repository owner.
+        repo: Repository name.
+        version_spec: The version specification string.
+        default_sha: Default SHA to use if version_spec is None.
+        verbose: If True, print progress information.
+
+    Returns:
+        The resolved commit SHA.
+
+    Raises:
+        GitError: If version resolution fails.
+    """
+    # No version spec - use default from marketplace
+    if version_spec is None:
+        if verbose:
+            print(f"  Using marketplace version: {default_sha[:8]}...")
+        return default_sha
+
+    # "latest" - get latest from main
+    if version_spec.lower() == "latest":
+        if verbose:
+            print("  Resolving 'latest' from main branch...")
+        return fetch_github_sha(owner, repo, "main", verbose=verbose)
+
+    # "branch:NAME" - get latest from specified branch
+    if version_spec.lower().startswith("branch:"):
+        branch = version_spec[7:]  # Remove "branch:" prefix
+        if verbose:
+            print(f"  Resolving latest from branch '{branch}'...")
+        return fetch_github_sha(owner, repo, branch, verbose=verbose)
+
+    # 40-character hex string - assume it's a commit SHA
+    if len(version_spec) == 40 and all(c in "0123456789abcdefABCDEF" for c in version_spec):
+        if verbose:
+            print(f"  Using specified SHA: {version_spec[:8]}...")
+        return version_spec.lower()
+
+    # Short SHA (7-39 chars) - we'll use it but warn it might be ambiguous
+    if 7 <= len(version_spec) <= 39 and all(c in "0123456789abcdefABCDEF" for c in version_spec):
+        if verbose:
+            print(f"  Using short SHA: {version_spec} (may need full SHA for checkout)")
+        # We can't expand this without cloning, so just return it
+        # Git will handle the lookup during checkout
+        return version_spec.lower()
+
+    # Otherwise, treat as a tag
+    if verbose:
+        print(f"  Resolving tag '{version_spec}'...")
+    return fetch_github_tag_sha(owner, repo, version_spec, verbose=verbose)

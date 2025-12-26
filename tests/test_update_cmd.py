@@ -1,6 +1,7 @@
 """Tests for the update command."""
 
 import argparse
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -34,6 +35,7 @@ def sample_installed_skill(temp_dir, sample_manifest):
         manifest=sample_manifest,
         agent="claude",
         project_level=False,
+        install_mode="copy",
     )
 
 
@@ -218,14 +220,187 @@ class TestCmdUpdate:
                 with patch("skilz.commands.update_cmd.install_skill") as mock_install:
                     result = cmd_update(args)
 
-                    # Should call install_skill
+                    # Should call install_skill with mode
                     mock_install.assert_called_once_with(
                         skill_id="spillwave/plantuml",
                         agent="claude",
                         project_level=False,
                         verbose=False,
+                        mode="copy",
                     )
 
         assert result == 0
         captured = capsys.readouterr()
         assert "updating" in captured.out.lower()
+
+
+class TestSymlinkUpdate:
+    """Tests for symlink-related update functionality."""
+
+    @pytest.fixture
+    def symlink_manifest(self):
+        """Create a manifest for a symlinked skill."""
+        return SkillManifest.create(
+            skill_id="spillwave/plantuml",
+            git_repo="https://github.com/SpillwaveSolutions/plantuml.git",
+            skill_path="/main/SKILL.md",
+            git_sha="f2489dcd47799e4aaff3ae0a34cde0ebf2288a66",
+            install_mode="symlink",
+            canonical_path="/home/user/.skilz/skills/plantuml",
+        )
+
+    @pytest.fixture
+    def symlinked_skill(self, temp_dir, symlink_manifest):
+        """Create a symlinked skill."""
+        skill_dir = temp_dir / "plantuml"
+        skill_dir.mkdir(parents=True)
+        return InstalledSkill(
+            skill_id="spillwave/plantuml",
+            skill_name="plantuml",
+            path=skill_dir,
+            manifest=symlink_manifest,
+            agent="claude",
+            project_level=False,
+            install_mode="symlink",
+            canonical_path=Path("/home/user/.skilz/skills/plantuml"),
+        )
+
+    @pytest.fixture
+    def broken_symlink_skill(self, temp_dir):
+        """Create a broken symlink skill."""
+        manifest = SkillManifest.create(
+            skill_id="spillwave/broken",
+            git_repo="https://github.com/SpillwaveSolutions/broken.git",
+            skill_path="/main/SKILL.md",
+            git_sha="abc123",
+            install_mode="symlink",
+            canonical_path="/nonexistent/path",
+        )
+        skill_dir = temp_dir / "broken"
+        skill_dir.mkdir(parents=True)
+        return InstalledSkill(
+            skill_id="spillwave/broken",
+            skill_name="broken",
+            path=skill_dir,
+            manifest=manifest,
+            agent="claude",
+            project_level=False,
+            install_mode="symlink",
+            canonical_path=Path("/nonexistent/path"),
+            is_broken=True,
+        )
+
+    def test_update_symlink_passes_mode(self, symlinked_skill, capsys):
+        """Test that update passes mode='symlink' for symlinked skills."""
+        args = argparse.Namespace(
+            skill_id=None,
+            agent="claude",
+            project=True,
+            dry_run=False,
+            verbose=False,
+        )
+
+        with patch("skilz.commands.update_cmd.scan_installed_skills") as mock_scan:
+            mock_scan.return_value = [symlinked_skill]
+
+            with patch("skilz.commands.update_cmd.check_skill_update") as mock_check:
+                mock_check.return_value = (True, "new_sha_1234567890abcdef")
+
+                with patch("skilz.commands.update_cmd.install_skill") as mock_install:
+                    result = cmd_update(args)
+
+                    mock_install.assert_called_once_with(
+                        skill_id="spillwave/plantuml",
+                        agent="claude",
+                        project_level=False,
+                        verbose=False,
+                        mode="symlink",
+                    )
+
+        assert result == 0
+
+    def test_update_shows_mode_in_verbose(self, symlinked_skill, capsys):
+        """Test that verbose output shows symlink mode."""
+        args = argparse.Namespace(
+            skill_id=None,
+            agent="claude",
+            project=True,
+            dry_run=True,
+            verbose=True,
+        )
+
+        with patch("skilz.commands.update_cmd.scan_installed_skills") as mock_scan:
+            mock_scan.return_value = [symlinked_skill]
+
+            with patch("skilz.commands.update_cmd.check_skill_update") as mock_check:
+                mock_check.return_value = (True, "new_sha_1234567890abcdef")
+
+                result = cmd_update(args)
+
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "[symlink]" in captured.out
+
+    def test_update_broken_symlink_skipped(self, broken_symlink_skill, capsys):
+        """Test that broken symlinks are skipped and reported."""
+        args = argparse.Namespace(
+            skill_id=None,
+            agent="claude",
+            project=True,
+            dry_run=False,
+            verbose=False,
+        )
+
+        with patch("skilz.commands.update_cmd.scan_installed_skills") as mock_scan:
+            mock_scan.return_value = [broken_symlink_skill]
+
+            with patch("skilz.commands.update_cmd.install_skill") as mock_install:
+                result = cmd_update(args)
+
+                # Should NOT call install_skill for broken symlinks
+                mock_install.assert_not_called()
+
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "broken symlink" in captured.out.lower()
+        assert "1 broken" in captured.out
+
+    def test_update_summary_shows_broken_count(self, broken_symlink_skill, capsys):
+        """Test that summary includes broken symlink count."""
+        args = argparse.Namespace(
+            skill_id=None,
+            agent="claude",
+            project=True,
+            dry_run=False,
+            verbose=False,
+        )
+
+        with patch("skilz.commands.update_cmd.scan_installed_skills") as mock_scan:
+            mock_scan.return_value = [broken_symlink_skill]
+            result = cmd_update(args)
+
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "broken" in captured.out
+
+    def test_update_copy_shows_mode_in_verbose(self, sample_installed_skill, capsys):
+        """Test that verbose output shows copy mode for copied skills."""
+        args = argparse.Namespace(
+            skill_id=None,
+            agent="claude",
+            project=True,
+            dry_run=True,
+            verbose=True,
+        )
+
+        with patch("skilz.commands.update_cmd.scan_installed_skills") as mock_scan:
+            mock_scan.return_value = [sample_installed_skill]
+
+            with patch("skilz.commands.update_cmd.check_skill_update") as mock_check:
+                mock_check.return_value = (True, "new_sha_1234567890abcdef")
+
+                result = cmd_update(args)
+
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "[copy]" in captured.out

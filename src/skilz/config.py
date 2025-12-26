@@ -9,11 +9,12 @@ This module handles loading, saving, and merging configuration from:
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 # Configuration file location (XDG standard)
 CONFIG_DIR = Path.home() / ".config" / "skilz"
 CONFIG_PATH = CONFIG_DIR / "settings.json"
+REGISTRY_CONFIG_PATH = CONFIG_DIR / "config.json"
 
 # Default configuration values
 DEFAULTS: dict[str, str | None] = {
@@ -195,3 +196,34 @@ def get_default_agent() -> str | None:
 def config_exists() -> bool:
     """Check if configuration file exists."""
     return CONFIG_PATH.exists()
+
+
+def get_registry_config_path() -> Path:
+    """Get the path to the agent registry configuration file.
+
+    Returns:
+        Path to ~/.config/skilz/config.json
+    """
+    return REGISTRY_CONFIG_PATH
+
+
+def load_registry_config() -> dict[str, Any] | None:
+    """Load agent registry configuration from file.
+
+    Returns:
+        Parsed config dictionary, or None if file doesn't exist or is invalid.
+    """
+    if not REGISTRY_CONFIG_PATH.exists():
+        return None
+
+    try:
+        with open(REGISTRY_CONFIG_PATH) as f:
+            return cast(dict[str, Any], json.load(f))
+    except (json.JSONDecodeError, OSError):
+        # Corrupted or unreadable file
+        return None
+
+
+def registry_config_exists() -> bool:
+    """Check if agent registry configuration file exists."""
+    return REGISTRY_CONFIG_PATH.exists()

@@ -1,6 +1,7 @@
 """Tests for the remove command."""
 
 import argparse
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -36,6 +37,7 @@ def installed_skill_with_dir(temp_dir, sample_manifest):
         manifest=sample_manifest,
         agent="claude",
         project_level=True,
+        install_mode="copy",
     )
 
 
@@ -241,3 +243,189 @@ class TestCmdRemove:
         assert result == 0
         captured = capsys.readouterr()
         assert "Removed:" in captured.out
+
+
+class TestSymlinkRemoval:
+    """Tests for symlink-related removal functionality."""
+
+    @pytest.fixture
+    def symlink_manifest(self):
+        """Create a manifest for a symlinked skill."""
+        return SkillManifest.create(
+            skill_id="spillwave/plantuml",
+            git_repo="https://github.com/SpillwaveSolutions/plantuml.git",
+            skill_path="/main/SKILL.md",
+            git_sha="f2489dcd47799e4aaff3ae0a34cde0ebf2288a66",
+            install_mode="symlink",
+            canonical_path="/home/user/.skilz/skills/plantuml",
+        )
+
+    @pytest.fixture
+    def symlinked_skill(self, temp_dir, symlink_manifest):
+        """Create a symlinked skill."""
+        skill_dir = temp_dir / "plantuml"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("# Test Skill")
+        write_manifest(skill_dir, symlink_manifest)
+
+        return InstalledSkill(
+            skill_id="spillwave/plantuml",
+            skill_name="plantuml",
+            path=skill_dir,
+            manifest=symlink_manifest,
+            agent="claude",
+            project_level=True,
+            install_mode="symlink",
+            canonical_path=Path("/home/user/.skilz/skills/plantuml"),
+        )
+
+    @pytest.fixture
+    def broken_symlink_skill(self, temp_dir):
+        """Create a broken symlink skill."""
+        manifest = SkillManifest.create(
+            skill_id="spillwave/broken",
+            git_repo="https://github.com/SpillwaveSolutions/broken.git",
+            skill_path="/main/SKILL.md",
+            git_sha="abc123",
+            install_mode="symlink",
+            canonical_path="/nonexistent/path",
+        )
+        skill_dir = temp_dir / "broken"
+        skill_dir.mkdir(parents=True)
+        write_manifest(skill_dir, manifest)
+
+        return InstalledSkill(
+            skill_id="spillwave/broken",
+            skill_name="broken",
+            path=skill_dir,
+            manifest=manifest,
+            agent="claude",
+            project_level=True,
+            install_mode="symlink",
+            canonical_path=Path("/nonexistent/path"),
+            is_broken=True,
+        )
+
+    def test_remove_symlink_with_yes_flag(self, symlinked_skill, capsys):
+        """Test removing a symlinked skill with --yes flag."""
+        args = argparse.Namespace(
+            skill_id="spillwave/plantuml",
+            agent="claude",
+            project=True,
+            yes=True,
+            verbose=False,
+        )
+
+        with patch("skilz.commands.remove_cmd.find_installed_skill") as mock_find:
+            mock_find.return_value = symlinked_skill
+            result = cmd_remove(args)
+
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "Removed symlink:" in captured.out
+        assert not symlinked_skill.path.exists()
+
+    def test_remove_symlink_shows_verbose_mode(self, symlinked_skill, capsys):
+        """Test verbose output shows symlink mode."""
+        args = argparse.Namespace(
+            skill_id="spillwave/plantuml",
+            agent="claude",
+            project=True,
+            yes=True,
+            verbose=True,
+        )
+
+        with patch("skilz.commands.remove_cmd.find_installed_skill") as mock_find:
+            mock_find.return_value = symlinked_skill
+            result = cmd_remove(args)
+
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "mode: symlink" in captured.out
+
+    def test_remove_symlink_confirmation_message(self, symlinked_skill, capsys):
+        """Test symlink removal shows different confirmation message."""
+        args = argparse.Namespace(
+            skill_id="spillwave/plantuml",
+            agent="claude",
+            project=True,
+            yes=False,
+            verbose=False,
+        )
+
+        with patch("skilz.commands.remove_cmd.find_installed_skill") as mock_find:
+            mock_find.return_value = symlinked_skill
+
+            # Mock user declining to confirm
+            with patch("builtins.input", return_value="n"):
+                result = cmd_remove(args)
+
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "Cancelled" in captured.out
+        # Skill should still exist since user cancelled
+        assert symlinked_skill.path.exists()
+
+    def test_remove_symlink_confirms_with_canonical_path(self, symlinked_skill, capsys):
+        """Test symlink confirmation mentions canonical path will be preserved."""
+        args = argparse.Namespace(
+            skill_id="spillwave/plantuml",
+            agent="claude",
+            project=True,
+            yes=False,
+            verbose=False,
+        )
+
+        captured_prompt = None
+
+        def capture_input(prompt):
+            nonlocal captured_prompt
+            captured_prompt = prompt
+            return "y"
+
+        with patch("skilz.commands.remove_cmd.find_installed_skill") as mock_find:
+            mock_find.return_value = symlinked_skill
+            with patch("builtins.input", side_effect=capture_input):
+                result = cmd_remove(args)
+
+        assert result == 0
+        # Check that the prompt mentioned canonical path being preserved
+        assert "preserved" in captured_prompt
+
+    def test_remove_broken_symlink(self, broken_symlink_skill, capsys):
+        """Test removing a broken symlink skill."""
+        args = argparse.Namespace(
+            skill_id="spillwave/broken",
+            agent="claude",
+            project=True,
+            yes=True,
+            verbose=True,
+        )
+
+        with patch("skilz.commands.remove_cmd.find_installed_skill") as mock_find:
+            mock_find.return_value = broken_symlink_skill
+            result = cmd_remove(args)
+
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "broken symlink" in captured.out.lower()
+        assert not broken_symlink_skill.path.exists()
+
+    def test_remove_copy_shows_removed_not_symlink(self, installed_skill_with_dir, capsys):
+        """Test removing a copied skill shows 'Removed:' not 'Removed symlink:'."""
+        args = argparse.Namespace(
+            skill_id="spillwave/plantuml",
+            agent="claude",
+            project=True,
+            yes=True,
+            verbose=False,
+        )
+
+        with patch("skilz.commands.remove_cmd.find_installed_skill") as mock_find:
+            mock_find.return_value = installed_skill_with_dir
+            result = cmd_remove(args)
+
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "Removed:" in captured.out
+        assert "Removed symlink:" not in captured.out

@@ -1,4 +1,6 @@
 # Python
+.env.jira 
+
 debugging/
 __pycache__/
 *.py[cod]

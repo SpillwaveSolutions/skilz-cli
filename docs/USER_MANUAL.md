@@ -82,8 +82,8 @@ See [Development](#development) for available development commands.
 ## Quick Start
 
 ```bash
-# Install a skill from the registry
-skilz install anthropics/web-artifacts-builder
+# Install a skill from the marketplace
+skilz install anthropics_skills/algorithmic-art
 
 # See what's installed
 skilz list
@@ -92,7 +92,7 @@ skilz list
 skilz update
 
 # Remove a skill you no longer need
-skilz remove web-artifacts-builder
+skilz remove algorithmic-art
 ```
 
 ---
@@ -111,7 +111,7 @@ skilz install <skill-id> [options]
 **Arguments:**
 | Argument | Description |
 |----------|-------------|
-| `skill-id` | The skill identifier (e.g., `anthropics/web-artifacts-builder`) |
+| `skill-id` | The skill identifier (e.g., `anthropics_skills/theme-factory`) |
 
 **Options:**
 | Option | Description |
@@ -124,22 +124,22 @@ skilz install <skill-id> [options]
 
 ```bash
 # Basic install (auto-detects agent)
-skilz install anthropics/web-artifacts-builder
+skilz install anthropics_skills/theme-factory
 
 # Install for specific agent
-skilz install anthropics/web-artifacts-builder --agent claude
-skilz install anthropics/web-artifacts-builder --agent opencode
+skilz install anthropics_skills/theme-factory --agent claude
+skilz install anthropics_skills/theme-factory --agent opencode
 
 # Install to project directory (for testing or project-specific skills)
-skilz install anthropics/web-artifacts-builder --project
+skilz install anthropics_skills/theme-factory --project
 
 # Verbose output to see what's happening
-skilz install anthropics/web-artifacts-builder -v
+skilz install anthropics_skills/theme-factory -v
 ```
 
 **What happens during install:**
 
-1. Skilz looks up the skill ID in the registry
+1. Skilz looks up the skill ID in the registry or marketplace API
 2. Clones the Git repository (or uses cached clone)
 3. Checks out the specific commit SHA from the registry
 4. Copies the skill files to the appropriate skills directory
@@ -149,7 +149,7 @@ skilz install anthropics/web-artifacts-builder -v
 
 If the skill is already installed with the same SHA, Skilz skips the installation:
 ```
-Already installed: anthropics/web-artifacts-builder (00756142)
+Already installed: anthropics_skills/theme-factory (00756142)
 ```
 
 ---
@@ -190,11 +190,11 @@ skilz list --json
 **Table Output:**
 
 ```
-Skill                             Version   Installed   Status
+Skill                               Version   Installed   Status
 ────────────────────────────────────────────────────────────────────────
-anthropics/web-artifacts-builder  00756142  2025-01-15  up-to-date
-spillwave/plantuml                f2489dcd  2025-01-15  up-to-date
-spillwave/design-doc-mermaid      e1c29a38  2025-01-15  outdated
+anthropics_skills/algorithmic-art   00756142  2025-01-15  up-to-date
+anthropics_skills/brand-guidelines  f2489dcd  2025-01-15  up-to-date
+anthropics_skills/theme-factory     e1c29a38  2025-01-15  outdated
 ```
 
 **Status Values:**
@@ -210,12 +210,12 @@ spillwave/design-doc-mermaid      e1c29a38  2025-01-15  outdated
 ```json
 [
   {
-    "skill_id": "anthropics/web-artifacts-builder",
-    "skill_name": "web-artifacts-builder",
+    "skill_id": "anthropics_skills/algorithmic-art",
+    "skill_name": "algorithmic-art",
     "git_sha": "00756142ab04c82a447693cf373c4e0c554d1005",
     "installed_at": "2025-01-15T14:32:00+00:00",
     "status": "up-to-date",
-    "path": "/Users/you/.claude/skills/web-artifacts-builder",
+    "path": "/Users/you/.claude/skills/algorithmic-art",
     "agent": "claude",
     "project_level": false
   }
@@ -253,7 +253,7 @@ skilz update [skill-id] [options]
 skilz update
 
 # Update a specific skill
-skilz update anthropics/web-artifacts-builder
+skilz update anthropics_skills/theme-factory
 
 # Preview what would be updated
 skilz update --dry-run
@@ -269,9 +269,9 @@ skilz update --agent claude
 
 ```
 Checking 3 installed skill(s)...
-  anthropics/web-artifacts-builder: up-to-date (00756142)
-  spillwave/plantuml: updating f2489dcd -> a1b2c3d4
-  spillwave/design-doc-mermaid: up-to-date (e1c29a38)
+  anthropics_skills/algorithmic-art: up-to-date (00756142)
+  anthropics_skills/brand-guidelines: updating f2489dcd -> a1b2c3d4
+  anthropics_skills/theme-factory: up-to-date (e1c29a38)
 
 Updated 1 skill(s), 2 already up-to-date
 ```
@@ -280,9 +280,9 @@ Updated 1 skill(s), 2 already up-to-date
 
 ```
 Checking 3 installed skill(s)...
-  anthropics/web-artifacts-builder: up-to-date (00756142)
-  spillwave/plantuml: would update f2489dcd -> a1b2c3d4
-  spillwave/design-doc-mermaid: up-to-date (e1c29a38)
+  anthropics_skills/algorithmic-art: up-to-date (00756142)
+  anthropics_skills/brand-guidelines: would update f2489dcd -> a1b2c3d4
+  anthropics_skills/theme-factory: up-to-date (e1c29a38)
 
 Would update 1 skill(s), 2 already up-to-date
 ```
@@ -315,23 +315,23 @@ skilz remove <skill-id> [options]
 
 ```bash
 # Remove with confirmation prompt
-skilz remove anthropics/web-artifacts-builder
+skilz remove anthropics_skills/theme-factory
 
 # Remove by skill name only
-skilz remove web-artifacts-builder
+skilz remove theme-factory
 
 # Skip confirmation (useful for scripts)
-skilz remove web-artifacts-builder -y
+skilz remove theme-factory -y
 
 # Remove from project directory
-skilz remove plantuml --project --yes
+skilz remove algorithmic-art --project --yes
 ```
 
 **Confirmation Prompt:**
 
 ```
-Remove anthropics/web-artifacts-builder from Claude Code? [y/N] y
-Removed: anthropics/web-artifacts-builder
+Remove anthropics_skills/theme-factory from Claude Code? [y/N] y
+Removed: anthropics_skills/theme-factory
 ```
 
 **Finding Skills by Name:**
@@ -340,9 +340,9 @@ You can use partial names if they're unambiguous:
 
 ```bash
 # These all work if there's only one matching skill:
-skilz remove anthropics/web-artifacts-builder  # Full ID
-skilz remove web-artifacts-builder             # Name only
-skilz remove artifacts                         # Partial match
+skilz remove anthropics_skills/theme-factory  # Full ID
+skilz remove theme-factory                    # Name only
+skilz remove factory                          # Partial match
 ```
 
 If the partial match is ambiguous, Skilz will report an error.
@@ -489,20 +489,20 @@ Skilz reads skill definitions from registry files in YAML format.
 ```yaml
 # .skilz/registry.yaml
 
-anthropics/web-artifacts-builder:
+anthropics_skills/algorithmic-art:
   git_repo: https://github.com/anthropics/skills.git
-  skill_path: /main/skills/web-artifacts-builder/SKILL.md
+  skill_path: /main/skills/algorithmic-art/SKILL.md
   git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
 
-spillwave/plantuml:
-  git_repo: https://github.com/SpillwaveSolutions/plantuml.git
-  skill_path: /main/SKILL.md
-  git_sha: f2489dcd47799e4aaff3ae0a34cde0ebf2288a66
+anthropics_skills/brand-guidelines:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/brand-guidelines/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
 
-spillwave/design-doc-mermaid:
-  git_repo: https://github.com/SpillwaveSolutions/design-doc-mermaid.git
-  skill_path: /v1.0.0/SKILL.md
-  git_sha: e1c29a38365c254c2fb0589e7bc1a11d23fc50a8
+anthropics_skills/theme-factory:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/theme-factory/SKILL.md
+  git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
 ```
 
 **Registry Fields:**
@@ -519,9 +519,9 @@ When Skilz installs a skill, it creates a `.skilz-manifest.yaml` file in the ski
 
 ```yaml
 installed_at: 2025-01-15T14:32:00+00:00
-skill_id: anthropics/web-artifacts-builder
+skill_id: anthropics_skills/theme-factory
 git_repo: https://github.com/anthropics/skills.git
-skill_path: /main/skills/web-artifacts-builder/SKILL.md
+skill_path: /main/skills/theme-factory/SKILL.md
 git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
 skilz_version: 0.1.0
 ```
@@ -673,9 +673,9 @@ Use `-y` or `--yes-all` to skip all confirmation prompts:
 #!/bin/bash
 # install-skills.sh - Install standard skills without prompts
 
-skilz -y install anthropics/web-artifacts-builder
-skilz -y install spillwave/plantuml
-skilz -y install spillwave/design-doc-mermaid
+skilz -y install anthropics_skills/algorithmic-art
+skilz -y install anthropics_skills/brand-guidelines
+skilz -y install anthropics_skills/theme-factory
 ```
 
 ### JSON Output for Scripting
@@ -690,8 +690,8 @@ skilz list --json | jq -r '.[] | select(.status == "outdated") | .skill_id'
 skilz list --json | jq length
 
 # Check if a specific skill is installed
-if skilz list --json | jq -e '.[] | select(.skill_id == "spillwave/plantuml")' > /dev/null; then
-    echo "plantuml is installed"
+if skilz list --json | jq -e '.[] | select(.skill_id == "anthropics_skills/algorithmic-art")' > /dev/null; then
+    echo "algorithmic-art is installed"
 fi
 ```
 
@@ -732,8 +732,8 @@ All skilz operations are idempotent - running them multiple times produces the s
 
 ```bash
 # Safe to run in CI/CD - won't reinstall if already at correct version
-skilz install anthropics/web-artifacts-builder
-skilz install anthropics/web-artifacts-builder  # No-op
+skilz install anthropics_skills/theme-factory
+skilz install anthropics_skills/theme-factory  # No-op
 
 # Update is also idempotent
 skilz update  # Only updates outdated skills
@@ -776,7 +776,7 @@ Error: Permission denied: /path/to/skills
 ### Skill already installed
 
 ```
-Already installed: anthropics/web-artifacts-builder (00756142)
+Already installed: anthropics_skills/theme-factory (00756142)
 ```
 
 This is normal behavior. Skilz is idempotent and skips reinstallation if the SHA matches.
@@ -1002,9 +1002,9 @@ anthropics/canvas-design:
   git_sha: 00756142ab04c82a447693cf373c4e0c554d1005
 ```
 
-# Help 
+# Help
 ```
-% skilz --help 
+% skilz --help
 usage: skilz [-h] [-V] [-v] {install,list,update,remove} ...
 
 The universal package manager for AI skills.
@@ -1023,7 +1023,7 @@ options:
   -v, --verbose         Enable verbose output
 
 Examples:
-  skilz install anthropics/web-artifacts-builder
+  skilz install anthropics_skills/theme-factory
   skilz install some-skill --agent opencode
   skilz --version
 
@@ -1031,21 +1031,18 @@ Examples:
 
 # Install a skill to project
 ```
-% skilz install anthropics/algorithmic-art --project
-Installed: anthropics/algorithmic-art -> Claude Code (project)
+% skilz install anthropics_skills/algorithmic-art --project
+Installed: anthropics_skills/algorithmic-art -> Claude Code (project)
 
 % skilz list --project
-Skill                             Version   Installed   Status    
+Skill                               Version   Installed   Status
 ──────────────────────────────────────────────────────────────────
-anthropics/algorithmic-art        00756142  2025-12-15  up-to-date
-anthropics/pdf                    00756142  2025-12-15  up-to-date
-anthropics/web-artifacts-builder  00756142  2025-12-14  up-to-date
-spillwave/design-doc-mermaid      e1c29a38  2025-12-14  up-to-date
-spillwave/gemini                  0c99433d  2025-12-15  up-to-date
-spillwave/plantuml                f2489dcd  2025-12-14  up-to-date
-spillwave/plantuml                f2489dcd  2025-12-14  up-to-date
+anthropics_skills/algorithmic-art   00756142  2025-12-15  up-to-date
+anthropics_skills/brand-guidelines  00756142  2025-12-15  up-to-date
+anthropics_skills/frontend-design   00756142  2025-12-14  up-to-date
+anthropics_skills/theme-factory     e1c29a38  2025-12-14  up-to-date
 
-% ls .claude/skills/algorithmic-art 
+% ls .claude/skills/algorithmic-art
 LICENSE.txt	SKILL.md	templates
 
 ```
@@ -1054,22 +1051,19 @@ LICENSE.txt	SKILL.md	templates
 
 ```
 
-% skilz remove anthropics/algorithmic-art --project
-Remove anthropics/algorithmic-art from Claude Code? [y/N] y
-Removed: anthropics/algorithmic-art
+% skilz remove anthropics_skills/algorithmic-art --project
+Remove anthropics_skills/algorithmic-art from Claude Code? [y/N] y
+Removed: anthropics_skills/algorithmic-art
 
-% ls .claude/skills/algorithmic-art                
+% ls .claude/skills/algorithmic-art
 ls: .claude/skills/algorithmic-art: No such file or directory
 
-% skilz list --project                             
-Skill                             Version   Installed   Status    
+% skilz list --project
+Skill                               Version   Installed   Status
 ──────────────────────────────────────────────────────────────────
-anthropics/pdf                    00756142  2025-12-15  up-to-date
-anthropics/web-artifacts-builder  00756142  2025-12-14  up-to-date
-spillwave/design-doc-mermaid      e1c29a38  2025-12-14  up-to-date
-spillwave/gemini                  0c99433d  2025-12-15  up-to-date
-spillwave/plantuml                f2489dcd  2025-12-14  up-to-date
-spillwave/plantuml                f2489dcd  2025-12-14  up-to-date
+anthropics_skills/brand-guidelines  00756142  2025-12-15  up-to-date
+anthropics_skills/frontend-design   00756142  2025-12-14  up-to-date
+anthropics_skills/theme-factory     e1c29a38  2025-12-14  up-to-date
 
 ```
 
@@ -1078,15 +1072,15 @@ spillwave/plantuml                f2489dcd  2025-12-14  up-to-date
 
 # Install a skill to user skills
 ```
-% skilz install anthropics/algorithmic-art 
-Installed: anthropics/algorithmic-art -> Claude Code (project)
+% skilz install anthropics_skills/algorithmic-art
+Installed: anthropics_skills/algorithmic-art -> Claude Code (user)
 
-% skilz list 
-Skill                             Version   Installed   Status    
+% skilz list
+Skill                               Version   Installed   Status
 ──────────────────────────────────────────────────────────────────
-anthropics/algorithmic-art  00756142  2025-12-15  up-to-date
+anthropics_skills/algorithmic-art   00756142  2025-12-15  up-to-date
 
-% ls  ~/.claude/skills/algorithmic-art 
+% ls  ~/.claude/skills/algorithmic-art
 LICENSE.txt	SKILL.md	templates
 
 ```
@@ -1096,14 +1090,14 @@ LICENSE.txt	SKILL.md	templates
 
 ```
 
-% skilz remove anthropics/algorithmic-art 
-Remove anthropics/algorithmic-art from Claude Code? [y/N] y
-Removed: anthropics/algorithmic-art
+% skilz remove anthropics_skills/algorithmic-art
+Remove anthropics_skills/algorithmic-art from Claude Code? [y/N] y
+Removed: anthropics_skills/algorithmic-art
 
-% ls ~/.claude/skills/algorithmic-art                
+% ls ~/.claude/skills/algorithmic-art
 ls: ~/.claude/skills/algorithmic-art: No such file or directory
 
-% skilz list    
+% skilz list
 No skills installed.
 
 ```
@@ -1113,9 +1107,9 @@ No skills installed.
 
 # Install a skill to user's skills opencode
 ```
-skilz install anthropics/algorithmic-art --agent opencode
+skilz install anthropics_skills/algorithmic-art --agent opencode
 skilz list --agent opencode
-ls  ~/.config/opencode/skills/algorithmic-art  
+ls  ~/.config/opencode/skills/algorithmic-art
 
 ```
 
@@ -1123,7 +1117,7 @@ ls  ~/.config/opencode/skills/algorithmic-art
 # Remove a skill from user's skills opencode
 
 ```
-skilz remove anthropics/algorithmic-art --agent opencode
+skilz remove anthropics_skills/algorithmic-art --agent opencode
 ls  ~/.config/opencode/skills/algorithmic-art
 skilz list --agent opencode
 ```

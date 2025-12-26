@@ -6,7 +6,7 @@ from typing import Any
 
 import yaml
 
-from skilz.errors import RegistryError, SkillNotFoundError
+from skilz.errors import GitError, RegistryError, SkillNotFoundError
 
 
 @dataclass
@@ -183,7 +183,20 @@ def lookup_skill(
             coords = fetch_skill_coordinates(owner, repo, skill_name, verbose=verbose)
 
             # Fetch SHA from GitHub (API doesn't provide it)
-            git_sha = fetch_github_sha(owner, repo, coords.branch, verbose=verbose)
+            # If this fails, fall back to "HEAD" - installer will resolve it
+            git_sha: str
+            sha_warning: str | None = None
+            try:
+                git_sha = fetch_github_sha(owner, repo, coords.branch, verbose=verbose)
+            except GitError as sha_err:
+                # GitHub API failed - use HEAD as fallback
+                git_sha = "HEAD"
+                sha_warning = (
+                    f"Could not fetch SHA from GitHub ({sha_err.reason}), "
+                    f"will use latest from {coords.branch}"
+                )
+                if verbose:
+                    print(f"  Warning: {sha_warning}")
 
             # Build git_repo URL
             git_repo = f"https://github.com/{coords.repo_full_name}.git"
@@ -195,7 +208,14 @@ def lookup_skill(
                 print(f"  Found via API: {coords.name}")
                 print(f"  Repo: {git_repo}")
                 print(f"  Path: {skill_path}")
-                print(f"  SHA: {git_sha[:8]}...")
+                if git_sha != "HEAD":
+                    print(f"  SHA: {git_sha[:8]}...")
+                else:
+                    print("  SHA: HEAD (will resolve during install)")
+
+            # Print warning even in non-verbose mode
+            if sha_warning and not verbose:
+                print(f"Warning: {sha_warning}")
 
             return SkillInfo(
                 skill_id=skill_id,

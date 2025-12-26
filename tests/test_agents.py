@@ -141,7 +141,8 @@ class TestGetAgentDisplayName:
 
     def test_opencode_display_name(self):
         """Get OpenCode display name."""
-        assert get_agent_display_name("opencode") == "OpenCode"
+        # Registry uses "OpenCode CLI" as the display name
+        assert get_agent_display_name("opencode") == "OpenCode CLI"
 
     def test_unknown_returns_raw(self):
         """Unknown agent returns raw value."""

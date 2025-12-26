@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.11"
+  TASK_VERSION: "3.38.0"
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ─────────────────────────────────────────────────────────────
+      # Python Setup with pip Caching
+      # ─────────────────────────────────────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'  # Built-in pip caching
+
+      - name: Install project with dev dependencies
+        run: pip install -e ".[dev]"
+
+      # ─────────────────────────────────────────────────────────────
+      # Task (go-task) Setup with Caching
+      # ─────────────────────────────────────────────────────────────
+      - name: Cache Task installation
+        id: cache-task
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/bin/task
+          key: task-${{ env.TASK_VERSION }}-${{ runner.os }}
+
+      - name: Install Task
+        if: steps.cache-task.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.local/bin
+          curl -sL "https://github.com/go-task/task/releases/download/v$TASK_VERSION/task_linux_amd64.tar.gz" | tar xz -C ~/.local/bin task
+          chmod +x ~/.local/bin/task
+
+      - name: Add Task to PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # ─────────────────────────────────────────────────────────────
+      # Quality Checks
+      # ─────────────────────────────────────────────────────────────
+      - name: Run linting
+        id: lint
+        run: task lint
+
+      - name: Run format check
+        id: format
+        run: task format:check
+
+      - name: Run type checking
+        id: typecheck
+        run: task typecheck
+
+      - name: Run tests
+        id: test
+        run: task test
+
+      - name: Run coverage
+        id: coverage
+        run: task coverage
+        continue-on-error: true
