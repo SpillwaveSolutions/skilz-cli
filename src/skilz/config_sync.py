@@ -127,13 +127,14 @@ def detect_project_config_files(
     results: list[tuple[str, Path]] = []
 
     if agent:
-        # Only check the specified agent
+        # Only check the specified agent - return only existing files
+        # If none exist, sync_skill_to_configs will create the first one
         agent_config = registry.get(agent)
         if agent_config:
             for config_file in agent_config.config_files:
                 config_path = project_dir / config_file
-                # Return the path even if it doesn't exist - we may create it
-                results.append((agent, config_path))
+                if config_path.exists():
+                    results.append((agent, config_path))
     else:
         # Check all agents for existing config files
         for agent_name in registry.list_agents():
