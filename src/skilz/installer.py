@@ -17,6 +17,7 @@ from skilz.errors import InstallError
 from skilz.git_ops import (
     checkout_sha,
     clone_or_fetch,
+    find_skill_by_name,
     get_skill_source_path,
     parse_skill_path,
 )
@@ -183,11 +184,26 @@ def install_skill(
     source_dir = get_skill_source_path(cache_path, skill_info.skill_path)
 
     if not source_dir.exists():
-        raise InstallError(
-            skill_id,
-            f"Skill path not found in repository: {skill_info.skill_path}\n"
-            f"Expected at: {source_dir}",
-        )
+        # Path not found - skill may have been reorganized in the repo
+        # Try to find it by searching for SKILL.md files with matching name
+        if verbose:
+            print(f"  Path '{skill_info.skill_path}' not found, searching repository...")
+
+        found_path = find_skill_by_name(cache_path, skill_info.skill_name, verbose=verbose)
+
+        if found_path:
+            source_dir = found_path
+            if verbose:
+                rel_path = source_dir.relative_to(cache_path)
+                print(f"  Using found location: {rel_path}")
+        else:
+            raise InstallError(
+                skill_id,
+                f"Skill path not found in repository: {skill_info.skill_path}\n"
+                f"Expected at: {source_dir}\n"
+                f"Searched for skill named '{skill_info.skill_name}' but could not find it.\n"
+                f"The skill may have been removed from the repository.",
+            )
 
     # Step 9: Install files based on mode
     canonical_path: Path | None = None

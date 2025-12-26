@@ -224,6 +224,81 @@ def get_skill_source_path(cache_path: Path, skill_path: str) -> Path:
     return cache_path / relative_path if relative_path else cache_path
 
 
+def find_skill_by_name(cache_path: Path, skill_name: str, verbose: bool = False) -> Path | None:
+    """
+    Search for a skill by name when the expected path doesn't exist.
+
+    This handles cases where skills have been reorganized in the repo
+    but the registry/API has stale path data.
+
+    Args:
+        cache_path: Path to the cached repository.
+        skill_name: The skill name to search for (e.g., "web-artifacts-builder").
+        verbose: If True, print progress information.
+
+    Returns:
+        Path to the skill directory if found, None otherwise.
+    """
+    if verbose:
+        print(f"  Searching for skill '{skill_name}' in repository...")
+
+    # Find all SKILL.md files in the repo
+    skill_files = list(cache_path.rglob("SKILL.md"))
+
+    # Filter out .git directory matches
+    skill_files = [p for p in skill_files if ".git" not in p.parts]
+
+    if verbose:
+        print(f"  Found {len(skill_files)} SKILL.md files")
+
+    # Look for exact directory name match
+    matches = []
+    for skill_file in skill_files:
+        skill_dir = skill_file.parent
+        if skill_dir.name == skill_name:
+            matches.append(skill_dir)
+
+    if len(matches) == 1:
+        if verbose:
+            rel_path = matches[0].relative_to(cache_path)
+            print(f"  Found skill at: {rel_path}")
+        return matches[0]
+    elif len(matches) > 1:
+        if verbose:
+            print(f"  Warning: Multiple matches found for '{skill_name}':")
+            for match in matches:
+                print(f"    - {match.relative_to(cache_path)}")
+        # Return the first match (could be improved with more heuristics)
+        return matches[0]
+
+    # No exact match - try partial matching
+    if verbose:
+        print("  No exact match, checking SKILL.md files for name field...")
+
+    for skill_file in skill_files:
+        try:
+            content = skill_file.read_text()
+            # Check YAML frontmatter for name field
+            if content.startswith("---"):
+                end_idx = content.find("---", 3)
+                if end_idx > 0:
+                    frontmatter = content[3:end_idx]
+                    for line in frontmatter.split("\n"):
+                        if line.startswith("name:"):
+                            name_value = line.split(":", 1)[1].strip().strip("'\"")
+                            if name_value == skill_name:
+                                if verbose:
+                                    rel_path = skill_file.parent.relative_to(cache_path)
+                                    print(f"  Found skill by name field at: {rel_path}")
+                                return skill_file.parent
+        except OSError:
+            continue
+
+    if verbose:
+        print(f"  Could not find skill '{skill_name}' in repository")
+    return None
+
+
 def parse_skill_path(skill_path: str) -> tuple[str, str]:
     """
     Parse a skill path into branch and relative path components.

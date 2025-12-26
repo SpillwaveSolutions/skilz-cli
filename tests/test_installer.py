@@ -198,7 +198,7 @@ class TestInstallSkill:
         assert "Updated" in captured.out
 
     def test_install_source_not_found(self, temp_dir, mock_dependencies):
-        """Test error when skill source path doesn't exist."""
+        """Test error when skill source path doesn't exist and fallback search fails."""
         deps = mock_dependencies
         nonexistent = temp_dir / "nonexistent"
 
@@ -212,6 +212,7 @@ class TestInstallSkill:
             patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
             patch("skilz.installer.checkout_sha"),
             patch("skilz.installer.get_skill_source_path", return_value=nonexistent),
+            patch("skilz.installer.find_skill_by_name", return_value=None),
         ):
             with pytest.raises(InstallError) as exc:
                 install_skill("test/skill", project_level=True)
