@@ -88,7 +88,7 @@ def _extract_description_from_skill(skill_path: Path) -> str:
         # Fallback: look for first paragraph after title
         lines = content.split("\n")
         in_paragraph = False
-        paragraph = []
+        paragraph: list[str] = []
         for line in lines:
             if line.startswith("#"):
                 in_paragraph = True
