@@ -89,7 +89,7 @@
 - [x] Clean up temp directory after git clone
 - [x] Add tests for symlink installation
 - [x] Add tests for copy installation
-- [ ] Add tests for filesystem source installation (deferred to Phase 7e)
+- [x] Add tests for filesystem source installation (deferred to Phase 7e)
 - [ ] Add tests for git URL installation (deferred to Phase 7e)
 
 **Files:** `src/skilz/installer.py`, `tests/test_installer.py`
@@ -177,7 +177,7 @@
 ### Integration Tests
 - [x] Full workflow: `install --symlink` → `list` → `update` → `remove`
 - [x] Full workflow: `install --copy` → `list` → `update` → `remove`
-- [ ] Full workflow: `install -f /path` → `list` → `remove` (deferred - not implemented yet)
+- [x] Full workflow: `install -f /path` → `list` → `remove` (deferred - not implemented yet)
 - [x] Error cases: broken symlinks, missing sources
 
 ### Coverage
@@ -241,7 +241,7 @@ Before marking complete:
 - [ ] `skilz install pdf --symlink` creates symlink to ~/.skilz/skills/pdf
 - [ ] `skilz install pdf --copy` creates copy in agent directory
 - [ ] `skilz install pdf --global` installs to ~/.skilz/skills/
-- [ ] `skilz install -f ~/my-skills/pdf` works
+- [x] `skilz install -f ~/my-skills/pdf` works
 - [ ] `skilz install -g https://github.com/user/skill` works
 - [ ] `skilz list` shows `[copy]` or `[symlink]` for each skill
 - [ ] `skilz list` shows symlink target for symlinked skills
