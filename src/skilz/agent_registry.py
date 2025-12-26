@@ -154,7 +154,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             project_dir=Path(".skilz") / "skills",
             config_files=("GEMINI.md",),
             supports_home=False,
-            default_mode="symlink",
+            default_mode="copy",
             native_skill_support="none",
         ),
         "copilot": AgentConfig(
@@ -164,7 +164,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             project_dir=Path(".github") / "copilot" / "skills",
             config_files=(".github/copilot-instructions.md",),
             supports_home=False,
-            default_mode="symlink",
+            default_mode="copy",
             native_skill_support="none",
         ),
         "aider": AgentConfig(
@@ -174,7 +174,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             project_dir=Path(".skills") / "skills",
             config_files=("CONVENTIONS.md",),
             supports_home=False,
-            default_mode="symlink",
+            default_mode="copy",
             native_skill_support="none",
         ),
         "cursor": AgentConfig(
@@ -184,7 +184,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             project_dir=Path(".skills") / "skills",
             config_files=(".cursor/rules/RULES.md", ".cursor/rules/RULE.md"),
             supports_home=False,
-            default_mode="symlink",
+            default_mode="copy",
             native_skill_support="none",
             uses_folder_rules=True,
         ),
@@ -195,7 +195,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             project_dir=Path(".skills") / "skills",
             config_files=(),
             supports_home=False,
-            default_mode="symlink",
+            default_mode="copy",
             native_skill_support="none",
         ),
         "qwen": AgentConfig(
@@ -205,7 +205,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             project_dir=Path(".skills") / "skills",
             config_files=("QWEN.md", "CONTEXT.md"),
             supports_home=False,
-            default_mode="symlink",
+            default_mode="copy",
             native_skill_support="none",
         ),
         "crush": AgentConfig(
@@ -215,7 +215,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             project_dir=Path(".skills") / "skills",
             config_files=(),
             supports_home=False,
-            default_mode="symlink",
+            default_mode="copy",
             native_skill_support="none",
         ),
         "kimi": AgentConfig(
@@ -225,7 +225,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             project_dir=Path(".skills") / "skills",
             config_files=(),
             supports_home=False,
-            default_mode="symlink",
+            default_mode="copy",
             native_skill_support="none",
         ),
         "plandex": AgentConfig(
@@ -235,7 +235,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             project_dir=Path(".skills") / "skills",
             config_files=(),
             supports_home=False,
-            default_mode="symlink",
+            default_mode="copy",
             native_skill_support="none",
         ),
         "zed": AgentConfig(
@@ -245,7 +245,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             project_dir=Path(".skills") / "skills",
             config_files=(),
             supports_home=False,
-            default_mode="symlink",
+            default_mode="copy",
             native_skill_support="none",
         ),
         "universal": AgentConfig(

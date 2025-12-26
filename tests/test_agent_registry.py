@@ -163,7 +163,7 @@ class TestBuiltinAgents:
         assert gemini.display_name == "Gemini CLI"
         assert gemini.home_dir is None
         assert gemini.supports_home is False
-        assert gemini.default_mode == "symlink"
+        assert gemini.default_mode == "copy"  # copy for agents without native support
         assert gemini.native_skill_support == "none"
 
     def test_cursor_uses_folder_rules(self):
