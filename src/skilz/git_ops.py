@@ -232,7 +232,7 @@ def get_branch_sha(cache_path: Path, branch: str = "main", verbose: bool = False
         )
 
         if result.returncode == 0:
-            sha = result.stdout.strip()
+            sha: str = result.stdout.strip()
             if len(sha) == 40:
                 if verbose:
                     if ref != f"origin/{branch}" and ref != branch:
@@ -482,8 +482,8 @@ def fetch_github_tag_sha(
 
                 # The ref object contains the SHA
                 obj = data.get("object", {})
-                obj_type = obj.get("type", "")
-                sha = obj.get("sha", "")
+                obj_type = str(obj.get("type", ""))
+                sha: str = str(obj.get("sha", ""))
 
                 # If it's a tag object (annotated tag), we need to dereference it
                 if obj_type == "tag":
@@ -499,7 +499,7 @@ def fetch_github_tag_sha(
                         )
                         with urllib.request.urlopen(req2, timeout=30) as tag_response:
                             tag_data = json.loads(tag_response.read().decode("utf-8"))
-                            sha = tag_data.get("object", {}).get("sha", "")
+                            sha = str(tag_data.get("object", {}).get("sha", ""))
 
                 if sha and len(sha) == 40:
                     if verbose:
