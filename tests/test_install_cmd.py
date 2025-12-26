@@ -21,6 +21,7 @@ class TestCmdInstall:
             git=None,
             copy=False,
             symlink=False,
+            version_spec=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -33,6 +34,7 @@ class TestCmdInstall:
             project_level=True,
             verbose=False,
             mode=None,
+            version_spec=None,
         )
 
     def test_install_with_agent(self):
@@ -46,6 +48,7 @@ class TestCmdInstall:
             git=None,
             copy=False,
             symlink=False,
+            version_spec=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -58,6 +61,7 @@ class TestCmdInstall:
             project_level=False,
             verbose=True,
             mode=None,
+            version_spec=None,
         )
 
     def test_install_with_claude_agent(self):
@@ -71,6 +75,7 @@ class TestCmdInstall:
             git=None,
             copy=False,
             symlink=False,
+            version_spec=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -83,6 +88,7 @@ class TestCmdInstall:
             project_level=True,
             verbose=False,
             mode=None,
+            version_spec=None,
         )
 
     def test_install_skill_not_found_error(self, capsys):
@@ -181,20 +187,21 @@ class TestCmdInstall:
             git=None,
             copy=False,
             symlink=False,
-            # No verbose attribute
+            # No verbose attribute - version_spec also omitted
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
             result = cmd_install(args)
 
         assert result == 0
-        # Should default to False for verbose
+        # Should default to False for verbose and None for version_spec
         mock_install.assert_called_once_with(
             skill_id="test/skill",
             agent=None,
             project_level=True,
             verbose=False,
             mode=None,
+            version_spec=None,
         )
 
     def test_install_with_copy_flag(self):
@@ -208,6 +215,7 @@ class TestCmdInstall:
             git=None,
             copy=True,
             symlink=False,
+            version_spec=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -220,6 +228,7 @@ class TestCmdInstall:
             project_level=False,
             verbose=False,
             mode="copy",
+            version_spec=None,
         )
 
     def test_install_with_symlink_flag(self):
@@ -233,6 +242,7 @@ class TestCmdInstall:
             git=None,
             copy=False,
             symlink=True,
+            version_spec=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -245,6 +255,7 @@ class TestCmdInstall:
             project_level=False,
             verbose=False,
             mode="symlink",
+            version_spec=None,
         )
 
     def test_install_no_source_error(self, capsys):

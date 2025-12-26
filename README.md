@@ -53,26 +53,26 @@ For detailed usage instructions, see the [User Manual](docs/USER_MANUAL.md).
 ## Quick Start
 
 ```bash
-# Install a skill (defaults to Claude Code, user-level)
-skilz install anthropics/web-artifacts-builder
+# Install a skill from the marketplace (defaults to Claude Code, user-level)
+skilz install anthropics_skills/algorithmic-art
 
 # Install for a specific agent
-skilz install spillwave/plantuml --agent gemini
+skilz install anthropics_skills/brand-guidelines --agent gemini
 
 # Install at project level (for sandboxed agents)
-skilz install spillwave/plantuml --agent copilot --project
+skilz install anthropics_skills/frontend-design --agent copilot --project
 
 # List installed skills
 skilz list
 
 # Read skill content (for agents without native skill loading)
-skilz read plantuml
+skilz read algorithmic-art
 
 # Update all skills to latest registry versions
 skilz update
 
 # Remove a skill
-skilz remove anthropics/web-artifacts-builder
+skilz remove anthropics_skills/algorithmic-art
 ```
 
 Each install command:
@@ -93,13 +93,13 @@ Each install command:
 
 **Example:**
 
-The skill page for [Web Artifacts Builder](https://skillzwave.ai/skill/anthropics__skills__web-artifacts-builder__SKILL/) shows:
+The skill page for [Theme Factory](https://skillzwave.ai/skill/anthropics_skills/theme-factory/) shows:
 
 ```bash
-skilz install anthropics/web-artifacts-builder
+skilz install anthropics_skills/theme-factory
 ```
 
-The string `anthropics/web-artifacts-builder` is the **Skill ID** — an opaque identifier that may contain `/` characters.
+The string `anthropics_skills/theme-factory` is the **Skill ID** — the format is `owner_repo/skill-name` where underscores separate owner and repo.
 
 ---
 
@@ -120,13 +120,13 @@ The registry tells Skilz exactly where to find each skill and which version to i
 
 ### `skilz install <skill-id>`
 
-Install a skill from the registry.
+Install a skill from the registry or marketplace.
 
 ```bash
-skilz install anthropics/web-artifacts-builder        # Auto-detect agent
-skilz install anthropics/web-artifacts-builder --agent claude
-skilz install anthropics/web-artifacts-builder --agent opencode
-skilz install anthropics/web-artifacts-builder --project  # Project-level
+skilz install anthropics_skills/theme-factory           # Auto-detect agent
+skilz install anthropics_skills/theme-factory --agent claude
+skilz install anthropics_skills/theme-factory --agent opencode
+skilz install anthropics_skills/theme-factory --project # Project-level
 ```
 
 ### `skilz list`
@@ -142,10 +142,10 @@ skilz list --json            # Output as JSON
 
 **Output example:**
 ```
-Skill                             Version   Installed   Status
+Skill                               Version   Installed   Status
 ────────────────────────────────────────────────────────────────────────
-anthropics/web-artifacts-builder  00756142  2025-01-15  up-to-date
-spillwave/plantuml                f2489dcd  2025-01-15  outdated
+anthropics_skills/algorithmic-art   00756142  2025-01-15  up-to-date
+anthropics_skills/theme-factory     f2489dcd  2025-01-15  outdated
 ```
 
 ### `skilz update [skill-id]`
@@ -153,10 +153,10 @@ spillwave/plantuml                f2489dcd  2025-01-15  outdated
 Update installed skills to match registry versions.
 
 ```bash
-skilz update                              # Update all skills
-skilz update anthropics/web-artifacts     # Update specific skill
-skilz update --dry-run                    # Show what would be updated
-skilz update --project                    # Update project-level skills
+skilz update                                    # Update all skills
+skilz update anthropics_skills/algorithmic-art  # Update specific skill
+skilz update --dry-run                          # Show what would be updated
+skilz update --project                          # Update project-level skills
 ```
 
 ### `skilz remove <skill-id>`
@@ -164,9 +164,9 @@ skilz update --project                    # Update project-level skills
 Remove an installed skill.
 
 ```bash
-skilz remove anthropics/web-artifacts     # Prompts for confirmation
-skilz remove anthropics/web-artifacts -y  # Skip confirmation
-skilz remove plantuml --project           # Remove by name
+skilz remove anthropics_skills/theme-factory    # Prompts for confirmation
+skilz remove anthropics_skills/theme-factory -y # Skip confirmation
+skilz remove theme-factory --project            # Remove by name
 ```
 
 For complete documentation including troubleshooting and advanced examples, see the [User Manual](docs/USER_MANUAL.md).
@@ -207,14 +207,14 @@ The registry is a YAML file mapping Skill IDs to their source locations.
 ```yaml
 # .skilz/registry.yaml
 
-anthropics/web-artifacts-builder:
-  git_repo: git@github.com:anthropics/skills.git
-  skill_path: /main/skills/web-artifacts-builder/SKILL.md
+anthropics_skills/algorithmic-art:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/algorithmic-art/SKILL.md
   git_sha: ee131b98d0e39c27b5e69ba84603b49254b0119d
 
-anthropics/document-generator:
-  git_repo: git@github.com:anthropics/skills.git
-  skill_path: /main/skills/document-generator/SKILL.md
+anthropics_skills/theme-factory:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: /main/skills/theme-factory/SKILL.md
   git_sha: ee131b98d0e39c27b5e69ba84603b49254b0119d
 
 my-company/internal-skill:
@@ -230,13 +230,13 @@ Phase 2 extends the registry to support plugin-based installs:
 ```yaml
 # .skilz/registry.yaml
 
-some-org/marketplace-skill:
-  git_repo: git@github.com:some-org/skills-repo.git
-  skill_path: skills/marketplace-skill
+anthropics_skills/frontend-design:
+  git_repo: https://github.com/anthropics/skills.git
+  skill_path: skills/frontend-design
   git_sha: ee131b98d0e39c27b5e69ba84603b49254b0119d
   plugin: true
   marketplace_path: /main/.claude-plugin/marketplace.json
-  plugin_id: marketplace-skill
+  plugin_id: frontend-design
 ```
 
 ---
@@ -373,9 +373,9 @@ When Skilz installs a skill, it writes a `.skilz-manifest.yaml` file into the sk
 
 ```yaml
 installed_at: 2025-01-15T14:32:00Z
-skill_id: anthropics/web-artifacts-builder
-git_repo: git@github.com:anthropics/skills.git
-skill_path: /main/skills/web-artifacts-builder/SKILL.md
+skill_id: anthropics_skills/theme-factory
+git_repo: https://github.com/anthropics/skills.git
+skill_path: /main/skills/theme-factory/SKILL.md
 git_sha: ee131b98d0e39c27b5e69ba84603b49254b0119d
 skilz_version: 0.1.0
 ```

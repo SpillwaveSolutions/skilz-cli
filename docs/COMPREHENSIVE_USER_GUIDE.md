@@ -28,16 +28,16 @@ Skilz is like npm or pip, but for AI coding assistants. It lets you install, man
 pip install skilz
 
 # Install a skill for Claude Code (user-level, available in all projects)
-skilz install anthropics/web-artifacts-builder
+skilz install anthropics_skills/algorithmic-art
 
 # Install a skill for Gemini CLI (project-level, in current directory)
-skilz install spillwave/plantuml --agent gemini
+skilz install anthropics_skills/brand-guidelines --agent gemini
 
 # List installed skills
 skilz list
 
 # Read a skill (for AI agents to load)
-skilz read plantuml
+skilz read algorithmic-art
 ```
 
 ---
@@ -121,16 +121,16 @@ Skills installed at the user level are available in ALL projects:
 
 ```bash
 # Claude Code - installs to ~/.claude/skills/
-skilz install anthropics/web-artifacts-builder --agent claude
+skilz install anthropics_skills/theme-factory --agent claude
 
 # OpenAI Codex - installs to ~/.codex/skills/
-skilz install anthropics/web-artifacts-builder --agent codex
+skilz install anthropics_skills/theme-factory --agent codex
 
 # OpenCode CLI - installs to ~/.config/opencode/skills/
-skilz install anthropics/web-artifacts-builder --agent opencode
+skilz install anthropics_skills/theme-factory --agent opencode
 
 # Universal - installs to ~/.skilz/skills/
-skilz install anthropics/web-artifacts-builder --agent universal
+skilz install anthropics_skills/theme-factory --agent universal
 ```
 
 ### Project-Level Installation
@@ -172,10 +172,10 @@ skilz install spillwave/plantuml --agent gemini  # Always project-level
 
 ```bash
 # User-level (recommended - available everywhere)
-skilz install anthropics/web-artifacts-builder --agent claude
+skilz install anthropics_skills/frontend-design --agent claude
 
 # Project-level
-skilz install anthropics/web-artifacts-builder --agent claude --project
+skilz install anthropics_skills/frontend-design --agent claude --project
 
 # List skills
 skilz list --agent claude
@@ -194,10 +194,10 @@ skilz list --agent claude
 
 ```bash
 # User-level (recommended)
-skilz install anthropics/web-artifacts-builder --agent codex
+skilz install anthropics_skills/frontend-design --agent codex
 
 # Project-level
-skilz install anthropics/web-artifacts-builder --agent codex --project
+skilz install anthropics_skills/frontend-design --agent codex --project
 
 # List skills
 skilz list --agent codex
@@ -216,10 +216,10 @@ skilz list --agent codex
 
 ```bash
 # User-level
-skilz install anthropics/web-artifacts-builder --agent opencode
+skilz install anthropics_skills/frontend-design --agent opencode
 
 # Project-level
-skilz install anthropics/web-artifacts-builder --agent opencode --project
+skilz install anthropics_skills/frontend-design --agent opencode --project
 
 # List skills
 skilz list --agent opencode
@@ -378,6 +378,47 @@ skilz install -f /path/to/skill --agent gemini
 # From git URL
 skilz install -g https://github.com/user/skill-repo --agent claude
 ```
+
+#### Version Control with `--version`
+
+The `--version` flag lets you install specific versions of a skill:
+
+```bash
+# Install the marketplace version (default)
+skilz install anthropics_skills/theme-factory
+
+# Install latest from the default branch
+skilz install anthropics_skills/theme-factory --version latest
+
+# Install a specific git tag
+skilz install anthropics_skills/theme-factory --version v1.0.0
+
+# Install from a specific branch
+skilz install anthropics_skills/theme-factory --version branch:develop
+
+# Install a specific commit SHA
+skilz install anthropics_skills/theme-factory --version abc123def456...
+```
+
+**Version Resolution Order:**
+
+| Version Spec | What it Does |
+|--------------|--------------|
+| _(none)_ | Uses the marketplace/registry version (default, recommended) |
+| `latest` | Gets the latest commit from the default branch |
+| `v1.0.0` or `1.0.0` | Tries as a git tag (both with and without `v` prefix) |
+| `branch:NAME` | Uses the latest commit from the specified branch |
+| `40-char hex` | Uses the exact commit SHA |
+
+**Fallback Behavior:**
+
+If the GitHub API is unavailable or returns an error, skilz automatically:
+1. Falls back to `HEAD` (latest commit)
+2. Resolves the actual SHA after cloning
+3. Tries multiple branch names if the specified branch doesn't exist (origin/HEAD, origin/main, origin/master)
+4. Prints a warning so you know a fallback occurred
+
+This ensures `skilz install` always works, even with flaky network conditions.
 
 ### List
 
@@ -546,9 +587,9 @@ Or configure to share the same project directory:
 
 ```bash
 # Install skills at user level - available everywhere
-skilz install anthropics/web-artifacts-builder
-skilz install spillwave/design-doc-mermaid
-skilz install spillwave/plantuml
+skilz install anthropics_skills/algorithmic-art
+skilz install anthropics_skills/brand-guidelines
+skilz install anthropics_skills/theme-factory
 
 # List what you have
 skilz list

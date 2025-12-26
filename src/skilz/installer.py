@@ -18,8 +18,10 @@ from skilz.git_ops import (
     checkout_sha,
     clone_or_fetch,
     find_skill_by_name,
+    get_branch_sha,
     get_skill_source_path,
     parse_skill_path,
+    resolve_version_spec,
 )
 from skilz.link_ops import (
     InstallMode,
@@ -89,6 +91,7 @@ def install_skill(
     project_level: bool = False,
     verbose: bool = False,
     mode: InstallMode | None = None,
+    version_spec: str | None = None,
 ) -> None:
     """
     Install a skill from the registry.
@@ -101,6 +104,12 @@ def install_skill(
         mode: Installation mode ("copy" or "symlink"). If None, uses agent's default.
               - copy: Copies files directly to agent's skills directory.
               - symlink: Creates canonical copy in ~/.skilz/skills/, then symlinks.
+        version_spec: Version specification to install:
+              - None: Use marketplace version (default)
+              - "latest": Latest commit from main branch
+              - "branch:NAME": Latest commit from specified branch
+              - 40-char hex: Specific commit SHA
+              - Other: Treat as tag (tries "X" and "vX" formats)
 
     Raises:
         SkillNotFoundError: If the skill ID is not found in any registry.
@@ -146,15 +155,44 @@ def install_skill(
         print(f"  Path: {skill_info.skill_path}")
         print(f"  SHA: {skill_info.git_sha[:8]}...")
 
+    # Step 2b: Resolve version if specified
+    resolved_sha = skill_info.git_sha
+    if version_spec is not None:
+        # Parse owner/repo from git URL
+        # Handles: https://github.com/owner/repo.git or git@github.com:owner/repo.git
+        git_url = skill_info.git_repo
+        if "github.com" in git_url:
+            # Extract owner/repo from URL
+            if git_url.startswith("git@"):
+                # git@github.com:owner/repo.git
+                parts = git_url.split(":")[-1]
+            else:
+                # https://github.com/owner/repo.git
+                parts = git_url.split("github.com/")[-1]
+            parts = parts.rstrip(".git")
+            owner_repo = parts.split("/")
+            if len(owner_repo) >= 2:
+                owner, repo = owner_repo[0], owner_repo[1]
+                if verbose:
+                    print(f"Resolving version '{version_spec}'...")
+                resolved_sha = resolve_version_spec(
+                    owner, repo, version_spec, skill_info.git_sha, verbose=verbose
+                )
+                if resolved_sha != skill_info.git_sha and verbose:
+                    print(f"  Resolved to SHA: {resolved_sha[:8]}...")
+        else:
+            if verbose:
+                print("  Warning: --version only supported for GitHub repos, using default")
+
     # Step 3: Determine target directory
     skills_dir = ensure_skills_dir(resolved_agent, project_level)
     target_dir = skills_dir / skill_info.skill_name
 
     # Step 4: Check if installation is needed
-    should_install, reason = needs_install(target_dir, skill_info.git_sha)
+    should_install, reason = needs_install(target_dir, resolved_sha)
 
     if not should_install:
-        print(f"Already installed: {skill_id} ({skill_info.git_sha[:8]})")
+        print(f"Already installed: {skill_id} ({resolved_sha[:8]})")
         return
 
     if verbose:
@@ -174,11 +212,17 @@ def install_skill(
     # Step 6: Parse skill path to get branch
     branch, _ = parse_skill_path(skill_info.skill_path)
 
+    # Step 6b: Resolve "HEAD" to actual SHA if needed (fallback from API)
+    if resolved_sha == "HEAD":
+        if verbose:
+            print(f"Resolving HEAD to actual SHA for branch '{branch}'...")
+        resolved_sha = get_branch_sha(cache_path, branch, verbose=verbose)
+
     # Step 7: Checkout the specific SHA
     if verbose:
-        print(f"Checking out {skill_info.git_sha[:8]}...")
+        print(f"Checking out {resolved_sha[:8]}...")
 
-    checkout_sha(cache_path, skill_info.git_sha, verbose=verbose)
+    checkout_sha(cache_path, resolved_sha, verbose=verbose)
 
     # Step 8: Get the source path within the repo
     source_dir = get_skill_source_path(cache_path, skill_info.skill_path)
@@ -225,7 +269,7 @@ def install_skill(
             skill_id=skill_info.skill_id,
             git_repo=skill_info.git_repo,
             skill_path=skill_info.skill_path,
-            git_sha=skill_info.git_sha,
+            git_sha=resolved_sha,
             install_mode="symlink",
             canonical_path=str(canonical_path),
         )
@@ -255,7 +299,7 @@ def install_skill(
             skill_id=skill_info.skill_id,
             git_repo=skill_info.git_repo,
             skill_path=skill_info.skill_path,
-            git_sha=skill_info.git_sha,
+            git_sha=resolved_sha,
             install_mode="copy",
         )
         write_manifest(target_dir, manifest)

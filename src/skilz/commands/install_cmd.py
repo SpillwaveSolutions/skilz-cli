@@ -25,6 +25,7 @@ def cmd_install(args: argparse.Namespace) -> int:
     agent: AgentType | None = getattr(args, "agent", None)
     project_level: bool = getattr(args, "project", False)
     skill_id: str | None = getattr(args, "skill_id", None)
+    version_spec: str | None = getattr(args, "version_spec", None)
 
     # Handle source options
     file_path: str | None = getattr(args, "file", None)
@@ -61,6 +62,7 @@ def cmd_install(args: argparse.Namespace) -> int:
             project_level=project_level,
             verbose=verbose,
             mode=mode,
+            version_spec=version_spec,
         )
         return 0
     except SkilzError as e:

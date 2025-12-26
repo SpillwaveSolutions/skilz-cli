@@ -128,6 +128,17 @@ Supported agents: {", ".join(agent_choices)}
         metavar="URL",
         help="Install from a git repository URL",
     )
+    install_parser.add_argument(
+        "--version",
+        dest="version_spec",
+        metavar="VERSION",
+        help=(
+            "Version to install: 'latest' (latest from main), "
+            "'branch:NAME' (latest from branch), "
+            "SHA (specific commit), or TAG (e.g., 1.0.1 -> v1.0.1). "
+            "Default: use marketplace version"
+        ),
+    )
 
     # List command
     list_parser = subparsers.add_parser(
