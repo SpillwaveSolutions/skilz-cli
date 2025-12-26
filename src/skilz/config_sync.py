@@ -80,7 +80,8 @@ def _extract_description_from_skill(skill_path: Path) -> str:
             if end_idx > 0:
                 frontmatter = content[3:end_idx]
                 # Simple regex to extract description
-                match = re.search(r"description:\s*['\"]?(.+?)['\"]?\s*$", frontmatter, re.MULTILINE)
+                desc_pattern = r"description:\s*['\"]?(.+?)['\"]?\s*$"
+                match = re.search(desc_pattern, frontmatter, re.MULTILINE)
                 if match:
                     return match.group(1).strip()
 
@@ -177,9 +178,6 @@ def format_skill_element(
     if not description:
         description = f"Skill: {skill.skill_id}"
 
-    # Determine location type
-    location = "project"  # For now, all installed skills are project-level
-
     return f"""<skill>
 <name>{skill.skill_name}</name>
 <description>{description}</description>
@@ -244,7 +242,11 @@ def _parse_existing_skills(content: str) -> list[tuple[str, str, str]]:
     section = content[start_match.end() : end_match.start()]
 
     # Extract skill elements
-    skill_pattern = r"<skill>\s*<name>([^<]+)</name>\s*<description>([^<]*)</description>\s*<location>([^<]+)</location>\s*</skill>"
+    skill_pattern = (
+        r"<skill>\s*<name>([^<]+)</name>\s*"
+        r"<description>([^<]*)</description>\s*"
+        r"<location>([^<]+)</location>\s*</skill>"
+    )
     for match in re.finditer(skill_pattern, section, re.DOTALL):
         skills.append((match.group(1).strip(), match.group(2).strip(), match.group(3).strip()))
 
@@ -289,7 +291,11 @@ def _merge_skill_into_section(
     skill_elements.append(format_skill_element(new_skill, project_dir))
 
     # Sort by skill name
-    skill_elements.sort(key=lambda x: re.search(r"<name>([^<]+)</name>", x).group(1) if re.search(r"<name>([^<]+)</name>", x) else "")
+    def _get_skill_name(elem: str) -> str:
+        m = re.search(r"<name>([^<]+)</name>", elem)
+        return m.group(1) if m else ""
+
+    skill_elements.sort(key=_get_skill_name)
 
     skills_xml = "\n\n".join(skill_elements)
 
@@ -361,11 +367,7 @@ def update_config_file(
                 created=False,
             )
 
-        # Find existing section or create new one
-        start_match = re.search(re.escape(SECTION_START), content)
-        end_match = re.search(re.escape(SECTION_END), content)
-
-        # Also check for the outer skills_system tag
+        # Check for the outer skills_system tag
         system_start = re.search(r"<skills_system[^>]*>", content)
         system_end = re.search(r"</skills_system>", content)
 

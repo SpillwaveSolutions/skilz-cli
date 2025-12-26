@@ -8,7 +8,6 @@ from skilz.agent_registry import AgentConfig
 from skilz.config_sync import (
     SECTION_END,
     SECTION_START,
-    ConfigSyncResult,
     SkillReference,
     _parse_existing_skills,
     detect_project_config_files,

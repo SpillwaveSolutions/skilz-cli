@@ -7,7 +7,6 @@ It follows the agentskills.io standard for skill invocation:
 
 import argparse
 import sys
-from pathlib import Path
 
 from skilz.scanner import find_installed_skill
 
