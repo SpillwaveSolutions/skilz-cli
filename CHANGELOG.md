@@ -5,6 +5,30 @@ All notable changes to Skilz CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-12-25
+
+### Added
+
+- **`--version` Flag for Install**: Specify which version of a skill to install
+  - `--version latest`: Install latest from default branch
+  - `--version branch:NAME`: Install from specific branch
+  - `--version v1.0.0`: Install specific git tag
+  - `--version <SHA>`: Install specific commit
+- **Resilient GitHub API Fallback**: Installation now works even when GitHub API is unavailable
+  - Falls back to HEAD when SHA lookup fails
+  - Tries multiple branch names (origin/HEAD, origin/main, origin/master)
+  - Prints warnings but doesn't fail
+- **Skill Search Fallback**: Searches repository for skills when path in registry is outdated
+
+### Fixed
+
+- **HTTP 422 Errors**: No longer fails when GitHub API returns validation errors
+- **Branch Not Found**: Automatically tries alternative branches when specified branch doesn't exist
+
+### Changed
+
+- Updated documentation examples to use correct marketplace skill ID format (`owner_repo/skill-name`)
+
 ## [1.0.2] - 2025-01-15
 
 ### Added
