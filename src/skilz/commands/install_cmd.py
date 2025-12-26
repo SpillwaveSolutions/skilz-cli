@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from pathlib import Path
 from typing import Literal
 
 from skilz.agents import AgentType
@@ -19,7 +20,7 @@ def cmd_install(args: argparse.Namespace) -> int:
         Exit code (0 for success, non-zero for error).
     """
     # Import here to avoid circular imports and speed up --help
-    from skilz.installer import install_skill
+    from skilz.installer import install_local_skill, install_skill
 
     verbose = getattr(args, "verbose", False)
     agent: AgentType | None = getattr(args, "agent", None)
@@ -47,10 +48,24 @@ def cmd_install(args: argparse.Namespace) -> int:
     elif getattr(args, "symlink", False):
         mode = "symlink"
 
-    # Handle -f and -g options (not yet fully implemented)
+    # Handle -f and -g options
     if file_path is not None:
-        print("Error: --file option not yet implemented", file=sys.stderr)
-        return 1
+        try:
+            install_local_skill(
+                source_path=Path(file_path),
+                agent=agent,
+                project_level=project_level,
+                verbose=verbose,
+                mode=mode,
+            )
+            return 0
+        except SkilzError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+        except Exception as e:
+            print(f"Unexpected error: {e}", file=sys.stderr)
+            return 1
+
     if git_url is not None:
         print("Error: --git option not yet implemented", file=sys.stderr)
         return 1

@@ -297,24 +297,28 @@ class TestCmdInstall:
         captured = capsys.readouterr()
         assert "Error:" in captured.err
 
-    def test_install_file_not_implemented(self, capsys):
-        """Test that --file option returns not implemented error."""
+    def test_install_from_file_success(self):
+        """Test successful installation from local file."""
         args = argparse.Namespace(
             skill_id=None,
             agent=None,
-            project=False,
+            project=True,
             verbose=False,
             file="/path/to/skill",
             git=None,
             copy=False,
             symlink=False,
+            version_spec=None,
         )
 
-        result = cmd_install(args)
+        with patch("skilz.installer.install_local_skill") as mock_install:
+            result = cmd_install(args)
 
-        assert result == 1
-        captured = capsys.readouterr()
-        assert "not yet implemented" in captured.err.lower()
+        assert result == 0
+        mock_install.assert_called_once()
+        call_args = mock_install.call_args[1]
+        assert str(call_args["source_path"]) == "/path/to/skill"
+        assert call_args["project_level"] is True
 
     def test_install_git_not_implemented(self, capsys):
         """Test that --git option returns not implemented error."""

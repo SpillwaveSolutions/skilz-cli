@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from skilz.errors import InstallError
-from skilz.installer import copy_skill_files, install_skill
+from skilz.installer import copy_skill_files, install_local_skill, install_skill
 from skilz.registry import SkillInfo
 
 
@@ -107,6 +107,53 @@ class TestCopySkillFiles:
 
         assert target.exists()
         assert (target / "SKILL.md").exists()
+
+
+class TestInstallLocalSkill:
+    """Tests for install_local_skill function."""
+
+    def test_install_local_success(self, temp_dir):
+        """Test successful local installation."""
+        source = temp_dir / "my-skill"
+        source.mkdir()
+        (source / "SKILL.md").write_text("# My Skill")
+
+        target_root = temp_dir / ".claude" / "skills"
+        target_root.mkdir(parents=True)
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.ensure_skills_dir", return_value=target_root),
+            patch("skilz.installer.write_manifest") as mock_write,
+        ):
+            install_local_skill(source, project_level=True)
+
+            assert (target_root / "my-skill").exists()
+            assert (target_root / "my-skill" / "SKILL.md").read_text() == "# My Skill"
+
+            mock_write.assert_called_once()
+            manifest = mock_write.call_args[0][1]
+            assert manifest.skill_id == "local/my-skill"
+            assert manifest.install_mode == "copy"
+
+    def test_install_local_not_found(self, temp_dir):
+        """Test error when local source does not exist."""
+        source = temp_dir / "nonexistent"
+
+        with pytest.raises(InstallError) as exc:
+            install_local_skill(source)
+
+        assert "does not exist" in str(exc.value)
+
+    def test_install_local_not_dir(self, temp_dir):
+        """Test error when source is a file."""
+        source = temp_dir / "file"
+        source.write_text("content")
+
+        with pytest.raises(InstallError) as exc:
+            install_local_skill(source)
+
+        assert "not a directory" in str(exc.value)
 
 
 class TestInstallSkill:
