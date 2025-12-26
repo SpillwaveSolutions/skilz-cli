@@ -378,9 +378,7 @@ def update_config_file(
             new_section = _merge_skill_into_section(existing_section, skill, project_dir)
 
             new_content = (
-                content[: system_start.start()]
-                + new_section
-                + content[system_end.end() :]
+                content[: system_start.start()] + new_section + content[system_end.end() :]
             )
             updated = True
         else:

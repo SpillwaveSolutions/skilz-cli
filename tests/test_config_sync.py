@@ -96,9 +96,7 @@ class TestSkillReference:
 class TestFormatSkillElement:
     """Tests for format_skill_element function."""
 
-    def test_format_skill_element(
-        self, skill_ref: SkillReference, project_dir: Path
-    ) -> None:
+    def test_format_skill_element(self, skill_ref: SkillReference, project_dir: Path) -> None:
         """Test formatting a skill as XML element."""
         result = format_skill_element(skill_ref, project_dir)
         assert "<skill>" in result
@@ -107,9 +105,7 @@ class TestFormatSkillElement:
         assert "<location>" in result
         assert "</skill>" in result
 
-    def test_format_uses_relative_path(
-        self, skill_ref: SkillReference, project_dir: Path
-    ) -> None:
+    def test_format_uses_relative_path(self, skill_ref: SkillReference, project_dir: Path) -> None:
         """Test that paths are relative to project directory."""
         result = format_skill_element(skill_ref, project_dir)
         # Should NOT contain absolute path

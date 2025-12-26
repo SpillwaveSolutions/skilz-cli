@@ -207,9 +207,7 @@ class TestReadCommand:
                 project_level=False,
             )
 
-    def test_read_project_level_fallback(
-        self, mock_skill: InstalledSkill
-    ) -> None:
+    def test_read_project_level_fallback(self, mock_skill: InstalledSkill) -> None:
         """Test that user-level miss falls back to project-level."""
         args = argparse.Namespace(
             skill_name="test-skill",
@@ -269,11 +267,15 @@ class TestCLIIntegration:
         from skilz.cli import create_parser
 
         parser = create_parser()
-        args = parser.parse_args([
-            "read", "my-skill",
-            "--agent", "claude",
-            "--project",
-        ])
+        args = parser.parse_args(
+            [
+                "read",
+                "my-skill",
+                "--agent",
+                "claude",
+                "--project",
+            ]
+        )
 
         assert args.skill_name == "my-skill"
         assert args.agent == "claude"
