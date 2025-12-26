@@ -11,9 +11,11 @@
 | 7e: CLI Updates | ✅ Complete | 10 |
 | 7f: Command Updates | ✅ Complete | 20 |
 | 7g: Tests & Validation | ✅ Complete | - |
-| **Total** | **✅ Complete** | **96+ tests** |
+| 7h: Config Sync Module | ✅ Complete | 18 |
+| 7i: Read Command | ✅ Complete | 9 |
+| **Total** | **✅ Complete** | **123+ tests** |
 
-**Total Project Tests:** 391 passing
+**Total Project Tests:** 418 passing
 
 ---
 
@@ -186,6 +188,49 @@
 **Files:** All test files
 
 **Estimated:** 2 hours | **Actual:** Complete
+
+---
+
+## Phase 7h: Config Sync Module
+
+- [x] Create `src/skilz/config_sync.py`
+- [x] Implement `SkillReference` dataclass
+- [x] Implement `ConfigSyncResult` dataclass
+- [x] Implement `format_skill_element()` following agentskills.io standard
+- [x] Implement `detect_project_config_files()` for finding agent config files
+- [x] Implement `update_config_file()` for adding skills to configs
+- [x] Implement `sync_skill_to_configs()` for orchestration
+- [x] Implement `_parse_existing_skills()` for idempotent updates
+- [x] Implement `_extract_description_from_skill()` from SKILL.md frontmatter
+- [x] Use relative paths in config output (not absolute)
+- [x] Integrate config sync into `installer.py` for `--project` installs
+- [x] Add auto-project detection for agents without home support
+- [x] Create `tests/test_config_sync.py` with 18 tests
+- [x] Test XML format follows agentskills.io standard
+
+**Files:** `src/skilz/config_sync.py`, `src/skilz/installer.py`, `tests/test_config_sync.py`
+
+**Estimated:** 2 hours | **Actual:** Complete
+
+---
+
+## Phase 7i: Read Command
+
+- [x] Create `src/skilz/commands/read_cmd.py`
+- [x] Implement `cmd_read()` function
+- [x] Find skill by name/ID using `find_installed_skill()`
+- [x] Auto-fallback from user-level to project-level search
+- [x] Output skill name, base directory, SKILL.md path, and content
+- [x] Handle broken symlinks gracefully
+- [x] Handle missing SKILL.md gracefully
+- [x] Add `read` subparser to CLI
+- [x] Add dispatch in `main()` function
+- [x] Update CLI help examples
+- [x] Create `tests/test_read_cmd.py` with 9 tests
+
+**Files:** `src/skilz/commands/read_cmd.py`, `src/skilz/cli.py`, `tests/test_read_cmd.py`
+
+**Estimated:** 1 hour | **Actual:** Complete
 
 ---
 
