@@ -1,0 +1,669 @@
+# Skilz CLI - Comprehensive User Guide
+
+**The Universal Package Manager for AI Skills**
+
+Skilz is like npm or pip, but for AI coding assistants. It lets you install, manage, and share skills across 14+ AI agents including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, and more.
+
+---
+
+## Table of Contents
+
+1. [Quick Start](#quick-start)
+2. [Understanding Agents](#understanding-agents)
+3. [Installation Modes: Copy vs Symlink](#installation-modes-copy-vs-symlink)
+4. [User-Level vs Project-Level Installation](#user-level-vs-project-level-installation)
+5. [Agent Reference](#agent-reference)
+6. [Command Reference](#command-reference)
+7. [Search Paths and Resolution Order](#search-paths-and-resolution-order)
+8. [Configuration File](#configuration-file)
+9. [Common Workflows](#common-workflows)
+10. [Troubleshooting](#troubleshooting)
+
+---
+
+## Quick Start
+
+```bash
+# Install skilz
+pip install skilz
+
+# Install a skill for Claude Code (user-level, available in all projects)
+skilz install anthropics/web-artifacts-builder
+
+# Install a skill for Gemini CLI (project-level, in current directory)
+skilz install spillwave/plantuml --agent gemini
+
+# List installed skills
+skilz list
+
+# Read a skill (for AI agents to load)
+skilz read plantuml
+```
+
+---
+
+## Understanding Agents
+
+Skilz supports 14 AI coding assistants. Each agent has different capabilities:
+
+| Agent | Display Name | Home Support | Native Skills | Default Mode |
+|-------|--------------|--------------|---------------|--------------|
+| `claude` | Claude Code | ✅ Yes | All | copy |
+| `codex` | OpenAI Codex | ✅ Yes | All | copy |
+| `opencode` | OpenCode CLI | ✅ Yes | Home only | copy |
+| `universal` | Universal (Skilz) | ✅ Yes | None | copy |
+| `gemini` | Gemini CLI | ❌ No | None | copy |
+| `copilot` | GitHub Copilot | ❌ No | None | copy |
+| `cursor` | Cursor | ❌ No | None | copy |
+| `aider` | Aider | ❌ No | None | copy |
+| `windsurf` | Windsurf | ❌ No | None | copy |
+| `qwen` | Qwen CLI | ❌ No | None | copy |
+| `kimi` | Kimi CLI | ❌ No | None | copy |
+| `crush` | Crush | ❌ No | None | copy |
+| `plandex` | Plandex | ❌ No | None | copy |
+| `zed` | Zed AI | ❌ No | None | copy |
+
+### What "Home Support" Means
+
+- **Home Support = Yes**: Skills can be installed at the user level (`~/.claude/skills/`) and are available across all projects
+- **Home Support = No**: Skills must be installed per-project (in the current working directory)
+
+### What "Native Skills" Means
+
+- **All**: Agent has built-in skill loading (like Claude Code's `/skill` command)
+- **Home only**: Agent loads skills from home directory only
+- **None**: Agent needs config file injection to discover skills
+
+---
+
+## Installation Modes: Copy vs Symlink
+
+Skilz supports two ways to install skills:
+
+### Copy Mode (Default for most agents)
+
+```bash
+skilz install spillwave/plantuml --copy
+```
+
+- **What happens**: Files are copied directly to the agent's skills directory
+- **Pros**: Works with sandboxed tools (Gemini, etc.), self-contained, no external dependencies
+- **Cons**: Uses more disk space if same skill installed in multiple projects
+
+### Symlink Mode
+
+```bash
+skilz install spillwave/plantuml --symlink
+```
+
+- **What happens**: A symlink is created pointing to `~/.skilz/skills/<skill-name>`
+- **Pros**: Saves disk space, updates apply everywhere automatically
+- **Cons**: Doesn't work with workspace-sandboxed tools (Gemini can't follow symlinks outside project)
+
+### When to Use Each
+
+| Scenario | Recommended Mode |
+|----------|------------------|
+| Gemini CLI | **Copy** (workspace sandboxed) |
+| GitHub Copilot | **Copy** (workspace sandboxed) |
+| Claude Code | Copy or Symlink (both work) |
+| OpenAI Codex | Copy or Symlink (both work) |
+| Aider, Cursor, etc. | **Copy** (safer default) |
+| Disk space constrained + Claude | **Symlink** |
+
+---
+
+## User-Level vs Project-Level Installation
+
+### User-Level Installation (Default for supported agents)
+
+Skills installed at the user level are available in ALL projects:
+
+```bash
+# Claude Code - installs to ~/.claude/skills/
+skilz install anthropics/web-artifacts-builder --agent claude
+
+# OpenAI Codex - installs to ~/.codex/skills/
+skilz install anthropics/web-artifacts-builder --agent codex
+
+# OpenCode CLI - installs to ~/.config/opencode/skills/
+skilz install anthropics/web-artifacts-builder --agent opencode
+
+# Universal - installs to ~/.skilz/skills/
+skilz install anthropics/web-artifacts-builder --agent universal
+```
+
+### Project-Level Installation
+
+Skills installed at the project level are only available in that project:
+
+```bash
+# Force project-level installation (any agent)
+skilz install spillwave/plantuml --project
+
+# Agents without home support always install to project level
+skilz install spillwave/plantuml --agent gemini  # Always project-level
+```
+
+### Which Agents Support What
+
+| Agent | User-Level Path | Project-Level Path |
+|-------|-----------------|-------------------|
+| `claude` | `~/.claude/skills/` | `.claude/skills/` |
+| `codex` | `~/.codex/skills/` | `.codex/skills/` |
+| `opencode` | `~/.config/opencode/skills/` | `.skilz/skills/` |
+| `universal` | `~/.skilz/skills/` | `.skilz/skills/` |
+| `gemini` | _(not supported)_ | `.skilz/skills/` |
+| `copilot` | _(not supported)_ | `.github/copilot/skills/` |
+| `cursor` | _(not supported)_ | `.skills/skills/` |
+| `aider` | _(not supported)_ | `.skills/skills/` |
+| `qwen` | _(not supported)_ | `.skills/skills/` |
+| `windsurf` | _(not supported)_ | `.skills/skills/` |
+| `kimi` | _(not supported)_ | `.skills/skills/` |
+| `crush` | _(not supported)_ | `.skills/skills/` |
+| `plandex` | _(not supported)_ | `.skills/skills/` |
+| `zed` | _(not supported)_ | `.skills/skills/` |
+
+---
+
+## Agent Reference
+
+### Claude Code
+
+```bash
+# User-level (recommended - available everywhere)
+skilz install anthropics/web-artifacts-builder --agent claude
+
+# Project-level
+skilz install anthropics/web-artifacts-builder --agent claude --project
+
+# List skills
+skilz list --agent claude
+```
+
+**Paths:**
+- User: `~/.claude/skills/`
+- Project: `.claude/skills/`
+- Config: `CLAUDE.md`
+
+**Native skill support:** Full - Claude Code natively loads skills from both directories.
+
+---
+
+### OpenAI Codex
+
+```bash
+# User-level (recommended)
+skilz install anthropics/web-artifacts-builder --agent codex
+
+# Project-level
+skilz install anthropics/web-artifacts-builder --agent codex --project
+
+# List skills
+skilz list --agent codex
+```
+
+**Paths:**
+- User: `~/.codex/skills/`
+- Project: `.codex/skills/`
+- Config: `AGENTS.md`
+
+**Native skill support:** Full - invoked via `$skill-name` or `/skills`.
+
+---
+
+### OpenCode CLI
+
+```bash
+# User-level
+skilz install anthropics/web-artifacts-builder --agent opencode
+
+# Project-level
+skilz install anthropics/web-artifacts-builder --agent opencode --project
+
+# List skills
+skilz list --agent opencode
+```
+
+**Paths:**
+- User: `~/.config/opencode/skills/`
+- Project: `.skilz/skills/`
+- Config: `AGENTS.md`
+
+**Native skill support:** Home directory only.
+
+---
+
+### Gemini CLI
+
+```bash
+# Project-level only (no home support)
+skilz install spillwave/plantuml --agent gemini
+
+# With explicit copy mode (recommended, default)
+skilz install spillwave/plantuml --agent gemini --copy
+
+# List skills
+skilz list --agent gemini --project
+```
+
+**Paths:**
+- User: _(not supported)_
+- Project: `.skilz/skills/`
+- Config: `GEMINI.md`
+
+**Important:** Gemini CLI uses workspace sandboxing and cannot follow symlinks outside the project. Always use `--copy` mode (the default).
+
+**How skills are discovered:** Skilz updates `GEMINI.md` with skill references. Gemini reads this file and can invoke skills via `skilz read <skill-name>`.
+
+---
+
+### GitHub Copilot
+
+```bash
+# Project-level only
+skilz install spillwave/plantuml --agent copilot
+
+# List skills
+skilz list --agent copilot --project
+```
+
+**Paths:**
+- User: _(not supported)_
+- Project: `.github/copilot/skills/`
+- Config: `.github/copilot-instructions.md`
+
+---
+
+### Cursor
+
+```bash
+# Project-level only
+skilz install spillwave/plantuml --agent cursor
+
+# List skills
+skilz list --agent cursor --project
+```
+
+**Paths:**
+- User: _(not supported)_
+- Project: `.skills/skills/`
+- Config: `.cursor/rules/RULES.md`, `.cursor/rules/RULE.md`
+
+**Note:** Cursor uses folder-based rules. Both config files are updated if they exist.
+
+---
+
+### Qwen CLI
+
+```bash
+# Project-level only
+skilz install spillwave/plantuml --agent qwen
+
+# List skills
+skilz list --agent qwen --project
+```
+
+**Paths:**
+- User: _(not supported)_
+- Project: `.skills/skills/`
+- Config: `QWEN.md` (primary), `CONTEXT.md` (secondary, only updated if exists)
+
+---
+
+### Universal (Skilz)
+
+The universal agent is a fallback for tools that don't have specific support:
+
+```bash
+# User-level - skills go to ~/.skilz/skills/
+skilz install spillwave/plantuml --agent universal
+
+# Project-level
+skilz install spillwave/plantuml --agent universal --project
+```
+
+**Paths:**
+- User: `~/.skilz/skills/`
+- Project: `.skilz/skills/`
+- Config: _(none - no config file injection)_
+
+**Use case:** Install skills centrally, then manually reference them or create symlinks for other tools.
+
+---
+
+### Other Agents (Aider, Windsurf, Kimi, Crush, Plandex, Zed)
+
+All follow the same pattern:
+
+```bash
+skilz install spillwave/plantuml --agent aider
+skilz install spillwave/plantuml --agent windsurf
+skilz install spillwave/plantuml --agent kimi
+skilz install spillwave/plantuml --agent crush
+skilz install spillwave/plantuml --agent plandex
+skilz install spillwave/plantuml --agent zed
+```
+
+**Paths:**
+- User: _(not supported)_
+- Project: `.skills/skills/`
+- Config: Varies (see agent table)
+
+---
+
+## Command Reference
+
+### Install
+
+```bash
+# Minimum command (auto-detects agent, defaults to claude)
+skilz install <skill-id>
+
+# Specify agent
+skilz install <skill-id> --agent <agent>
+
+# Force project-level
+skilz install <skill-id> --project
+
+# Force copy mode
+skilz install <skill-id> --copy
+
+# Force symlink mode
+skilz install <skill-id> --symlink
+
+# From local filesystem
+skilz install -f /path/to/skill --agent gemini
+
+# From git URL
+skilz install -g https://github.com/user/skill-repo --agent claude
+```
+
+### List
+
+```bash
+# List all installed skills (auto-detect agent)
+skilz list
+
+# List for specific agent
+skilz list --agent claude
+
+# List project-level skills
+skilz list --project
+
+# Output as JSON
+skilz list --json
+```
+
+### Read
+
+```bash
+# Read skill content (for AI agents to consume)
+skilz read <skill-name>
+
+# Read from specific agent
+skilz read <skill-name> --agent gemini
+
+# Read project-level skill
+skilz read <skill-name> --project
+```
+
+### Update
+
+```bash
+# Update all skills
+skilz update
+
+# Update specific skill
+skilz update <skill-id>
+
+# Dry run (see what would change)
+skilz update --dry-run
+```
+
+### Remove
+
+```bash
+# Remove a skill
+skilz remove <skill-id>
+
+# Skip confirmation
+skilz remove <skill-id> -y
+
+# Remove from project level
+skilz remove <skill-id> --project
+```
+
+### Config
+
+```bash
+# Show configuration
+skilz config
+
+# Run interactive setup
+skilz config --init
+```
+
+---
+
+## Search Paths and Resolution Order
+
+When Skilz looks for installed skills, it searches in this order:
+
+### For Agents with Home Support (claude, codex, opencode, universal)
+
+1. **User-level directory** (e.g., `~/.claude/skills/`)
+2. **Project-level directory** (e.g., `.claude/skills/`)
+
+### For Agents without Home Support (gemini, copilot, etc.)
+
+1. **Project-level directory only** (e.g., `.skilz/skills/`)
+
+### The `skilz read` Command
+
+When you run `skilz read <skill-name>`:
+
+1. First searches user-level (if supported)
+2. Falls back to project-level
+3. Returns skill content with base directory for resource resolution
+
+---
+
+## Configuration File
+
+Skilz can be customized via `~/.config/skilz/config.json`:
+
+```json
+{
+  "default_skills_dir": "~/.skilz/skills",
+  "agents": {
+    "mycompany": {
+      "display_name": "MyCompany AI",
+      "project_dir": ".mycompany/skills",
+      "config_files": ["MYCOMPANY.md"],
+      "supports_home": false,
+      "default_mode": "copy",
+      "native_skill_support": "none"
+    }
+  }
+}
+```
+
+### Common Configuration Scenarios
+
+#### OpenCode-Only Shop
+
+If your team only uses OpenCode, you might want all skills in one place:
+
+```json
+{
+  "default_skills_dir": "~/.config/opencode/skills"
+}
+```
+
+#### Codex-Only Shop
+
+```json
+{
+  "default_skills_dir": "~/.codex/skills"
+}
+```
+
+#### Aider-Only Shop Using Universal
+
+Since Aider doesn't support home-level skills, use the universal agent:
+
+```bash
+# Install skills centrally
+skilz install spillwave/plantuml --agent universal
+
+# Then in each project, create symlinks or copy
+skilz install spillwave/plantuml --agent aider --project
+```
+
+Or configure to share the same project directory:
+
+```json
+{
+  "agents": {
+    "aider": {
+      "display_name": "Aider",
+      "project_dir": ".skilz/skills",
+      "config_files": ["CONVENTIONS.md"],
+      "supports_home": false,
+      "default_mode": "copy",
+      "native_skill_support": "none"
+    }
+  }
+}
+```
+
+---
+
+## Common Workflows
+
+### Workflow 1: Claude Code User (Most Common)
+
+```bash
+# Install skills at user level - available everywhere
+skilz install anthropics/web-artifacts-builder
+skilz install spillwave/design-doc-mermaid
+skilz install spillwave/plantuml
+
+# List what you have
+skilz list
+
+# In any project, Claude Code will find them automatically
+```
+
+### Workflow 2: Gemini CLI User
+
+```bash
+# In your project directory
+cd my-project
+
+# Install skills (always project-level, always copy)
+skilz install spillwave/plantuml --agent gemini
+skilz install spillwave/sdd --agent gemini
+
+# Gemini will see them in GEMINI.md
+# Use: skilz read plantuml
+```
+
+### Workflow 3: Multi-Agent Project
+
+```bash
+cd my-project
+
+# Install for multiple agents
+skilz install spillwave/plantuml --agent claude --project
+skilz install spillwave/plantuml --agent gemini
+skilz install spillwave/plantuml --agent copilot
+
+# Each agent gets its own copy in the right location
+```
+
+### Workflow 4: Sharing Skills Across Agents (Symlink Strategy)
+
+```bash
+# Install to universal directory first
+skilz install spillwave/plantuml --agent universal
+
+# Then create project-level symlinks for specific agents
+skilz install spillwave/plantuml --agent claude --project --symlink
+skilz install spillwave/plantuml --agent opencode --project --symlink
+
+# Note: Don't use symlink for sandboxed agents (gemini, copilot)
+skilz install spillwave/plantuml --agent gemini --copy  # Must be copy
+```
+
+### Workflow 5: CI/CD Scripting
+
+```bash
+# Use -y to skip all prompts
+skilz -y install spillwave/plantuml --agent gemini
+skilz -y remove old-skill --agent gemini
+```
+
+---
+
+## Troubleshooting
+
+### Skill Not Found After Install
+
+**Symptoms:** `skilz list` shows the skill, but the AI agent can't find it.
+
+**Solutions:**
+1. Check you installed for the correct agent: `skilz list --agent <agent>`
+2. For project-level installs, make sure you're in the right directory
+3. For agents without native support, check the config file was updated (e.g., `GEMINI.md`)
+
+### Gemini Can't Read Symlinked Skills
+
+**Symptoms:** Gemini says it can't access the skill file.
+
+**Solution:** Use copy mode instead of symlink:
+```bash
+skilz remove plantuml --agent gemini -y
+skilz install spillwave/plantuml --agent gemini --copy
+```
+
+### Config File Not Updated
+
+**Symptoms:** Skill installed but not appearing in `GEMINI.md` or other config file.
+
+**Solutions:**
+1. Reinstall: `skilz install <skill> --agent <agent>`
+2. Check the config file location matches expectations
+3. Manually add the skill reference if needed
+
+### Broken Symlink
+
+**Symptoms:** `skilz list` shows `[ERROR]` for a skill.
+
+**Solution:** The symlink target was deleted. Remove and reinstall:
+```bash
+skilz remove broken-skill -y
+skilz install <skill-id> --agent <agent>
+```
+
+### Wrong Agent Auto-Detected
+
+**Symptoms:** Skills installing to wrong location.
+
+**Solution:** Always specify the agent explicitly:
+```bash
+skilz install <skill> --agent gemini
+```
+
+---
+
+## Next Steps
+
+- Browse the [Skill Registry](https://github.com/SpillwaveSolutions/skilz-cli/blob/main/.skilz/registry.yaml)
+- Create your own skills following the [agentskills.io standard](https://agentskills.io)
+- Contribute to the [skilz-cli project](https://github.com/SpillwaveSolutions/skilz-cli)
+
+---
+
+_This guide covers Skilz CLI v1.0.2+. For the latest updates, see the [GitHub repository](https://github.com/SpillwaveSolutions/skilz-cli)._
