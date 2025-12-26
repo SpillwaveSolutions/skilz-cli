@@ -73,8 +73,9 @@ def copy_skill(source: Path, target: Path) -> None:
     if target.exists():
         shutil.rmtree(target)
 
-    # Copy directory tree, following symlinks in source
-    shutil.copytree(source, target, symlinks=False)
+    # Copy directory tree, preserving symlinks (don't follow them)
+    # ignore_dangling_symlinks=True skips broken symlinks gracefully
+    shutil.copytree(source, target, symlinks=True, ignore_dangling_symlinks=True)
 
 
 def is_symlink(path: Path) -> bool:
