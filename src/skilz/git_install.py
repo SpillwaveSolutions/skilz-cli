@@ -128,8 +128,8 @@ def prompt_skill_selection(
         path_info = f"  ({skill.relative_path})" if skill.relative_path != "." else ""
         print(f"  [{i}] {skill.skill_name}{path_info}")
 
-    print(f"  [A] Install all")
-    print(f"  [Q] Cancel")
+    print("  [A] Install all")
+    print("  [Q] Cancel")
     print()
 
     try:
