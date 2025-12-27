@@ -4,6 +4,9 @@
 
 **Skilz** is a universal package manager for AI skills that works like npm for JavaScript or pip for Python, but specifically designed for AI coding assistants such as Claude Code and OpenCode.
 
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
+
 ## Problem Statement
 
 AI coding assistants use "skills" to extend their capabilities. Currently:
@@ -111,10 +114,10 @@ Custom exception hierarchy:
 
 ### 5. Testability
 
-- 92% code coverage
+- 85%+ code coverage
 - Unit tests for all modules
 - Integration tests for workflows
-- 159 test cases
+- 448 test cases
 
 ## Project Structure
 
@@ -165,15 +168,19 @@ skilz-cli/
 - `skilz remove` - Uninstall skills
 
 ### Phase 3: Developer Experience (COMPLETE)
-- Test coverage 92% (target 80%)
+- Test coverage 85%+ (target 80%)
 - Taskfile.yml automation
 - Documentation (README, USER_MANUAL)
-- PyPI publishing (deferred)
+- PyPI publishing (`pip install skilz`)
 
-### Phase 4: Scripting Support (PENDING)
-- Global `-y, --yes-all` flag
-- Non-interactive mode
-- Scripting examples
+### Phase 4-5: Distribution & Local Install (COMPLETE)
+- PyPI publishing: [pypi.org/project/skilz](https://pypi.org/project/skilz/)
+- Local skill installation (`skilz install -f /path`)
+
+### Phase 6-7: Multi-Agent Support (COMPLETE)
+- 14 AI agent support
+- Universal skills directory
+- Config file sync
 
 ## Technology Stack
 
@@ -207,6 +214,9 @@ skilz-cli/
 
 ## Links
 
+- **Marketplace:** [skillzwave.ai](https://skillzwave.ai) — Browse and discover skills
+- **Company:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
+- **PyPI:** [pypi.org/project/skilz](https://pypi.org/project/skilz/) — Install with `pip install skilz`
 - [Architecture Overview](./03-architecture-overview.md)
 - [Quick Start Guide](./02-quick-start.md)
 - [User Manual](../../USER_MANUAL.md)
