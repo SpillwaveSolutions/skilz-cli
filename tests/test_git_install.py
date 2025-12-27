@@ -335,8 +335,12 @@ class TestGetHeadSha:
             ["git", "commit", "-m", "initial"],
             cwd=tmp_path,
             capture_output=True,
-            env={"GIT_AUTHOR_NAME": "Test", "GIT_AUTHOR_EMAIL": "test@test.com",
-                 "GIT_COMMITTER_NAME": "Test", "GIT_COMMITTER_EMAIL": "test@test.com"},
+            env={
+                "GIT_AUTHOR_NAME": "Test",
+                "GIT_AUTHOR_EMAIL": "test@test.com",
+                "GIT_COMMITTER_NAME": "Test",
+                "GIT_COMMITTER_EMAIL": "test@test.com",
+            },
         )
 
         sha = get_head_sha(tmp_path)
@@ -394,9 +398,7 @@ class TestInstallFromGit:
     @patch("skilz.link_ops.clone_git_repo")
     @patch("skilz.link_ops.cleanup_temp_dir")
     @patch("skilz.installer.install_local_skill")
-    def test_install_all_flag(
-        self, mock_install, mock_cleanup, mock_clone, tmp_path
-    ):
+    def test_install_all_flag(self, mock_install, mock_cleanup, mock_clone, tmp_path):
         """Test --all flag installs all skills."""
         # Create multiple skills
         for name in ["skill1", "skill2"]:
@@ -432,9 +434,7 @@ class TestInstallFromGit:
     @patch("skilz.link_ops.clone_git_repo")
     @patch("skilz.link_ops.cleanup_temp_dir")
     @patch("skilz.installer.install_local_skill")
-    def test_passes_parameters_to_install(
-        self, mock_install, mock_cleanup, mock_clone, tmp_path
-    ):
+    def test_passes_parameters_to_install(self, mock_install, mock_cleanup, mock_clone, tmp_path):
         """Test that parameters are passed through to install."""
         skill_dir = tmp_path / "skill"
         skill_dir.mkdir()
@@ -461,9 +461,7 @@ class TestInstallFromGit:
     @patch("skilz.link_ops.clone_git_repo")
     @patch("skilz.link_ops.cleanup_temp_dir")
     @patch("skilz.installer.install_local_skill")
-    def test_cleanup_on_success(
-        self, mock_install, mock_cleanup, mock_clone, tmp_path
-    ):
+    def test_cleanup_on_success(self, mock_install, mock_cleanup, mock_clone, tmp_path):
         """Test cleanup happens on success."""
         skill_dir = tmp_path / "skill"
         skill_dir.mkdir()
@@ -478,9 +476,7 @@ class TestInstallFromGit:
     @patch("skilz.link_ops.clone_git_repo")
     @patch("skilz.link_ops.cleanup_temp_dir")
     @patch("skilz.installer.install_local_skill")
-    def test_cleanup_on_install_error(
-        self, mock_install, mock_cleanup, mock_clone, tmp_path
-    ):
+    def test_cleanup_on_install_error(self, mock_install, mock_cleanup, mock_clone, tmp_path):
         """Test cleanup happens even on install failure."""
         skill_dir = tmp_path / "skill"
         skill_dir.mkdir()
@@ -488,6 +484,7 @@ class TestInstallFromGit:
 
         mock_clone.return_value = tmp_path
         from skilz.errors import InstallError
+
         mock_install.side_effect = InstallError("skill", "Install failed")
 
         result = install_from_git(git_url="https://github.com/test/repo.git")

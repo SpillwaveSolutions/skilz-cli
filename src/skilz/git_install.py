@@ -245,8 +245,7 @@ def install_from_git(
 
         if not skills:
             print(
-                "Error: No skills found in repository. "
-                "Skills must contain a SKILL.md file.",
+                "Error: No skills found in repository. Skills must contain a SKILL.md file.",
                 file=sys.stderr,
             )
             return 1
