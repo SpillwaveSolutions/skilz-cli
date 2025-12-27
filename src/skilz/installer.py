@@ -91,6 +91,9 @@ def install_local_skill(
     project_level: bool = False,
     verbose: bool = False,
     mode: InstallMode | None = None,
+    git_url: str | None = None,
+    git_sha: str | None = None,
+    skill_name: str | None = None,
 ) -> None:
     """
     Install a skill from a local directory.
@@ -101,6 +104,9 @@ def install_local_skill(
         project_level: If True, install to project directory instead of user directory.
         verbose: If True, print detailed progress information.
         mode: Installation mode. Only "copy" is supported for local installs.
+        git_url: Optional git repo URL for manifest (overrides "local" default).
+        git_sha: Optional git SHA for manifest (overrides "local" default).
+        skill_name: Optional skill name (overrides source_path.name, used for git installs).
     """
     source_path = source_path.expanduser().resolve()
 
@@ -109,7 +115,9 @@ def install_local_skill(
     if not source_path.is_dir():
         raise InstallError(str(source_path), "Source path is not a directory")
 
-    skill_name = source_path.name
+    # Use provided skill_name or fall back to directory name
+    if skill_name is None:
+        skill_name = source_path.name
     skill_id = f"local/{skill_name}"
 
     # Step 1: Determine target agent
@@ -143,11 +151,13 @@ def install_local_skill(
     copy_skill_files(source_path, target_dir, verbose=verbose)
 
     # Step 4: Write manifest
+    # Use git info if provided (from -g/--git), otherwise mark as "local"
+    is_git_source = git_url is not None
     manifest = SkillManifest.create(
-        skill_id=skill_id,
-        git_repo="local",
+        skill_id=f"git/{skill_name}" if is_git_source else skill_id,
+        git_repo=git_url if git_url else "local",
         skill_path=str(source_path),
-        git_sha="local",
+        git_sha=git_sha if git_sha else "local",
         install_mode="copy",
     )
     write_manifest(target_dir, manifest)
@@ -155,13 +165,15 @@ def install_local_skill(
     # Success message
     agent_name = get_agent_display_name(resolved_agent)
     location = "project" if project_level else "user"
-    print(f"Installed: {skill_name} -> {agent_name} ({location}) [local]")
+    source_label = "[git]" if is_git_source else "[local]"
+    print(f"Installed: {skill_name} -> {agent_name} ({location}) {source_label}")
 
     # Step 5: Sync skill reference to agent config files (project-level only)
     if project_level:
         project_dir = Path.cwd()
+        ref_skill_id = f"git/{skill_name}" if is_git_source else skill_id
         skill_ref = SkillReference(
-            skill_id=skill_id,
+            skill_id=ref_skill_id,
             skill_name=skill_name,
             skill_path=target_dir,
         )

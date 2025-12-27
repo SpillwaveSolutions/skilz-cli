@@ -320,21 +320,24 @@ class TestCmdInstall:
         assert str(call_args["source_path"]) == "/path/to/skill"
         assert call_args["project_level"] is True
 
-    def test_install_git_not_implemented(self, capsys):
-        """Test that --git option returns not implemented error."""
+    def test_install_git_clone_failure(self, capsys):
+        """Test that --git option handles clone failures."""
         args = argparse.Namespace(
             skill_id=None,
             agent=None,
             project=False,
             verbose=False,
             file=None,
-            git="https://github.com/test/skill.git",
+            git="https://github.com/test/nonexistent-skill.git",
             copy=False,
             symlink=False,
+            install_all=False,
+            yes_all=False,
         )
 
         result = cmd_install(args)
 
         assert result == 1
         captured = capsys.readouterr()
-        assert "not yet implemented" in captured.err.lower()
+        # Should get a git clone error for non-existent repo
+        assert "git clone failed" in captured.err.lower() or "error" in captured.err.lower()
