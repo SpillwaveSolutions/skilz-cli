@@ -2,19 +2,23 @@
 
 Comprehensive technical documentation for the Skilz CLI project, the universal package manager for AI skills.
 
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
+
 > **📋 Documentation Status:** This documentation is current through **Phase 5** (Image Generation) of the 6-phase documentation workflow. Phase 6 (Validation) is in progress. All diagrams have been converted to images and the core documentation is complete.
 
 ## Project Statistics
 
 | Metric | Value |
 |--------|-------|
-| Source Files | 15 Python modules |
-| Source Lines | 1,661 lines |
-| Test Files | 13 test modules |
-| Test Lines | 2,384 lines |
-| Test Coverage | 92% |
+| Source Files | 23 Python modules |
+| Source Lines | 2,036+ lines |
+| Test Files | 18 test modules |
+| Test Cases | 448 tests |
+| Test Coverage | 85%+ |
 | Python Version | 3.10+ |
-| Status | Phase 5 Complete |
+| Current Version | 1.2.0 |
+| PyPI | [pip install skilz](https://pypi.org/project/skilz/) |
 
 ## Documentation Structure
 

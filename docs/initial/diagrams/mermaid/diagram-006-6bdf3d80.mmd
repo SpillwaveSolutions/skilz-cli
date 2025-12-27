@@ -1,0 +1,10 @@
+stateDiagram-v2
+    [*] --> NO_MANIFEST
+    NO_MANIFEST --> MANIFEST_EXISTS : install
+
+    state MANIFEST_EXISTS {
+        [*] --> CheckStatus
+        CheckStatus --> UP_TO_DATE : SHA matches registry
+        CheckStatus --> OUTDATED : SHA differs
+        CheckStatus --> UNKNOWN : Skill not in registry
+    }

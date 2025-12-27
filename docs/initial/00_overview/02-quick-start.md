@@ -1,8 +1,11 @@
 # Quick Start Guide
 
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
+
 ## Installation
 
-### Using pip (when published)
+### Using pip (Recommended)
 
 ```bash
 pip install skilz
@@ -26,7 +29,7 @@ task install
 
 ```bash
 skilz --version
-# Output: skilz 0.1.0
+# Output: skilz 1.2.0
 ```
 
 ## Basic Usage
@@ -410,3 +413,8 @@ The registry may reference a commit that doesn't exist or hasn't been fetched.
 - [Core Modules](../01_core_modules/) - Deep dive into implementation
 - [Workflows](../03_workflows/) - Detailed workflow documentation
 - [User Manual](../../USER_MANUAL.md) - Complete user guide
+
+---
+
+**[skillzwave.ai](https://skillzwave.ai)** — The largest agent and agent skills marketplace
+**[Spillwave](https://spillwave.com)** — Leaders in agentic software development

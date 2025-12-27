@@ -2,7 +2,15 @@
 
 **The universal package manager for AI skills.**
 
+[![PyPI version](https://badge.fury.io/py/skilz.svg)](https://pypi.org/project/skilz/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Skilz installs and manages AI skills (agents and tools) across multiple AI coding assistants. Think `npm install` or `pip install`, but for skills.
+
+**Built by [Spillwave](https://spillwave.com)** — Leaders in agentic software development.
+
+**Browse skills at [Skillzwave.ai](https://skillzwave.ai)** — The largest agent and agent skills marketplace.
 
 ---
 
@@ -19,23 +27,22 @@ Today, installing AI skills requires manual file copying, marketplace browsing, 
 
 ## Installation
 
-### From GitHub (recommended until PyPI release)
+### From PyPI (Recommended)
 
 ```bash
-# Install directly from GitHub
+pip install skilz
+```
+
+### From GitHub
+
+```bash
+# Install directly from GitHub (latest development version)
 pip install git+https://github.com/spillwave/skilz-cli.git
 
 # Or clone and install
 git clone https://github.com/spillwave/skilz-cli.git
 cd skilz-cli
 pip install .
-```
-
-### From PyPI (coming soon)
-
-```bash
-# Not yet available - will be:
-pip install skilz
 ```
 
 ### Development Setup
@@ -414,9 +421,14 @@ This enables:
 - [x] `skilz list` — show installed skills with status
 - [x] `skilz update` — update skills to latest pinned SHA
 - [x] `skilz remove` — uninstall a skill
-- [x] 92% test coverage (418 tests)
+- [x] 85%+ test coverage (448 tests)
 - [x] Taskfile automation
 - [x] Documentation updates
+
+### Phase 4-5 - Distribution (Complete)
+
+- [x] PyPI publishing (`pip install skilz`)
+- [x] Local skill installation (`skilz install -f /path/to/skill`)
 
 ### Phase 6-7 - Multi-Agent Support (Complete)
 
@@ -429,9 +441,8 @@ This enables:
 
 ### Future
 
-- [ ] PyPI publishing
 - [ ] Plugin and marketplace installation support
-- [ ] `skilz search` — search skillzwave.ai from CLI
+- [ ] `skilz search` — search [skillzwave.ai](https://skillzwave.ai) from CLI
 - [ ] Skill dependency resolution
 
 ---
@@ -513,6 +524,8 @@ PYTHONPATH=src python -m skilz --version               # Test CLI
 
 ## Related Projects
 
+- [Skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+- [Spillwave](https://spillwave.com) — Leaders in agentic software development
 - [OpenSkills](https://github.com/numman-ali/openskills) — Open-source skill format standardization
 - [Anthropic Skills](https://github.com/anthropics/skills) — Official Anthropic skills repository
 
@@ -532,5 +545,7 @@ For other agents:
 - Universal access to Claude's skills ecosystem
 - Use Anthropic marketplace skills via GitHub
 - Progressive disclosure — load skills on demand
+
+**Get started:** Browse available skills at [skillzwave.ai](https://skillzwave.ai) and install with a single command.
 
 ---

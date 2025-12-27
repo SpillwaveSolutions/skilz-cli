@@ -2,6 +2,9 @@
 
 This guide documents how to publish the `skilz` package to PyPI.
 
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
+
 ## Package Information
 
 | Field | Value |
@@ -118,14 +121,14 @@ skilz --version
 The version is defined in `src/skilz/__init__.py`:
 
 ```python
-__version__ = "0.2.0"
+__version__ = "1.2.0"  # Update to new version
 ```
 
 And mirrored in `pyproject.toml`:
 
 ```toml
 [project]
-version = "0.2.0"
+version = "1.2.0"  # Must match __init__.py
 ```
 
 **Before releasing**, update both files to match.

@@ -2,7 +2,12 @@
 
 **The Universal Package Manager for AI Skills**
 
+[![PyPI version](https://badge.fury.io/py/skilz.svg)](https://pypi.org/project/skilz/)
+
 Skilz is like npm or pip, but for AI coding assistants. It lets you install, manage, and share skills across 14+ AI agents including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, and more.
+
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
 
 ---
 
@@ -788,10 +793,12 @@ skilz install <skill> --agent gemini
 
 ## Next Steps
 
+- **Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
 - Browse the [Skill Registry](https://github.com/SpillwaveSolutions/skilz-cli/blob/main/.skilz/registry.yaml)
 - Create your own skills following the [agentskills.io standard](https://agentskills.io)
 - Contribute to the [skilz-cli project](https://github.com/SpillwaveSolutions/skilz-cli)
+- Learn more at [Spillwave](https://spillwave.com) — Leaders in agentic software development
 
 ---
 
-_This guide covers Skilz CLI v1.0.2+. For the latest updates, see the [GitHub repository](https://github.com/SpillwaveSolutions/skilz-cli)._
+_This guide covers Skilz CLI v1.2.0+. For the latest updates, see the [GitHub repository](https://github.com/SpillwaveSolutions/skilz-cli)._

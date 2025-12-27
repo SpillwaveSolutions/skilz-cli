@@ -1,0 +1,17 @@
+stateDiagram-v2
+    [*] --> NOT_INSTALLED
+    NOT_INSTALLED --> INSTALLED : skilz install
+    INSTALLED --> OUTDATED : registry updated
+    OUTDATED --> UP_TO_DATE : skilz update
+    UP_TO_DATE --> NOT_INSTALLED : skilz remove
+    INSTALLED --> NOT_INSTALLED : skilz remove
+
+    note right of INSTALLED
+        SHA a1b2c3
+    end note
+    note right of OUTDATED
+        Registry SHA b2c3d4
+    end note
+    note right of UP_TO_DATE
+        SHA b2c3d4
+    end note

@@ -1,8 +1,11 @@
 # Skilz User Manual
 
-**Version 0.1.0**
+**Version 1.2.0**
 
 Skilz is the universal package manager for AI skills. It installs, manages, and updates skills across multiple AI coding assistants including Claude Code and OpenCode.
+
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
 
 ---
 
@@ -35,23 +38,22 @@ Skilz is the universal package manager for AI skills. It installs, manages, and 
 
 ## Installation
 
-### From GitHub (recommended until PyPI release)
+### From PyPI (Recommended)
 
 ```bash
-# Install directly from GitHub
+pip install skilz
+```
+
+### From GitHub
+
+```bash
+# Install directly from GitHub (latest development version)
 pip install git+https://github.com/spillwave/skilz-cli.git
 
 # Or clone and install
 git clone https://github.com/spillwave/skilz-cli.git
 cd skilz-cli
 pip install .
-```
-
-### From PyPI (coming soon)
-
-```bash
-# Not yet available - will be:
-pip install skilz
 ```
 
 ### Verify Installation
@@ -996,7 +998,7 @@ task coverage:check
 - **Linting**: Uses ruff for fast Python linting
 - **Formatting**: Uses ruff format (compatible with Black)
 - **Type checking**: Uses mypy for static type analysis
-- **Coverage target**: 80% minimum (currently at 92%)
+- **Coverage target**: 80% minimum (currently at 85%)
 
 ---
 
@@ -1013,7 +1015,10 @@ skilz update --help
 skilz remove --help
 ```
 
-For issues and feature requests, visit the [project repository](https://github.com/spillwave/skilz-cli).
+**Resources:**
+- **Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+- **Issues & Features:** [GitHub Repository](https://github.com/spillwave/skilz-cli)
+- **Company:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
 
 
 # Complete walkthrough 

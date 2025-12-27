@@ -1,5 +1,8 @@
 # CLI Module (`cli.py`)
 
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
+
 ## Overview
 
 The CLI module serves as the entry point for the Skilz command-line interface. It defines the argument parser structure, handles command routing, and provides the main execution function.
@@ -10,18 +13,13 @@ The CLI module serves as the entry point for the Skilz command-line interface. I
 
 ## Architecture
 
-```
-User Input
-    ↓
-create_parser() → ArgumentParser
-    ↓
-main(argv) → Parse args
-    ↓
-Command Dispatch (if/elif chain)
-    ↓
-Import & Execute Command Handler
-    ↓
-Return Exit Code
+```mermaid
+flowchart TD
+    A[User Input] --> B["create_parser() → ArgumentParser"]
+    B --> C["main(argv) → Parse args"]
+    C --> D["Command Dispatch (if/elif chain)"]
+    D --> E["Import & Execute Command Handler"]
+    E --> F[Return Exit Code]
 ```
 
 ## Public API
@@ -35,29 +33,34 @@ Creates and configures the argument parser for the CLI.
 
 **Parser Structure:**
 
-```
-skilz
-├── -V, --version        # Show version
-├── -v, --verbose        # Enable verbose output
-└── <command>            # Subcommand
-    ├── install
-    │   ├── skill_id     # Required positional
-    │   ├── --agent      # claude | opencode
-    │   └── --project    # Project-level flag
-    ├── list
-    │   ├── --agent      # claude | opencode
-    │   ├── --project    # Project-level flag
-    │   └── --json       # JSON output
-    ├── update
-    │   ├── skill_id     # Optional positional
-    │   ├── --agent      # claude | opencode
-    │   ├── --project    # Project-level flag
-    │   └── --dry-run    # Show changes without applying
-    └── remove
-        ├── skill_id     # Required positional
-        ├── --agent      # claude | opencode
-        ├── --project    # Project-level flag
-        └── -y, --yes    # Skip confirmation
+```mermaid
+flowchart LR
+    skilz[skilz]
+    skilz --> version["-V, --version"]
+    skilz --> verbose["-v, --verbose"]
+    skilz --> cmd["command"]
+
+    cmd --> install[install]
+    install --> i_skill["skill_id (required)"]
+    install --> i_agent["--agent"]
+    install --> i_project["--project"]
+
+    cmd --> list[list]
+    list --> l_agent["--agent"]
+    list --> l_project["--project"]
+    list --> l_json["--json"]
+
+    cmd --> update[update]
+    update --> u_skill["skill_id (optional)"]
+    update --> u_agent["--agent"]
+    update --> u_project["--project"]
+    update --> u_dry["--dry-run"]
+
+    cmd --> remove[remove]
+    remove --> r_skill["skill_id (required)"]
+    remove --> r_agent["--agent"]
+    remove --> r_project["--project"]
+    remove --> r_yes["-y, --yes"]
 ```
 
 **Example:**
@@ -524,3 +527,8 @@ new_flag = getattr(args, "new_flag", False)
 - [Update Command](../02_commands/03-update.md)
 - [Remove Command](../02_commands/04-remove.md)
 - [Error Handling](../04_architecture/04-error-handling.md)
+
+---
+
+**[skillzwave.ai](https://skillzwave.ai)** — The largest agent and agent skills marketplace
+**[Spillwave](https://spillwave.com)** — Leaders in agentic software development
