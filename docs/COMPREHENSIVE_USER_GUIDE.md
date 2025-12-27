@@ -113,6 +113,93 @@ skilz install spillwave/plantuml --symlink
 
 ---
 
+## Installing from Local Sources
+
+In addition to installing from the registry, you can install skills directly from your local filesystem. This is perfect for:
+- Testing new skills you are developing
+- Sharing skills between different agents on the same machine
+- Installing private skills not in any registry
+
+### Usage
+
+```bash
+# Install from a local path
+skilz install -f /path/to/skill [options]
+```
+
+### Examples: Sharing Skills Between Agents
+
+If you have a skill installed for Claude Code but want to use it with Gemini CLI:
+
+```bash
+# Copy from Claude's skill directory to the current project for Gemini
+skilz install -f ~/.claude/skills/design-doc-mermaid --project --agent gemini
+```
+
+If you have skills in OpenCode:
+
+```bash
+# Copy from OpenCode to current project
+skilz install -f ~/.config/opencode/skills/sdd --project --agent gemini
+```
+
+From OpenAI Codex:
+
+```bash
+# Copy from Codex to current project
+skilz install -f ~/.codex/skills/python-expert --project --agent gemini
+```
+
+Or from the Universal directory:
+
+```bash
+skilz install -f ~/.skilz/skills/my-tool --project --agent gemini
+```
+
+### Configuration Injection (The XML Part)
+
+For agents that don't natively load skills (like Gemini, Qwen, etc.), Skilz injects an XML definition into the agent's context file (e.g., `GEMINI.md`).
+
+After installing `design-doc-mermaid` for Gemini, your `GEMINI.md` will look like this:
+
+```xml
+<skills_system priority="1">
+
+## Available Skills
+
+<!-- SKILLS_TABLE_START -->
+<usage>
+When users ask you to perform tasks, check if any of the available skills
+below can help complete the task more effectively.
+
+How to use skills:
+- Invoke: Bash("skilz read <skill-name>")
+- The skill content will load with detailed instructions
+- Base directory provided in output for resolving bundled resources
+...
+</usage>
+
+<available_skills>
+
+<skill>
+<name>design-doc-mermaid</name>
+<description>Create Mermaid diagrams for any purpose...</description>
+<location>.skilz/skills/design-doc-mermaid/SKILL.md</location>
+</skill>
+
+</available_skills>
+<!-- SKILLS_TABLE_END -->
+
+</skills_system>
+```
+
+This tells the agent:
+1. The skill exists and what it does (from the description)
+2. Where the definition file is (`SKILL.md`)
+3. How to use it (via `skilz read`)
+
+---
+
 ## User-Level vs Project-Level Installation
 
 ### User-Level Installation (Default for supported agents)

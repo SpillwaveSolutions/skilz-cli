@@ -85,6 +85,107 @@ def copy_skill_files(source_dir: Path, target_dir: Path, verbose: bool = False) 
         raise InstallError(str(source_dir), f"Failed to copy files: {e}")
 
 
+def install_local_skill(
+    source_path: Path,
+    agent: AgentType | None = None,
+    project_level: bool = False,
+    verbose: bool = False,
+    mode: InstallMode | None = None,
+) -> None:
+    """
+    Install a skill from a local directory.
+
+    Args:
+        source_path: Path to the local skill directory.
+        agent: Target agent ("claude" or "opencode"). Auto-detected if None.
+        project_level: If True, install to project directory instead of user directory.
+        verbose: If True, print detailed progress information.
+        mode: Installation mode. Only "copy" is supported for local installs.
+    """
+    source_path = source_path.expanduser().resolve()
+
+    if not source_path.exists():
+        raise InstallError(str(source_path), "Source path does not exist")
+    if not source_path.is_dir():
+        raise InstallError(str(source_path), "Source path is not a directory")
+
+    skill_name = source_path.name
+    skill_id = f"local/{skill_name}"
+
+    # Step 1: Determine target agent
+    resolved_agent: AgentType
+    if agent is None:
+        resolved_agent = cast(AgentType, detect_agent())
+        if verbose:
+            print(f"Auto-detected agent: {get_agent_display_name(resolved_agent)}")
+    else:
+        resolved_agent = agent
+        if verbose:
+            print(f"Using specified agent: {get_agent_display_name(resolved_agent)}")
+
+    # Step 1a: Auto-detect project-level for agents without home support
+    if not project_level and not supports_home_install(resolved_agent):
+        project_level = True
+        if verbose:
+            print(
+                f"  Note: {get_agent_display_name(resolved_agent)} only supports "
+                "project-level installation"
+            )
+
+    # Step 2: Determine target directory
+    skills_dir = ensure_skills_dir(resolved_agent, project_level)
+    target_dir = skills_dir / skill_name
+
+    # Step 3: Copy files
+    if verbose:
+        print(f"Installing local skill '{skill_name}' to {target_dir}...")
+
+    copy_skill_files(source_path, target_dir, verbose=verbose)
+
+    # Step 4: Write manifest
+    manifest = SkillManifest.create(
+        skill_id=skill_id,
+        git_repo="local",
+        skill_path=str(source_path),
+        git_sha="local",
+        install_mode="copy",
+    )
+    write_manifest(target_dir, manifest)
+
+    # Success message
+    agent_name = get_agent_display_name(resolved_agent)
+    location = "project" if project_level else "user"
+    print(f"Installed: {skill_name} -> {agent_name} ({location}) [local]")
+
+    # Step 5: Sync skill reference to agent config files (project-level only)
+    if project_level:
+        project_dir = Path.cwd()
+        skill_ref = SkillReference(
+            skill_id=skill_id,
+            skill_name=skill_name,
+            skill_path=target_dir,
+        )
+
+        if verbose:
+            print("Syncing skill to config files...")
+
+        sync_results = sync_skill_to_configs(
+            skill=skill_ref,
+            project_dir=project_dir,
+            agent=resolved_agent if agent else None,
+            verbose=verbose,
+        )
+
+        for result in sync_results:
+            if result.error:
+                print(f"  Warning: Could not update {result.config_file}: {result.error}")
+            elif result.created:
+                print(f"  Created: {result.config_file}")
+            elif result.updated:
+                if verbose:
+                    print(f"  Updated: {result.config_file}")
+
+
 def install_skill(
     skill_id: str,
     agent: AgentType | None = None,

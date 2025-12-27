@@ -1,6 +1,6 @@
 # Python
 .env.jira 
-
+.skilz/
 debugging/
 __pycache__/
 *.py[cod]

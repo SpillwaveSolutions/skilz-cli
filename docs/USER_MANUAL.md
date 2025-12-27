@@ -118,6 +118,10 @@ skilz install <skill-id> [options]
 |--------|-------------|
 | `--agent {claude,opencode}` | Target agent. Auto-detected if not specified. |
 | `--project` | Install to project directory instead of user directory |
+| `-f, --file PATH` | Install from local filesystem path |
+| `-g, --git URL` | Install from Git repository URL |
+| `--copy` | Force copy installation (default for project-level) |
+| `--symlink` | Force symlink installation (default for user-level) |
 | `-v, --verbose` | Show detailed output |
 
 **Examples:**
@@ -129,6 +133,12 @@ skilz install anthropics_skills/theme-factory
 # Install for specific agent
 skilz install anthropics_skills/theme-factory --agent claude
 skilz install anthropics_skills/theme-factory --agent opencode
+
+# Install from local filesystem
+skilz install -f ~/.claude/skills/design-doc-mermaid --project --agent gemini
+
+# Install from git repository (URL)
+skilz install -g https://github.com/user/skill-repo.git
 
 # Install to project directory (for testing or project-specific skills)
 skilz install anthropics_skills/theme-factory --project
@@ -151,6 +161,67 @@ If the skill is already installed with the same SHA, Skilz skips the installatio
 ```
 Already installed: anthropics_skills/theme-factory (00756142)
 ```
+
+---
+
+### Installing Local Skills
+
+You can install skills directly from your local filesystem. This is useful for developing new skills or installing skills from other agent directories (like Claude or OpenCode).
+
+**Syntax:**
+```bash
+skilz install -f <path-to-skill> [options]
+```
+
+**Examples:**
+
+```bash
+# Install a skill from Claude Code's directory to a project for Gemini
+skilz install -f ~/.claude/skills/design-doc-mermaid --project --agent gemini
+
+# Install a skill from OpenCode's directory
+skilz install -f ~/.config/opencode/skills/my-skill --project --agent gemini
+
+# Install a skill from a universal installation
+skilz install -f ~/.skilz/skills/some-tool --project --agent universal
+```
+
+**What happens to config files (e.g., GEMINI.md):**
+
+When you install a skill for an agent like Gemini (which doesn't have native skill loading), Skilz automatically injects the skill definition into the agent's context file (e.g., `GEMINI.md`).
+
+After running:
+`skilz install -f ~/.claude/skills/design-doc-mermaid --project --agent gemini`
+
+Your `GEMINI.md` will contain:
+
+```xml
+<skills_system priority="1">
+
+## Available Skills
+
+<!-- SKILLS_TABLE_START -->
+<usage>
+When users ask you to perform tasks, check if any of the available skills
+below can help complete the task more effectively.
+...
+</usage>
+
+<available_skills>
+
+<skill>
+<name>design-doc-mermaid</name>
+<description>Create Mermaid diagrams for any purpose - activity diagrams, deployment diagrams, architecture diagrams, or complete design documents.</description>
+<location>.skilz/skills/design-doc-mermaid/SKILL.md</location>
+</skill>
+
+</available_skills>
+<!-- SKILLS_TABLE_END -->
+
+</skills_system>
+```
+
+The agent (Gemini) reads this section and knows how to invoke the skill using `skilz read design-doc-mermaid`.
 
 ---
 
