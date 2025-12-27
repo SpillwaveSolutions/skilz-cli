@@ -1,0 +1,14 @@
+flowchart TD
+    A[User Input] --> B[CLI Parser]
+    B --> C[list_cmd.cmd_list]
+    C --> D[scanner.scan_installed_skills]
+
+    D --> E[agents.get_skills_dir]
+    D --> F["manifest.read_manifest<br/>(for each skill)"]
+    D --> G["registry.lookup_skill<br/>(for status check)"]
+
+    E --> H[Format Output - table or JSON]
+    F --> H
+    G --> H
+
+    H --> I[Display Results]

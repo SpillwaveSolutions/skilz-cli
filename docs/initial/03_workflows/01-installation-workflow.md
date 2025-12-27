@@ -1,13 +1,22 @@
 # Installation Workflow
 
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
+
 ## Overview
 
 The installation workflow orchestrates 10 distinct steps to safely install a skill from a git repository to the target agent's skills directory.
 
 ## High-Level Flow
 
-```
-User Command → CLI Parser → Install Command → Installer → Success/Error
+```mermaid
+flowchart LR
+    A[User Command] --> B[CLI Parser]
+    B --> C[Install Command]
+    C --> D[Installer]
+    D --> E{Result}
+    E -->|Success| F[✓ Success]
+    E -->|Error| G[✗ Error]
 ```
 
 ## Detailed 10-Step Workflow
@@ -431,3 +440,8 @@ Step 4 detects `up_to_date` and skips steps 5-10.
 - [Git Operations Module](../01_core_modules/05-git_ops.md)
 - [Manifest Module](../01_core_modules/07-manifest.md)
 - [Installation Sequence Diagram](../diagrams/mermaid/installation-workflow.mmd)
+
+---
+
+**[skillzwave.ai](https://skillzwave.ai)** — The largest agent and agent skills marketplace
+**[Spillwave](https://spillwave.com)** — Leaders in agentic software development

@@ -1,0 +1,20 @@
+flowchart TD
+    A[User Input] --> B[CLI Parser - cli.py]
+    B --> C[install_cmd.cmd_install]
+    C --> D[installer.install_skill]
+
+    D --> E[agents.detect_agent]
+    D --> F[registry.lookup_skill]
+    D --> G[manifest.needs_install]
+    D --> H[git_ops.clone_or_fetch]
+    D --> I[git_ops.checkout_sha]
+    D --> J[installer.copy_skill_files]
+    D --> K[manifest.write_manifest]
+
+    E --> L[Success Message]
+    F --> L
+    G --> L
+    H --> L
+    I --> L
+    J --> L
+    K --> L

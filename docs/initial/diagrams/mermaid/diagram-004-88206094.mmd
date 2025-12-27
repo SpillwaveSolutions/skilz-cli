@@ -1,0 +1,14 @@
+flowchart TD
+    A[User Input] --> B[CLI Parser]
+    B --> C[update_cmd.cmd_update]
+    C --> D[scanner.scan_installed_skills]
+    D --> E[Get all installed skills]
+
+    E --> F{For each skill}
+    F --> G[registry.lookup_skill]
+    G --> H[Compare SHAs]
+    H --> I{Outdated?}
+    I -->|Yes| J[installer.install_skill]
+    I -->|No| K[Skip]
+    J --> L[Summary Report]
+    K --> L

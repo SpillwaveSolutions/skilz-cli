@@ -1,0 +1,33 @@
+flowchart TB
+    subgraph CLI["CLI Layer"]
+        direction LR
+        CLI_FILES["cli.py, __main__.py"]
+        CLI_FUNC["• Argument Parsing<br/>• Command Dispatch<br/>• Help Generation"]
+    end
+
+    subgraph Commands["Commands Layer"]
+        direction LR
+        install_cmd["install_cmd"]
+        list_cmd["list_cmd"]
+        update_cmd["update_cmd"]
+        remove_cmd["remove_cmd"]
+    end
+
+    subgraph Core["Core Logic Layer"]
+        direction LR
+        installer["installer.py"]
+        scanner["scanner.py"]
+        registry["registry.py"]
+        git_ops["git_ops.py"]
+    end
+
+    subgraph Support["Support Layer"]
+        direction LR
+        agents["agents.py"]
+        manifest["manifest.py"]
+        errors["errors.py"]
+    end
+
+    CLI --> Commands
+    Commands --> Core
+    Core --> Support

@@ -1,11 +1,14 @@
 # Skilz CLI - Documentation Generation Summary
 
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
+
 ## Overview
 
 Exhaustive technical documentation generated for the Skilz CLI project following the 6-phase documentation workflow.
 
 **Project:** Skilz CLI - Universal Package Manager for AI Skills
-**Version:** 0.1.0
+**Version:** 1.2.0
 **Documentation Date:** 2025-12-14
 **Output Directory:** `/Users/richardhightower/clients/spillwave/src/skilz-cli/docs/initial`
 
@@ -30,8 +33,8 @@ Exhaustive technical documentation generated for the Skilz CLI project following
 | **Source Lines** | 1,661 lines |
 | **Test Files** | 13 test modules |
 | **Test Lines** | 2,384 lines |
-| **Test Coverage** | 92% |
-| **Total Tests** | 159 test cases |
+| **Test Coverage** | 85% |
+| **Total Tests** | 448 test cases |
 | **SDD Spec Files** | 13 documents |
 
 ## Directory Structure
@@ -88,7 +91,7 @@ docs/initial/
 - 15 Python source modules identified
 - 1,661 lines of source code
 - 13 test modules with 2,384 lines
-- 92% test coverage verified
+- 85% test coverage verified
 
 ### ✅ Phase 2: Structure (COMPLETE)
 
@@ -469,3 +472,8 @@ The documentation is production-ready and provides a solid foundation for:
 - [User Manual](../USER_MANUAL.md)
 - [Project README](../../README.md)
 - [SDD Constitution](../../.speckit/constitution.md)
+
+---
+
+**[skillzwave.ai](https://skillzwave.ai)** — The largest agent and agent skills marketplace
+**[Spillwave](https://spillwave.com)** — Leaders in agentic software development

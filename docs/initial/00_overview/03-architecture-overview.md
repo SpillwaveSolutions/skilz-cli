@@ -1,41 +1,46 @@
 # Architecture Overview
 
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
+
 ## System Architecture
 
 Skilz is built with a layered architecture that separates concerns and maintains high cohesion within modules.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        CLI Layer                            │
-│                     (cli.py, __main__.py)                   │
-│  • Argument Parsing                                         │
-│  • Command Dispatch                                         │
-│  • Help Generation                                          │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                     Commands Layer                          │
-│         (commands/*.py)                                     │
-│  ┌──────────────┬──────────────┬──────────────┬──────────┐ │
-│  │ install_cmd  │  list_cmd    │  update_cmd  │ remove_  │ │
-│  │              │              │              │  cmd     │ │
-│  └──────────────┴──────────────┴──────────────┴──────────┘ │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                   Core Logic Layer                          │
-│  ┌──────────────┬──────────────┬──────────────┬──────────┐ │
-│  │  installer   │   scanner    │   registry   │ git_ops  │ │
-│  │  .py         │   .py        │   .py        │  .py     │ │
-│  └──────────────┴──────────────┴──────────────┴──────────┘ │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                   Support Layer                             │
-│  ┌──────────────┬──────────────┬──────────────┐            │
-│  │   agents.py  │ manifest.py  │  errors.py   │            │
-│  └──────────────┴──────────────┴──────────────┘            │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph CLI["CLI Layer"]
+        direction LR
+        CLI_FILES["cli.py, __main__.py"]
+        CLI_FUNC["• Argument Parsing<br/>• Command Dispatch<br/>• Help Generation"]
+    end
+
+    subgraph Commands["Commands Layer"]
+        direction LR
+        install_cmd["install_cmd"]
+        list_cmd["list_cmd"]
+        update_cmd["update_cmd"]
+        remove_cmd["remove_cmd"]
+    end
+
+    subgraph Core["Core Logic Layer"]
+        direction LR
+        installer["installer.py"]
+        scanner["scanner.py"]
+        registry["registry.py"]
+        git_ops["git_ops.py"]
+    end
+
+    subgraph Support["Support Layer"]
+        direction LR
+        agents["agents.py"]
+        manifest["manifest.py"]
+        errors["errors.py"]
+    end
+
+    CLI --> Commands
+    Commands --> Core
+    Core --> Support
 ```
 
 ## Design Principles
@@ -362,89 +367,104 @@ class InstallError(SkilzError):
 
 ### Installation Flow
 
-```
-User Input
-    ↓
-CLI Parser (cli.py)
-    ↓
-install_cmd.cmd_install()
-    ↓
-installer.install_skill()
-    ├→ agents.detect_agent() ────────────┐
-    ├→ registry.lookup_skill() ──────────┤
-    ├→ manifest.needs_install() ─────────┤
-    ├→ git_ops.clone_or_fetch() ─────────┤
-    ├→ git_ops.checkout_sha() ───────────┤
-    ├→ installer.copy_skill_files() ─────┤
-    └→ manifest.write_manifest() ────────┘
-    ↓
-Success Message
+```mermaid
+flowchart TD
+    A[User Input] --> B[CLI Parser - cli.py]
+    B --> C[install_cmd.cmd_install]
+    C --> D[installer.install_skill]
+
+    D --> E[agents.detect_agent]
+    D --> F[registry.lookup_skill]
+    D --> G[manifest.needs_install]
+    D --> H[git_ops.clone_or_fetch]
+    D --> I[git_ops.checkout_sha]
+    D --> J[installer.copy_skill_files]
+    D --> K[manifest.write_manifest]
+
+    E --> L[Success Message]
+    F --> L
+    G --> L
+    H --> L
+    I --> L
+    J --> L
+    K --> L
 ```
 
 ### List Flow
 
-```
-User Input
-    ↓
-CLI Parser
-    ↓
-list_cmd.cmd_list()
-    ↓
-scanner.scan_installed_skills()
-    ├→ agents.get_skills_dir() ──────────┐
-    ├→ manifest.read_manifest() ─────────┤ (for each skill)
-    └→ registry.lookup_skill() ──────────┘ (for status check)
-    ↓
-Format Output (table or JSON)
-    ↓
-Display Results
+```mermaid
+flowchart TD
+    A[User Input] --> B[CLI Parser]
+    B --> C[list_cmd.cmd_list]
+    C --> D[scanner.scan_installed_skills]
+
+    D --> E[agents.get_skills_dir]
+    D --> F["manifest.read_manifest<br/>(for each skill)"]
+    D --> G["registry.lookup_skill<br/>(for status check)"]
+
+    E --> H[Format Output - table or JSON]
+    F --> H
+    G --> H
+
+    H --> I[Display Results]
 ```
 
 ### Update Flow
 
-```
-User Input
-    ↓
-CLI Parser
-    ↓
-update_cmd.cmd_update()
-    ├→ scanner.scan_installed_skills()
-    │   └→ Get all installed skills
-    │
-    └→ For each skill:
-        ├→ registry.lookup_skill()
-        ├→ Compare SHAs
-        └→ If outdated:
-            └→ installer.install_skill()
-    ↓
-Summary Report
+```mermaid
+flowchart TD
+    A[User Input] --> B[CLI Parser]
+    B --> C[update_cmd.cmd_update]
+    C --> D[scanner.scan_installed_skills]
+    D --> E[Get all installed skills]
+
+    E --> F{For each skill}
+    F --> G[registry.lookup_skill]
+    G --> H[Compare SHAs]
+    H --> I{Outdated?}
+    I -->|Yes| J[installer.install_skill]
+    I -->|No| K[Skip]
+    J --> L[Summary Report]
+    K --> L
 ```
 
 ## State Management
 
 ### Skill Lifecycle States
 
-```
-NOT INSTALLED
-    ↓ (skilz install)
-INSTALLED (SHA: a1b2c3)
-    ↓ (registry updated to SHA: b2c3d4)
-OUTDATED
-    ↓ (skilz update)
-UP-TO-DATE (SHA: b2c3d4)
-    ↓ (skilz remove)
-NOT INSTALLED
+```mermaid
+stateDiagram-v2
+    [*] --> NOT_INSTALLED
+    NOT_INSTALLED --> INSTALLED : skilz install
+    INSTALLED --> OUTDATED : registry updated
+    OUTDATED --> UP_TO_DATE : skilz update
+    UP_TO_DATE --> NOT_INSTALLED : skilz remove
+    INSTALLED --> NOT_INSTALLED : skilz remove
+
+    note right of INSTALLED
+        SHA a1b2c3
+    end note
+    note right of OUTDATED
+        Registry SHA b2c3d4
+    end note
+    note right of UP_TO_DATE
+        SHA b2c3d4
+    end note
 ```
 
 ### Manifest States
 
-```
-NO MANIFEST
-    ↓ (install)
-MANIFEST EXISTS
-    ├─ SHA matches registry → UP-TO-DATE
-    ├─ SHA differs → OUTDATED
-    └─ Skill not in registry → UNKNOWN
+```mermaid
+stateDiagram-v2
+    [*] --> NO_MANIFEST
+    NO_MANIFEST --> MANIFEST_EXISTS : install
+
+    state MANIFEST_EXISTS {
+        [*] --> CheckStatus
+        CheckStatus --> UP_TO_DATE : SHA matches registry
+        CheckStatus --> OUTDATED : SHA differs
+        CheckStatus --> UNKNOWN : Skill not in registry
+    }
 ```
 
 ## Concurrency Model
@@ -522,7 +542,7 @@ tests/
 └── test_remove_cmd.py   # Remove command
 ```
 
-**Coverage:** 92% (159 tests)
+**Coverage:** 85% (448 tests)
 
 ## Spec-Driven Development
 
@@ -546,20 +566,14 @@ Each feature in `.speckit/features/<NN>-feature-name/`:
 
 ### Workflow
 
-```
-Constitution
-    ↓
-Feature Specification (WHAT)
-    ↓
-Technical Plan (HOW)
-    ↓
-Task Breakdown
-    ↓
-Implementation
-    ↓
-Testing
-    ↓
-Documentation
+```mermaid
+flowchart TD
+    A[Constitution] --> B[Feature Specification - WHAT]
+    B --> C[Technical Plan - HOW]
+    C --> D[Task Breakdown]
+    D --> E[Implementation]
+    E --> F[Testing]
+    F --> G[Documentation]
 ```
 
 ## Extension Points
@@ -673,3 +687,8 @@ if not all(field in data for field in required):
 - [Data Flow](../04_architecture/02-data-flow.md)
 - [Core Modules](../01_core_modules/)
 - [Workflows](../03_workflows/)
+
+---
+
+**[skillzwave.ai](https://skillzwave.ai)** — The largest agent and agent skills marketplace
+**[Spillwave](https://spillwave.com)** — Leaders in agentic software development

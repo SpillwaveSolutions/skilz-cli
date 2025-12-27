@@ -1,5 +1,8 @@
 # Core Modules Summary
 
+**Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
+**Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
+
 ## Overview
 
 The Skilz CLI consists of 8 core modules organized into layers, each with specific responsibilities.
@@ -21,53 +24,60 @@ The Skilz CLI consists of 8 core modules organized into layers, each with specif
 
 ## Layer Architecture
 
-```
-┌─────────────────────────────────────┐
-│          CLI Layer (176)            │
-│         cli.py, __main__.py         │
-└─────────────────┬───────────────────┘
-                  │
-┌─────────────────▼───────────────────┐
-│       Commands Layer (292)          │
-│    install, list, update, remove    │
-└─────────────────┬───────────────────┘
-                  │
-┌─────────────────▼───────────────────┐
-│       Core Logic Layer (754)        │
-│ installer, scanner, registry, git   │
-└─────────────────┬───────────────────┘
-                  │
-┌─────────────────▼───────────────────┐
-│       Support Layer (292)           │
-│    agents, manifest, errors         │
-└─────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph CLI["CLI Layer (176 lines)"]
+        CLI_MOD["cli.py, __main__.py"]
+    end
+
+    subgraph Commands["Commands Layer (292 lines)"]
+        CMD_MOD["install, list, update, remove"]
+    end
+
+    subgraph Core["Core Logic Layer (754 lines)"]
+        CORE_MOD["installer, scanner, registry, git"]
+    end
+
+    subgraph Support["Support Layer (292 lines)"]
+        SUPPORT_MOD["agents, manifest, errors"]
+    end
+
+    CLI --> Commands
+    Commands --> Core
+    Core --> Support
 ```
 
 ## Module Dependencies
 
 ### Dependency Graph
 
-```
-cli.py
-├── commands/install_cmd.py
-│   └── installer.py
-│       ├── registry.py
-│       ├── agents.py
-│       ├── git_ops.py
-│       ├── manifest.py
-│       └── errors.py
-├── commands/list_cmd.py
-│   ├── scanner.py
-│   │   ├── agents.py
-│   │   └── manifest.py
-│   └── registry.py
-├── commands/update_cmd.py
-│   ├── scanner.py
-│   ├── installer.py
-│   └── registry.py
-└── commands/remove_cmd.py
-    ├── scanner.py
-    └── agents.py
+```mermaid
+flowchart TB
+    cli[cli.py]
+
+    cli --> install_cmd[install_cmd.py]
+    cli --> list_cmd[list_cmd.py]
+    cli --> update_cmd[update_cmd.py]
+    cli --> remove_cmd[remove_cmd.py]
+
+    install_cmd --> installer[installer.py]
+    installer --> registry[registry.py]
+    installer --> agents[agents.py]
+    installer --> git_ops[git_ops.py]
+    installer --> manifest[manifest.py]
+    installer --> errors[errors.py]
+
+    list_cmd --> scanner[scanner.py]
+    list_cmd --> registry
+    scanner --> agents
+    scanner --> manifest
+
+    update_cmd --> scanner
+    update_cmd --> installer
+    update_cmd --> registry
+
+    remove_cmd --> scanner
+    remove_cmd --> agents
 ```
 
 ### Import Matrix
@@ -367,7 +377,7 @@ class InstallError(SkilzError):
 | `update_cmd.py` | `test_update_cmd.py` | 87% | 10 |
 | `remove_cmd.py` | `test_remove_cmd.py` | 91% | 5 |
 
-**Overall Coverage:** 92% (159 tests)
+**Overall Coverage:** 85% (448 tests)
 
 ## Common Patterns
 
@@ -419,3 +429,8 @@ class Model:
 - [Agents Module](./06-agents.md)
 - [Manifest Module](./07-manifest.md)
 - [Errors Module](./08-errors.md)
+
+---
+
+**[skillzwave.ai](https://skillzwave.ai)** — The largest agent and agent skills marketplace
+**[Spillwave](https://spillwave.com)** — Leaders in agentic software development
