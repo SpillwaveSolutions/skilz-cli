@@ -139,6 +139,12 @@ Supported agents: {", ".join(agent_choices)}
             "Default: use marketplace version"
         ),
     )
+    install_parser.add_argument(
+        "--all",
+        action="store_true",
+        dest="install_all",
+        help="Install all skills found in repository (with -g/--git)",
+    )
 
     # List command
     list_parser = subparsers.add_parser(
