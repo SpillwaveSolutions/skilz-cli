@@ -637,12 +637,10 @@ class TestFindSkillsFromMarketplace:
         plugin_dir = tmp_path / ".claude-plugin"
         plugin_dir.mkdir()
         (plugin_dir / "marketplace.json").write_text(
-            '{"name": "official", "plugins": '
-            '[{"name": "official", "source": "./official-skill"}]}'
+            '{"name": "official", "plugins": [{"name": "official", "source": "./official-skill"}]}'
         )
         (tmp_path / "marketplace.json").write_text(
-            '{"name": "root", "plugins": '
-            '[{"name": "root", "source": "./root-skill"}]}'
+            '{"name": "root", "plugins": [{"name": "root", "source": "./root-skill"}]}'
         )
 
         skills = find_skills_from_marketplace(tmp_path)
