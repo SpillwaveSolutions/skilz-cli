@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "skilz"
-version = "1.3.0"
+version = "1.4.0"
 description = "The universal package manager for AI skills"
 readme = "README.md"
 license = "MIT"

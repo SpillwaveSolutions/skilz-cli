@@ -4,6 +4,7 @@ This module handles installing skills directly from git repositories
 without requiring registry entries.
 """
 
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -75,8 +76,9 @@ def find_skills_in_repo(repo_path: Path) -> list[GitSkillInfo]:
 
     # Find all SKILL.md files recursively
     for skill_md in repo_path.rglob("SKILL.md"):
-        # Skip hidden directories (like .git)
-        if any(part.startswith(".") for part in skill_md.parts):
+        # Skip .git directory, but allow .claude/.opencode (these contain valid skills)
+        relative_parts = skill_md.relative_to(repo_path).parts
+        if ".git" in relative_parts:
             continue
 
         skill_dir = skill_md.parent
@@ -95,6 +97,69 @@ def find_skills_in_repo(repo_path: Path) -> list[GitSkillInfo]:
     skills.sort(key=lambda s: s.skill_name.lower())
 
     return skills
+
+
+def find_skills_from_marketplace(repo_path: Path) -> list[GitSkillInfo]:
+    """
+    Find skills from official Claude plugin marketplace.json.
+
+    Looks for .claude-plugin/marketplace.json per official Claude Code docs.
+    Falls back to checking root marketplace.json for compatibility.
+
+    Reference: https://code.claude.com/docs/en/plugin-marketplaces
+
+    Args:
+        repo_path: Path to the cloned repository root.
+
+    Returns:
+        List of GitSkillInfo for each skill found in marketplace, or empty list.
+    """
+    # Official location per Claude Code docs, then fallback
+    marketplace_paths = [
+        repo_path / ".claude-plugin" / "marketplace.json",
+        repo_path / "marketplace.json",
+    ]
+
+    for marketplace_path in marketplace_paths:
+        if not marketplace_path.exists():
+            continue
+
+        try:
+            data = json.loads(marketplace_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+
+        skills: list[GitSkillInfo] = []
+
+        # Official schema uses "plugins" array
+        for plugin in data.get("plugins", []):
+            source = plugin.get("source", "")
+
+            # Handle string source (local path)
+            if isinstance(source, str) and source.startswith("./"):
+                skill_path = repo_path / source.lstrip("./")
+            elif isinstance(source, str):
+                skill_path = repo_path / source
+            else:
+                # Skip non-local sources (github refs, URLs)
+                continue
+
+            # Validate SKILL.md exists
+            if (skill_path / "SKILL.md").exists():
+                skills.append(
+                    GitSkillInfo(
+                        skill_name=plugin.get("name", skill_path.name),
+                        skill_path=skill_path,
+                        relative_path=str(skill_path.relative_to(repo_path)),
+                    )
+                )
+
+        if skills:
+            # Sort by skill name for consistent ordering
+            skills.sort(key=lambda s: s.skill_name.lower())
+            return skills
+
+    return []
 
 
 def prompt_skill_selection(
@@ -205,6 +270,7 @@ def install_from_git(
     mode: InstallMode | None = None,
     install_all: bool = False,
     yes_all: bool = False,
+    skill_filter_name: str | None = None,
 ) -> int:
     """
     Install skill(s) from a git repository URL.
@@ -217,6 +283,7 @@ def install_from_git(
         mode: Installation mode ('copy' or 'symlink').
         install_all: If True, install all skills without prompting.
         yes_all: If True (global -y flag), install all without prompting.
+        skill_filter_name: If provided, install only the skill with this name.
 
     Returns:
         Exit code (0 for success, non-zero for error).
@@ -240,8 +307,10 @@ def install_from_git(
         if verbose:
             print(f"Cloned to: {temp_dir}")
 
-        # Step 2: Find all skills
-        skills = find_skills_in_repo(temp_dir)
+        # Step 2: Find all skills (try marketplace.json first, then recursive search)
+        skills = find_skills_from_marketplace(temp_dir)
+        if not skills:
+            skills = find_skills_in_repo(temp_dir)
 
         if not skills:
             print(
@@ -253,12 +322,25 @@ def install_from_git(
         if verbose:
             print(f"Found {len(skills)} skill(s)")
 
-        # Step 3: Select skills to install
-        selected = prompt_skill_selection(
-            skills,
-            install_all=install_all,
-            yes_all=yes_all,
-        )
+        # Step 3: Filter by skill name if --skill flag provided
+        if skill_filter_name:
+            matching = [s for s in skills if s.skill_name == skill_filter_name]
+            if not matching:
+                available = ", ".join(s.skill_name for s in skills)
+                print(
+                    f"Error: Skill '{skill_filter_name}' not found in repository.",
+                    file=sys.stderr,
+                )
+                print(f"Available skills: {available}", file=sys.stderr)
+                return 1
+            selected = matching
+        else:
+            # Step 3b: Interactive selection
+            selected = prompt_skill_selection(
+                skills,
+                install_all=install_all,
+                yes_all=yes_all,
+            )
 
         if not selected:
             if verbose:
