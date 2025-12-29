@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from skilz.git_install import (
     GitSkillInfo,
+    find_skills_from_marketplace,
     find_skills_in_repo,
     get_head_sha,
     install_from_git,
@@ -144,12 +145,22 @@ Content
         assert "skill-one" in skill_names
         assert "skill-two" in skill_names
 
-    def test_skip_hidden_directories(self, tmp_path):
-        """Test that hidden directories are skipped."""
-        # Create skill in hidden directory
-        hidden_dir = tmp_path / ".hidden" / "skill"
-        hidden_dir.mkdir(parents=True)
-        (hidden_dir / "SKILL.md").write_text("---\nname: hidden\n---\n")
+    def test_skip_git_directory_only(self, tmp_path):
+        """Test that only .git directory is skipped, not .claude or .opencode."""
+        # Create skill in .git directory (should be skipped)
+        git_dir = tmp_path / ".git" / "hooks"
+        git_dir.mkdir(parents=True)
+        (git_dir / "SKILL.md").write_text("---\nname: git-hook\n---\n")
+
+        # Create skill in .claude directory (should be found)
+        claude_dir = tmp_path / ".claude" / "skills" / "my-skill"
+        claude_dir.mkdir(parents=True)
+        (claude_dir / "SKILL.md").write_text("---\nname: claude-skill\n---\n")
+
+        # Create skill in .opencode directory (should be found)
+        opencode_dir = tmp_path / ".opencode" / "skills" / "another-skill"
+        opencode_dir.mkdir(parents=True)
+        (opencode_dir / "SKILL.md").write_text("---\nname: opencode-skill\n---\n")
 
         # Create visible skill
         visible_dir = tmp_path / "visible"
@@ -158,8 +169,13 @@ Content
 
         skills = find_skills_in_repo(tmp_path)
 
-        assert len(skills) == 1
-        assert skills[0].skill_name == "visible"
+        # Should find 3 skills (claude, opencode, visible) but not .git
+        assert len(skills) == 3
+        skill_names = [s.skill_name for s in skills]
+        assert "claude-skill" in skill_names
+        assert "opencode-skill" in skill_names
+        assert "visible" in skill_names
+        assert "git-hook" not in skill_names
 
     def test_empty_repo(self, tmp_path):
         """Test finding no skills in empty repo."""
@@ -491,3 +507,271 @@ class TestInstallFromGit:
 
         assert result == 1
         mock_cleanup.assert_called_once_with(tmp_path)
+
+    @patch("skilz.link_ops.clone_git_repo")
+    @patch("skilz.link_ops.cleanup_temp_dir")
+    @patch("skilz.installer.install_local_skill")
+    def test_skill_filter_name_success(self, mock_install, mock_cleanup, mock_clone, tmp_path):
+        """Test --skill flag finds and installs specific skill."""
+        # Create multiple skills
+        for name in ["skill1", "skill2", "target-skill"]:
+            skill_dir = tmp_path / name
+            skill_dir.mkdir()
+            (skill_dir / "SKILL.md").write_text(f"---\nname: {name}\n---\n")
+
+        mock_clone.return_value = tmp_path
+
+        result = install_from_git(
+            git_url="https://github.com/test/repo.git",
+            skill_filter_name="target-skill",
+        )
+
+        assert result == 0
+        # Only the target skill should be installed
+        assert mock_install.call_count == 1
+        call_kwargs = mock_install.call_args[1]
+        assert call_kwargs["skill_name"] == "target-skill"
+        mock_cleanup.assert_called_once()
+
+    @patch("skilz.link_ops.clone_git_repo")
+    @patch("skilz.link_ops.cleanup_temp_dir")
+    def test_skill_filter_name_not_found(self, mock_cleanup, mock_clone, tmp_path, capsys):
+        """Test --skill flag shows error when skill not found."""
+        # Create some skills (but not the one we're looking for)
+        for name in ["skill1", "skill2"]:
+            skill_dir = tmp_path / name
+            skill_dir.mkdir()
+            (skill_dir / "SKILL.md").write_text(f"---\nname: {name}\n---\n")
+
+        mock_clone.return_value = tmp_path
+
+        result = install_from_git(
+            git_url="https://github.com/test/repo.git",
+            skill_filter_name="nonexistent-skill",
+        )
+
+        assert result == 1
+        captured = capsys.readouterr()
+        assert "nonexistent-skill" in captured.err
+        assert "not found" in captured.err
+        assert "Available skills:" in captured.err
+        assert "skill1" in captured.err
+        assert "skill2" in captured.err
+        mock_cleanup.assert_called_once()
+
+
+class TestFindSkillsFromMarketplace:
+    """Tests for find_skills_from_marketplace function."""
+
+    def test_official_location(self, tmp_path):
+        """Test finding skills from official .claude-plugin/marketplace.json location."""
+        # Create official marketplace location
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+
+        # Create skill directory
+        skill_dir = tmp_path / "plugins" / "my-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("---\nname: my-skill\n---\n")
+
+        # Create marketplace.json
+        (plugin_dir / "marketplace.json").write_text(
+            """
+{
+    "name": "test-marketplace",
+    "plugins": [
+        {
+            "name": "my-skill",
+            "source": "./plugins/my-skill"
+        }
+    ]
+}
+"""
+        )
+
+        skills = find_skills_from_marketplace(tmp_path)
+
+        assert len(skills) == 1
+        assert skills[0].skill_name == "my-skill"
+        assert skills[0].relative_path == "plugins/my-skill"
+
+    def test_root_fallback(self, tmp_path):
+        """Test fallback to marketplace.json at repo root."""
+        # Create skill directory
+        skill_dir = tmp_path / "skills" / "root-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("---\nname: root-skill\n---\n")
+
+        # Create marketplace.json at root (no .claude-plugin/)
+        (tmp_path / "marketplace.json").write_text(
+            """
+{
+    "name": "root-marketplace",
+    "plugins": [
+        {
+            "name": "root-skill",
+            "source": "./skills/root-skill"
+        }
+    ]
+}
+"""
+        )
+
+        skills = find_skills_from_marketplace(tmp_path)
+
+        assert len(skills) == 1
+        assert skills[0].skill_name == "root-skill"
+
+    def test_official_takes_priority(self, tmp_path):
+        """Test that .claude-plugin/marketplace.json takes priority over root."""
+        # Create skill directories
+        official_skill = tmp_path / "official-skill"
+        official_skill.mkdir()
+        (official_skill / "SKILL.md").write_text("---\nname: official\n---\n")
+
+        root_skill = tmp_path / "root-skill"
+        root_skill.mkdir()
+        (root_skill / "SKILL.md").write_text("---\nname: root\n---\n")
+
+        # Create both marketplace files
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "marketplace.json").write_text(
+            '{"name": "official", "plugins": '
+            '[{"name": "official", "source": "./official-skill"}]}'
+        )
+        (tmp_path / "marketplace.json").write_text(
+            '{"name": "root", "plugins": '
+            '[{"name": "root", "source": "./root-skill"}]}'
+        )
+
+        skills = find_skills_from_marketplace(tmp_path)
+
+        # Should find the official one, not the root one
+        assert len(skills) == 1
+        assert skills[0].skill_name == "official"
+
+    def test_multiple_plugins(self, tmp_path):
+        """Test finding multiple skills from marketplace."""
+        # Create skill directories
+        for name in ["alpha", "beta", "gamma"]:
+            skill_dir = tmp_path / "plugins" / name
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md").write_text(f"---\nname: {name}\n---\n")
+
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "marketplace.json").write_text(
+            """
+{
+    "name": "multi",
+    "plugins": [
+        {"name": "alpha", "source": "./plugins/alpha"},
+        {"name": "beta", "source": "./plugins/beta"},
+        {"name": "gamma", "source": "./plugins/gamma"}
+    ]
+}
+"""
+        )
+
+        skills = find_skills_from_marketplace(tmp_path)
+
+        assert len(skills) == 3
+        skill_names = [s.skill_name for s in skills]
+        # Should be sorted alphabetically
+        assert skill_names == ["alpha", "beta", "gamma"]
+
+    def test_skips_missing_skill_md(self, tmp_path):
+        """Test that plugins without SKILL.md are skipped."""
+        # Create one skill with SKILL.md
+        good_skill = tmp_path / "good-skill"
+        good_skill.mkdir()
+        (good_skill / "SKILL.md").write_text("---\nname: good\n---\n")
+
+        # Create one skill without SKILL.md
+        bad_skill = tmp_path / "bad-skill"
+        bad_skill.mkdir()
+        (bad_skill / "README.md").write_text("No SKILL.md here")
+
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "marketplace.json").write_text(
+            """
+{
+    "name": "mixed",
+    "plugins": [
+        {"name": "good", "source": "./good-skill"},
+        {"name": "bad", "source": "./bad-skill"}
+    ]
+}
+"""
+        )
+
+        skills = find_skills_from_marketplace(tmp_path)
+
+        assert len(skills) == 1
+        assert skills[0].skill_name == "good"
+
+    def test_skips_non_local_sources(self, tmp_path):
+        """Test that non-local sources (github refs) are skipped."""
+        # Create local skill
+        local_skill = tmp_path / "local-skill"
+        local_skill.mkdir()
+        (local_skill / "SKILL.md").write_text("---\nname: local\n---\n")
+
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "marketplace.json").write_text(
+            """
+{
+    "name": "mixed-sources",
+    "plugins": [
+        {"name": "local", "source": "./local-skill"},
+        {"name": "remote", "source": {"github": "owner/repo", "ref": "v1.0"}}
+    ]
+}
+"""
+        )
+
+        skills = find_skills_from_marketplace(tmp_path)
+
+        assert len(skills) == 1
+        assert skills[0].skill_name == "local"
+
+    def test_no_marketplace_returns_empty(self, tmp_path):
+        """Test that missing marketplace files return empty list."""
+        skills = find_skills_from_marketplace(tmp_path)
+        assert len(skills) == 0
+
+    def test_invalid_json_skipped(self, tmp_path):
+        """Test that invalid JSON is gracefully handled."""
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "marketplace.json").write_text("{ invalid json }")
+
+        skills = find_skills_from_marketplace(tmp_path)
+        assert len(skills) == 0
+
+    def test_source_without_dot_slash(self, tmp_path):
+        """Test handling source paths without ./ prefix."""
+        skill_dir = tmp_path / "my-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("---\nname: my-skill\n---\n")
+
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "marketplace.json").write_text(
+            """
+{
+    "name": "no-prefix",
+    "plugins": [
+        {"name": "my-skill", "source": "my-skill"}
+    ]
+}
+"""
+        )
+
+        skills = find_skills_from_marketplace(tmp_path)
+
+        assert len(skills) == 1
+        assert skills[0].skill_name == "my-skill"

@@ -145,6 +145,11 @@ Supported agents: {", ".join(agent_choices)}
         dest="install_all",
         help="Install all skills found in repository (with -g/--git)",
     )
+    install_parser.add_argument(
+        "--skill",
+        metavar="NAME",
+        help="Install specific skill by name from multi-skill repository (with -g/--git)",
+    )
 
     # List command
     list_parser = subparsers.add_parser(

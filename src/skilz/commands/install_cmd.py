@@ -71,6 +71,7 @@ def cmd_install(args: argparse.Namespace) -> int:
 
         install_all = getattr(args, "install_all", False)
         yes_all = getattr(args, "yes_all", False)
+        skill_filter_name: str | None = getattr(args, "skill", None)
 
         return install_from_git(
             git_url=git_url,
@@ -80,6 +81,7 @@ def cmd_install(args: argparse.Namespace) -> int:
             mode=mode,
             install_all=install_all,
             yes_all=yes_all,
+            skill_filter_name=skill_filter_name,
         )
 
     try:
