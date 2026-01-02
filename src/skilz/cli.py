@@ -269,6 +269,17 @@ Supported agents: {", ".join(agent_choices)}
         help="Search project-level skills only",
     )
 
+    # Visit command
+    visit_parser = subparsers.add_parser(
+        "visit",
+        help="Open a skill's GitHub page in browser",
+        description="Open a skill's GitHub page in the default browser.",
+    )
+    visit_parser.add_argument(
+        "source",
+        help=("Source to visit: owner/repo, owner/repo/skill, or full https://github.com/... URL"),
+    )
+
     return parser
 
 
@@ -310,6 +321,11 @@ def main(argv: list[str] | None = None) -> int:
         from skilz.commands.read_cmd import cmd_read
 
         return cmd_read(args)
+
+    if args.command == "visit":
+        from skilz.commands.visit_cmd import cmd_visit
+
+        return cmd_visit(args)
 
     # Unknown command (shouldn't happen with subparsers)
     parser.print_help()
