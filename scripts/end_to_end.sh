@@ -708,14 +708,15 @@ test_visit_command() {
     fi
     
     log_info "Testing URL resolution for 'skilz visit owner/repo/path'..."
-    output=$(skilz visit anthropics/skills/excel 2>&1 || true)
+    # Note: Skills in anthropics/skills are under the skills/ subdirectory
+    output=$(skilz visit anthropics/skills/skills/xlsx 2>&1 || true)
     
-    if echo "$output" | grep -q "https://github.com/anthropics/skills/tree/main/excel"; then
+    if echo "$output" | grep -q "https://github.com/anthropics/skills/tree/main/skills/xlsx"; then
         log_success "Visit URL resolution works for owner/repo/path format"
-        track_test "skilz visit anthropics/skills/excel" "Visit owner/repo/path format" "PASS"
+        track_test "skilz visit anthropics/skills/skills/xlsx" "Visit owner/repo/path format" "PASS"
     else
         log_fail "Visit URL resolution failed for owner/repo/path format"
-        track_test "skilz visit anthropics/skills/excel" "Visit owner/repo/path format" "FAIL"
+        track_test "skilz visit anthropics/skills/skills/xlsx" "Visit owner/repo/path format" "FAIL"
     fi
 }
 
