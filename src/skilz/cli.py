@@ -269,6 +269,29 @@ Supported agents: {", ".join(agent_choices)}
         help="Search project-level skills only",
     )
 
+    # Search command
+    search_parser = subparsers.add_parser(
+        "search",
+        help="Search GitHub for available skills",
+        description="Search GitHub repositories for skills matching a query.",
+    )
+    search_parser.add_argument(
+        "query",
+        help="Search query (e.g., 'excel', 'pdf', 'data analysis')",
+    )
+    search_parser.add_argument(
+        "-l",
+        "--limit",
+        type=int,
+        default=10,
+        help="Maximum number of results (default: 10)",
+    )
+    search_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output as JSON",
+    )
+
     return parser
 
 
@@ -310,6 +333,11 @@ def main(argv: list[str] | None = None) -> int:
         from skilz.commands.read_cmd import cmd_read
 
         return cmd_read(args)
+
+    if args.command == "search":
+        from skilz.commands.search_cmd import cmd_search
+
+        return cmd_search(args)
 
     # Unknown command (shouldn't happen with subparsers)
     parser.print_help()
