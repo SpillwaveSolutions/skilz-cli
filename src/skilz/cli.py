@@ -154,7 +154,7 @@ Supported agents: {", ".join(agent_choices)}
     # List command
     list_parser = subparsers.add_parser(
         "list",
-        help="List installed skills",
+        help="List installed skills (alias: ls)",
         description="Show all installed skills with their versions and status.",
     )
     list_parser.add_argument(
@@ -205,29 +205,29 @@ Supported agents: {", ".join(agent_choices)}
         help="Show what would be updated without making changes",
     )
 
-    # Remove command
-    remove_parser = subparsers.add_parser(
-        "remove",
-        help="Remove an installed skill",
+    # Uninstall command (with alias: rm)
+    uninstall_parser = subparsers.add_parser(
+        "uninstall",
+        help="Uninstall a skill (alias: rm)",
         description="Uninstall a skill by removing its directory.",
     )
-    remove_parser.add_argument(
+    uninstall_parser.add_argument(
         "skill_id",
-        help="Skill to remove (ID or name)",
+        help="Skill to uninstall (ID or name)",
     )
-    remove_parser.add_argument(
+    uninstall_parser.add_argument(
         "--agent",
         choices=agent_choices,
         default=None,
         metavar="AGENT",
         help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
-    remove_parser.add_argument(
+    uninstall_parser.add_argument(
         "--project",
         action="store_true",
-        help="Remove project-level skill instead of user-level",
+        help="Uninstall project-level skill instead of user-level",
     )
-    remove_parser.add_argument(
+    uninstall_parser.add_argument(
         "-y",
         "--yes",
         action="store_true",
@@ -292,6 +292,89 @@ Supported agents: {", ".join(agent_choices)}
         help="Output as JSON",
     )
 
+    # Command aliases for Unix-like familiarity
+    # ls alias for list
+    ls_parser = subparsers.add_parser(
+        "ls",
+        help="Alias for 'list' - List installed skills",
+        description="Show all installed skills with their versions and status.",
+    )
+    ls_parser.add_argument(
+        "--agent",
+        choices=agent_choices,
+        default=None,
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
+    )
+    ls_parser.add_argument(
+        "--project",
+        action="store_true",
+        help="List project-level skills instead of user-level",
+    )
+    ls_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output as JSON",
+    )
+
+    # rm alias for uninstall
+    rm_parser = subparsers.add_parser(
+        "rm",
+        help="Alias for 'uninstall' - Uninstall a skill",
+        description="Uninstall a skill by removing its directory.",
+    )
+    rm_parser.add_argument(
+        "skill_id",
+        help="Skill to uninstall (ID or name)",
+    )
+    rm_parser.add_argument(
+        "--agent",
+        choices=agent_choices,
+        default=None,
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
+    )
+    rm_parser.add_argument(
+        "--project",
+        action="store_true",
+        help="Uninstall project-level skill instead of user-level",
+    )
+    rm_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip confirmation prompt",
+    )
+
+    # remove alias for uninstall (backward compatibility)
+    remove_parser = subparsers.add_parser(
+        "remove",
+        help="Alias for 'uninstall' - Uninstall a skill",
+        description="Uninstall a skill by removing its directory.",
+    )
+    remove_parser.add_argument(
+        "skill_id",
+        help="Skill to uninstall (ID or name)",
+    )
+    remove_parser.add_argument(
+        "--agent",
+        choices=agent_choices,
+        default=None,
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
+    )
+    remove_parser.add_argument(
+        "--project",
+        action="store_true",
+        help="Uninstall project-level skill instead of user-level",
+    )
+    remove_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip confirmation prompt",
+    )
+
     return parser
 
 
@@ -309,7 +392,7 @@ def main(argv: list[str] | None = None) -> int:
 
         return cmd_install(args)
 
-    if args.command == "list":
+    if args.command in ("list", "ls"):
         from skilz.commands.list_cmd import cmd_list
 
         return cmd_list(args)
@@ -319,7 +402,7 @@ def main(argv: list[str] | None = None) -> int:
 
         return cmd_update(args)
 
-    if args.command == "remove":
+    if args.command in ("uninstall", "remove", "rm"):
         from skilz.commands.remove_cmd import cmd_remove
 
         return cmd_remove(args)

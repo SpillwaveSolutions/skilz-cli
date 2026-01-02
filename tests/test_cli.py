@@ -309,3 +309,115 @@ class TestMain:
             result = main(["list"])
 
         assert result == 42
+
+
+class TestCommandAliases:
+    """Tests for SKILZ-50: Unix-style command aliases."""
+
+    def test_ls_alias_parses_correctly(self):
+        """ls alias should parse as list command."""
+        parser = create_parser()
+        args = parser.parse_args(["ls"])
+        assert args.command == "ls"
+
+    def test_rm_alias_parses_correctly(self):
+        """rm alias should parse as uninstall command."""
+        parser = create_parser()
+        args = parser.parse_args(["rm", "test/skill"])
+        assert args.command == "rm"
+        assert args.skill_id == "test/skill"
+
+    def test_uninstall_command_parses_correctly(self):
+        """uninstall command should parse correctly."""
+        parser = create_parser()
+        args = parser.parse_args(["uninstall", "test/skill"])
+        assert args.command == "uninstall"
+        assert args.skill_id == "test/skill"
+
+    def test_ls_alias_calls_list_handler(self):
+        """ls alias should call cmd_list handler."""
+        with patch("skilz.commands.list_cmd.cmd_list", return_value=0) as mock:
+            result = main(["ls"])
+
+        assert result == 0
+        mock.assert_called_once()
+
+    def test_rm_alias_calls_remove_handler(self):
+        """rm alias should call cmd_remove handler."""
+        with patch("skilz.commands.remove_cmd.cmd_remove", return_value=0) as mock:
+            result = main(["rm", "test/skill"])
+
+        assert result == 0
+        mock.assert_called_once()
+        args = mock.call_args[0][0]
+        assert args.skill_id == "test/skill"
+
+    def test_uninstall_calls_remove_handler(self):
+        """uninstall command should call cmd_remove handler."""
+        with patch("skilz.commands.remove_cmd.cmd_remove", return_value=0) as mock:
+            result = main(["uninstall", "test/skill"])
+
+        assert result == 0
+        mock.assert_called_once()
+        args = mock.call_args[0][0]
+        assert args.skill_id == "test/skill"
+
+    def test_ls_alias_has_same_options_as_list(self):
+        """ls alias should have same options as list."""
+        parser = create_parser()
+
+        # Test --agent option
+        args = parser.parse_args(["ls", "--agent", "claude"])
+        assert args.agent == "claude"
+
+        # Test --project option
+        args = parser.parse_args(["ls", "--project"])
+        assert args.project is True
+
+        # Test --json option
+        args = parser.parse_args(["ls", "--json"])
+        assert args.json is True
+
+    def test_rm_alias_has_same_options_as_uninstall(self):
+        """rm alias should have same options as uninstall."""
+        parser = create_parser()
+
+        # Test --agent option
+        args = parser.parse_args(["rm", "test/skill", "--agent", "claude"])
+        assert args.agent == "claude"
+
+        # Test --project option
+        args = parser.parse_args(["rm", "test/skill", "--project"])
+        assert args.project is True
+
+        # Test -y option
+        args = parser.parse_args(["rm", "test/skill", "-y"])
+        assert args.yes is True
+
+    def test_main_help_shows_all_aliases(self, capsys):
+        """Main help should show all commands and aliases."""
+        main([])
+        captured = capsys.readouterr()
+
+        # Check all main commands are shown
+        assert "list" in captured.out
+        assert "install" in captured.out
+        assert "update" in captured.out
+        assert "config" in captured.out
+        assert "read" in captured.out
+
+        # Check aliases are shown
+        assert "ls" in captured.out
+        assert "rm" in captured.out
+        assert "uninstall" in captured.out
+        assert "remove" in captured.out
+
+    def test_remove_still_works_for_backward_compatibility(self):
+        """remove command should still work for backward compatibility."""
+        with patch("skilz.commands.remove_cmd.cmd_remove", return_value=0) as mock:
+            result = main(["remove", "test/skill"])
+
+        assert result == 0
+        mock.assert_called_once()
+        args = mock.call_args[0][0]
+        assert args.skill_id == "test/skill"
