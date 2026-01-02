@@ -150,6 +150,12 @@ Supported agents: {", ".join(agent_choices)}
         metavar="NAME",
         help="Install specific skill by name from multi-skill repository (with -g/--git)",
     )
+    install_parser.add_argument(
+        "--force-config",
+        action="store_true",
+        dest="force_config",
+        help="Force config file updates even for agents with native skill support",
+    )
 
     # List command
     list_parser = subparsers.add_parser(

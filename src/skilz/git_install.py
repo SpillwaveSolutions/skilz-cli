@@ -271,6 +271,7 @@ def install_from_git(
     install_all: bool = False,
     yes_all: bool = False,
     skill_filter_name: str | None = None,
+    force_config: bool = False,
 ) -> int:
     """
     Install skill(s) from a git repository URL.
@@ -284,6 +285,7 @@ def install_from_git(
         install_all: If True, install all skills without prompting.
         yes_all: If True (global -y flag), install all without prompting.
         skill_filter_name: If provided, install only the skill with this name.
+        force_config: If True, write to config files even for native agents.
 
     Returns:
         Exit code (0 for success, non-zero for error).
@@ -370,6 +372,7 @@ def install_from_git(
                     git_sha=head_sha,
                     # Use skill name from SKILL.md frontmatter
                     skill_name=skill.skill_name,
+                    force_config=force_config,
                 )
 
                 installed_count += 1

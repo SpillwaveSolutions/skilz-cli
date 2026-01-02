@@ -35,6 +35,7 @@ class TestCmdInstall:
             verbose=False,
             mode=None,
             version_spec=None,
+            force_config=False,
         )
 
     def test_install_with_agent(self):
@@ -62,6 +63,7 @@ class TestCmdInstall:
             verbose=True,
             mode=None,
             version_spec=None,
+            force_config=False,
         )
 
     def test_install_with_claude_agent(self):
@@ -89,6 +91,7 @@ class TestCmdInstall:
             verbose=False,
             mode=None,
             version_spec=None,
+            force_config=False,
         )
 
     def test_install_skill_not_found_error(self, capsys):
@@ -202,6 +205,7 @@ class TestCmdInstall:
             verbose=False,
             mode=None,
             version_spec=None,
+            force_config=False,
         )
 
     def test_install_with_copy_flag(self):
@@ -229,6 +233,7 @@ class TestCmdInstall:
             verbose=False,
             mode="copy",
             version_spec=None,
+            force_config=False,
         )
 
     def test_install_with_symlink_flag(self):
@@ -256,6 +261,7 @@ class TestCmdInstall:
             verbose=False,
             mode="symlink",
             version_spec=None,
+            force_config=False,
         )
 
     def test_install_no_source_error(self, capsys):
