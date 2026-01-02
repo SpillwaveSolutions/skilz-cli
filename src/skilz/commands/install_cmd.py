@@ -9,6 +9,29 @@ from skilz.agents import AgentType
 from skilz.errors import SkilzError
 
 
+def is_git_url(skill_id: str | None) -> bool:
+    """Detect if skill_id is a Git URL that should route to git installation.
+
+    Detects:
+    - HTTPS URLs: https://github.com/owner/repo
+    - HTTP URLs: http://github.com/owner/repo
+    - SSH URLs: git@github.com:owner/repo
+    - .git suffix: any URL ending in .git
+
+    Does NOT match:
+    - Registry shorthand: owner/repo
+    - Plain skill names: my-skill
+    """
+    if not skill_id:
+        return False
+    return (
+        skill_id.startswith("https://")
+        or skill_id.startswith("http://")
+        or skill_id.startswith("git@")
+        or skill_id.endswith(".git")
+    )
+
+
 def cmd_install(args: argparse.Namespace) -> int:
     """
     Handle the install command.
@@ -31,6 +54,12 @@ def cmd_install(args: argparse.Namespace) -> int:
     # Handle source options
     file_path: str | None = getattr(args, "file", None)
     git_url: str | None = getattr(args, "git", None)
+
+    # AUTO-DETECT GIT URLs (SKILZ-48)
+    # If skill_id looks like a URL, treat it as git installation
+    if skill_id and is_git_url(skill_id) and not git_url:
+        git_url = skill_id
+        skill_id = None
 
     # Validate source - exactly one of skill_id, -f, or -g must be provided
     sources = [s for s in [skill_id, file_path, git_url] if s is not None]
