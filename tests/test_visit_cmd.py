@@ -4,11 +4,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from skilz.commands.visit_cmd import cmd_visit, open_in_browser, resolve_github_url
+from skilz.commands.visit_cmd import (
+    cmd_visit,
+    open_in_browser,
+    resolve_github_url,
+    resolve_marketplace_url,
+    check_url_exists,
+    MARKETPLACE_BASE_URL,
+)
 
 
 class TestResolveGithubUrl:
-    """Tests for URL resolution."""
+    """Tests for GitHub URL resolution."""
 
     def test_owner_repo_format(self):
         """owner/repo should resolve to GitHub URL."""
@@ -71,6 +78,90 @@ class TestResolveGithubUrl:
         assert resolve_github_url(url) == url
 
 
+class TestResolveMarketplaceUrl:
+    """Tests for marketplace URL resolution."""
+
+    def test_owner_repo_skill_format(self):
+        """owner/repo/skill should resolve to marketplace URL."""
+        url = resolve_marketplace_url("Jamie-BitFlight/claude_skills/brainstorming-skill")
+        expected = (
+            f"{MARKETPLACE_BASE_URL}/Jamie-BitFlight__claude_skills__brainstorming-skill__SKILL/"
+        )
+        assert url == expected
+
+    def test_owner_repo_format(self):
+        """owner/repo should resolve to marketplace URL."""
+        url = resolve_marketplace_url("anthropics/skills")
+        expected = f"{MARKETPLACE_BASE_URL}/anthropics__skills/"
+        assert url == expected
+
+    def test_nested_skill_path(self):
+        """owner/repo/path/to/skill should work."""
+        url = resolve_marketplace_url("owner/repo/skills/xlsx")
+        expected = f"{MARKETPLACE_BASE_URL}/owner__repo__skills__xlsx__SKILL/"
+        assert url == expected
+
+    def test_https_passthrough(self):
+        """HTTPS URLs should pass through."""
+        input_url = "https://skillzwave.ai/skill/some-skill/"
+        assert resolve_marketplace_url(input_url) == input_url
+
+    def test_empty_raises_error(self):
+        """Empty source should raise ValueError."""
+        with pytest.raises(ValueError, match="cannot be empty"):
+            resolve_marketplace_url("")
+
+    def test_single_skill_name(self):
+        """Single skill name should be converted."""
+        url = resolve_marketplace_url("my-skill")
+        expected = f"{MARKETPLACE_BASE_URL}/my-skill__SKILL/"
+        assert url == expected
+
+
+class TestCheckUrlExists:
+    """Tests for URL existence checking."""
+
+    @patch("skilz.commands.visit_cmd.urlopen")
+    def test_returns_true_for_200(self, mock_urlopen):
+        """Should return True for 200 response."""
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_urlopen.return_value = mock_response
+
+        result = check_url_exists("https://example.com")
+        assert result is True
+
+    @patch("skilz.commands.visit_cmd.urlopen")
+    def test_returns_false_for_non_200(self, mock_urlopen):
+        """Should return False for non-200 response."""
+        mock_response = MagicMock()
+        mock_response.status = 404
+        mock_urlopen.return_value = mock_response
+
+        result = check_url_exists("https://example.com")
+        assert result is False
+
+    @patch("skilz.commands.visit_cmd.urlopen")
+    def test_returns_false_on_url_error(self, mock_urlopen):
+        """Should return False on URLError."""
+        from urllib.error import URLError
+
+        mock_urlopen.side_effect = URLError("Connection failed")
+
+        result = check_url_exists("https://example.com")
+        assert result is False
+
+    @patch("skilz.commands.visit_cmd.urlopen")
+    def test_returns_false_on_http_error(self, mock_urlopen):
+        """Should return False on HTTPError."""
+        from urllib.error import HTTPError
+
+        mock_urlopen.side_effect = HTTPError("https://example.com", 404, "Not Found", {}, None)
+
+        result = check_url_exists("https://example.com")
+        assert result is False
+
+
 class TestOpenInBrowser:
     """Tests for browser opening."""
 
@@ -101,50 +192,105 @@ class TestCmdVisit:
     """Tests for cmd_visit function."""
 
     @patch("skilz.commands.visit_cmd.open_in_browser")
-    def test_success(self, mock_browser, capsys):
-        """Should open resolved URL in browser."""
+    @patch("skilz.commands.visit_cmd.check_url_exists")
+    def test_default_uses_marketplace_when_exists(self, mock_check, mock_browser, capsys):
+        """Should use marketplace URL when it exists (default behavior)."""
+        mock_check.return_value = True
+        mock_browser.return_value = True
+
+        args = MagicMock()
+        args.source = "owner/repo/skill"
+        args.git = False
+        args.dry_run = False
+
+        result = cmd_visit(args)
+
+        assert result == 0
+        # Should check marketplace first
+        mock_check.assert_called_once()
+        # Should open marketplace URL
+        assert "skillzwave.ai" in mock_browser.call_args[0][0]
+
+    @patch("skilz.commands.visit_cmd.open_in_browser")
+    @patch("skilz.commands.visit_cmd.check_url_exists")
+    def test_falls_back_to_github_when_marketplace_404(self, mock_check, mock_browser, capsys):
+        """Should fall back to GitHub when marketplace returns 404."""
+        mock_check.return_value = False
         mock_browser.return_value = True
 
         args = MagicMock()
         args.source = "owner/repo"
+        args.git = False
+        args.dry_run = False
+
+        result = cmd_visit(args)
+
+        assert result == 0
+        # Should open GitHub URL
+        assert "github.com" in mock_browser.call_args[0][0]
+
+    @patch("skilz.commands.visit_cmd.open_in_browser")
+    def test_git_flag_forces_github(self, mock_browser, capsys):
+        """--git flag should force GitHub URL."""
+        mock_browser.return_value = True
+
+        args = MagicMock()
+        args.source = "owner/repo"
+        args.git = True
+        args.dry_run = False
 
         result = cmd_visit(args)
 
         assert result == 0
         mock_browser.assert_called_once_with("https://github.com/owner/repo")
-        captured = capsys.readouterr()
-        assert "Opening: https://github.com/owner/repo" in captured.out
 
     @patch("skilz.commands.visit_cmd.open_in_browser")
-    def test_with_path(self, mock_browser, capsys):
-        """Should handle owner/repo/path format."""
+    def test_git_flag_with_path(self, mock_browser, capsys):
+        """--git flag should work with path."""
         mock_browser.return_value = True
 
         args = MagicMock()
         args.source = "owner/repo/skill"
+        args.git = True
+        args.dry_run = False
 
         result = cmd_visit(args)
 
         assert result == 0
         mock_browser.assert_called_once_with("https://github.com/owner/repo/tree/main/skill")
 
-    @patch("skilz.commands.visit_cmd.open_in_browser")
-    def test_with_full_url(self, mock_browser, capsys):
-        """Should handle full URL."""
-        mock_browser.return_value = True
-
+    def test_dry_run_outputs_url_without_opening(self, capsys):
+        """--dry-run should output URL without opening browser."""
         args = MagicMock()
-        args.source = "https://github.com/owner/repo"
+        args.source = "owner/repo/skill"
+        args.git = True
+        args.dry_run = True
 
         result = cmd_visit(args)
 
         assert result == 0
-        mock_browser.assert_called_once_with("https://github.com/owner/repo")
+        captured = capsys.readouterr()
+        assert "URL: https://github.com/owner/repo/tree/main/skill" in captured.out
+
+    def test_dry_run_marketplace_url(self, capsys):
+        """--dry-run should output marketplace URL by default."""
+        args = MagicMock()
+        args.source = "owner/repo/skill"
+        args.git = False
+        args.dry_run = True
+
+        result = cmd_visit(args)
+
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "skillzwave.ai" in captured.out
 
     def test_invalid_source_returns_error(self, capsys):
         """Should return 1 and print error for invalid source."""
         args = MagicMock()
         args.source = "invalid"
+        args.git = True  # Use git mode to hit the ValueError
+        args.dry_run = False
 
         result = cmd_visit(args)
 
@@ -160,6 +306,8 @@ class TestCmdVisit:
 
         args = MagicMock()
         args.source = "owner/repo"
+        args.git = True
+        args.dry_run = False
 
         result = cmd_visit(args)
 
@@ -181,24 +329,57 @@ class TestCLIIntegration:
         assert args.command == "visit"
         assert args.source == "owner/repo"
 
+    def test_visit_git_flag(self):
+        """Visit command should accept --git flag."""
+        from skilz.cli import create_parser
+
+        parser = create_parser()
+        args = parser.parse_args(["visit", "owner/repo", "--git"])
+        assert args.git is True
+
+    def test_visit_git_short_flag(self):
+        """Visit command should accept -g flag."""
+        from skilz.cli import create_parser
+
+        parser = create_parser()
+        args = parser.parse_args(["visit", "-g", "owner/repo"])
+        assert args.git is True
+
+    def test_visit_dry_run_flag(self):
+        """Visit command should accept --dry-run flag."""
+        from skilz.cli import create_parser
+
+        parser = create_parser()
+        args = parser.parse_args(["visit", "owner/repo", "--dry-run"])
+        assert args.dry_run is True
+
+    def test_visit_combined_flags(self):
+        """Visit command should accept multiple flags."""
+        from skilz.cli import create_parser
+
+        parser = create_parser()
+        args = parser.parse_args(["visit", "-g", "--dry-run", "owner/repo"])
+        assert args.git is True
+        assert args.dry_run is True
+
     @patch("skilz.commands.visit_cmd.open_in_browser")
-    def test_main_routes_to_visit(self, mock_browser, capsys):
-        """main() should route visit command to cmd_visit."""
+    def test_main_routes_to_visit_with_git(self, mock_browser, capsys):
+        """main() should route visit command with --git to cmd_visit."""
         from skilz.cli import main
 
         mock_browser.return_value = True
 
-        result = main(["visit", "owner/repo"])
+        result = main(["visit", "--git", "owner/repo"])
 
         assert result == 0
-        mock_browser.assert_called_once()
+        mock_browser.assert_called_once_with("https://github.com/owner/repo")
 
-    def test_visit_invalid_source_via_main(self, capsys):
-        """main() should handle invalid source."""
+    def test_visit_dry_run_via_main(self, capsys):
+        """main() should handle --dry-run."""
         from skilz.cli import main
 
-        result = main(["visit", "invalid"])
+        result = main(["visit", "--git", "--dry-run", "owner/repo"])
 
-        assert result == 1
+        assert result == 0
         captured = capsys.readouterr()
-        assert "Error" in captured.err
+        assert "URL: https://github.com/owner/repo" in captured.out

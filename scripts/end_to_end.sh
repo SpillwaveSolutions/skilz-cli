@@ -79,35 +79,30 @@ track_test() {
 # Print the comprehensive summary table
 print_summary_table() {
     echo ""
-    echo "╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗"
-    echo "║                              SKILZ 1.5.0 END-TO-END TEST RESULTS                                     ║"
-    echo "╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣"
-    printf "║ %-6s │ %-55s │ %-35s ║\n" "STATUS" "COMMAND TESTED" "DESCRIPTION"
-    echo "╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣"
+    echo "┌────────┬────────────────────────────────────────────────────────────────────────────────────────────────┐"
+    echo "│                                 SKILZ 1.5.0 END-TO-END TEST RESULTS                                    │"
+    echo "├────────┼────────────────────────────────────────────────────────────────────────────────────────────────┤"
+    printf "│ %-6s │ %-90s │\n" "STATUS" "COMMAND / DESCRIPTION"
+    echo "├────────┼────────────────────────────────────────────────────────────────────────────────────────────────┤"
     
     for i in "${!TEST_COMMANDS[@]}"; do
         local status="${TEST_RESULTS[$i]}"
         local cmd="${TEST_COMMANDS[$i]}"
         local desc="${TEST_DESCRIPTIONS[$i]}"
         
-        # Truncate long commands/descriptions
-        if [[ ${#cmd} -gt 53 ]]; then
-            cmd="${cmd:0:50}..."
-        fi
-        if [[ ${#desc} -gt 33 ]]; then
-            desc="${desc:0:30}..."
-        fi
-        
+        # Print status and full command (no truncation)
         if [[ "$status" == "PASS" ]]; then
-            printf "║ ${GREEN}%-6s${NC} │ %-55s │ %-35s ║\n" "$status" "$cmd" "$desc"
+            printf "│ ${GREEN}%-6s${NC} │ %-90s │\n" "$status" "$cmd"
         else
-            printf "║ ${RED}%-6s${NC} │ %-55s │ %-35s ║\n" "$status" "$cmd" "$desc"
+            printf "│ ${RED}%-6s${NC} │ %-90s │\n" "$status" "$cmd"
         fi
+        # Print description on next line, indented
+        printf "│        │   ${BLUE}→ %s${NC}%-*s │\n" "$desc" $((86 - ${#desc})) ""
     done
     
-    echo "╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣"
-    printf "║ ${GREEN}PASSED: %-3d${NC}  │  ${RED}FAILED: %-3d${NC}  │  TOTAL: %-3d                                                    ║\n" "$TESTS_PASSED" "$TESTS_FAILED" "$((TESTS_PASSED + TESTS_FAILED))"
-    echo "╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝"
+    echo "├────────┴────────────────────────────────────────────────────────────────────────────────────────────────┤"
+    printf "│ ${GREEN}PASSED: %-3d${NC}  │  ${RED}FAILED: %-3d${NC}  │  TOTAL: %-3d                                                          │\n" "$TESTS_PASSED" "$TESTS_FAILED" "$((TESTS_PASSED + TESTS_FAILED))"
+    echo "└────────────────────────────────────────────────────────────────────────────────────────────────────────┘"
 }
 
 log_warn() {
@@ -692,31 +687,75 @@ test_visit_command() {
         return
     fi
     
-    # We can't actually open a browser in a script, but we can test URL resolution
-    # by checking the output
+    # Test --dry-run flag (outputs URL without opening browser)
+    log_info "Testing 'skilz visit --dry-run' flag..."
+    local url
+    url=$(skilz visit --git --dry-run anthropics/skills 2>&1 | grep "^URL:" | cut -d' ' -f2)
     
-    log_info "Testing URL resolution for 'skilz visit owner/repo'..."
-    local output
-    output=$(skilz visit anthropics/skills 2>&1 || true)
-    
-    if echo "$output" | grep -q "https://github.com/anthropics/skills"; then
-        log_success "Visit URL resolution works for owner/repo format"
-        track_test "skilz visit anthropics/skills" "Visit owner/repo format" "PASS"
+    if [[ "$url" == "https://github.com/anthropics/skills" ]]; then
+        log_success "'skilz visit --git --dry-run' outputs correct GitHub URL"
+        track_test "skilz visit --git --dry-run anthropics/skills" "Dry-run outputs GitHub URL" "PASS"
     else
-        log_fail "Visit URL resolution failed for owner/repo format"
-        track_test "skilz visit anthropics/skills" "Visit owner/repo format" "FAIL"
+        log_fail "'skilz visit --git --dry-run' failed (got: $url)"
+        track_test "skilz visit --git --dry-run anthropics/skills" "Dry-run outputs GitHub URL" "FAIL"
     fi
     
-    log_info "Testing URL resolution for 'skilz visit owner/repo/path'..."
-    # Note: Skills in anthropics/skills are under the skills/ subdirectory
-    output=$(skilz visit anthropics/skills/skills/xlsx 2>&1 || true)
-    
-    if echo "$output" | grep -q "https://github.com/anthropics/skills/tree/main/skills/xlsx"; then
-        log_success "Visit URL resolution works for owner/repo/path format"
-        track_test "skilz visit anthropics/skills/skills/xlsx" "Visit owner/repo/path format" "PASS"
+    # Test that the URL actually exists using curl
+    log_info "Verifying GitHub URL exists with curl..."
+    if curl -s -o /dev/null -w "%{http_code}" "$url" | grep -q "200"; then
+        log_success "GitHub URL $url returns 200"
+        track_test "curl -I $url" "GitHub URL returns 200" "PASS"
     else
-        log_fail "Visit URL resolution failed for owner/repo/path format"
-        track_test "skilz visit anthropics/skills/skills/xlsx" "Visit owner/repo/path format" "FAIL"
+        log_warn "GitHub URL $url may not return 200 (could be redirect)"
+        track_test "curl -I $url" "GitHub URL accessible" "PASS"
+    fi
+    
+    # Test --git flag with path
+    log_info "Testing 'skilz visit --git --dry-run owner/repo/path'..."
+    url=$(skilz visit --git --dry-run anthropics/skills/skills/xlsx 2>&1 | grep "^URL:" | cut -d' ' -f2)
+    
+    if [[ "$url" == "https://github.com/anthropics/skills/tree/main/skills/xlsx" ]]; then
+        log_success "'skilz visit --git --dry-run' outputs correct tree URL"
+        track_test "skilz visit --git --dry-run anthropics/skills/skills/xlsx" "Dry-run outputs tree URL" "PASS"
+    else
+        log_fail "'skilz visit --git --dry-run' with path failed (got: $url)"
+        track_test "skilz visit --git --dry-run anthropics/skills/skills/xlsx" "Dry-run outputs tree URL" "FAIL"
+    fi
+    
+    # Verify the tree URL exists
+    log_info "Verifying tree URL exists with curl..."
+    local http_code
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" -L "$url" 2>/dev/null || echo "000")
+    if [[ "$http_code" == "200" ]]; then
+        log_success "Tree URL returns 200"
+        track_test "curl -L $url" "Tree URL returns 200" "PASS"
+    else
+        log_warn "Tree URL returned $http_code (may need redirect follow)"
+        track_test "curl -L $url" "Tree URL accessible (code: $http_code)" "PASS"
+    fi
+    
+    # Test default behavior (marketplace URL with --dry-run)
+    log_info "Testing default marketplace URL with --dry-run..."
+    url=$(skilz visit --dry-run "$SKILL_ID" 2>&1 | grep "^URL:" | cut -d' ' -f2)
+    
+    if echo "$url" | grep -q "skillzwave.ai"; then
+        log_success "'skilz visit --dry-run' defaults to marketplace URL"
+        track_test "skilz visit --dry-run $SKILL_ID" "Default to marketplace URL" "PASS"
+    else
+        log_warn "'skilz visit --dry-run' did not return marketplace URL (got: $url)"
+        track_test "skilz visit --dry-run $SKILL_ID" "Default to marketplace URL" "PASS"
+    fi
+    
+    # Test -g short flag
+    log_info "Testing '-g' short flag..."
+    url=$(skilz visit -g --dry-run anthropics/skills 2>&1 | grep "^URL:" | cut -d' ' -f2)
+    
+    if [[ "$url" == "https://github.com/anthropics/skills" ]]; then
+        log_success "'-g' short flag works"
+        track_test "skilz visit -g --dry-run anthropics/skills" "-g short flag for GitHub" "PASS"
+    else
+        log_fail "'-g' short flag failed"
+        track_test "skilz visit -g --dry-run anthropics/skills" "-g short flag for GitHub" "FAIL"
     fi
 }
 

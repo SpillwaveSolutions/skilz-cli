@@ -285,12 +285,25 @@ For detailed help: skilz <command> --help
     # Visit command
     visit_parser = subparsers.add_parser(
         "visit",
-        help="Open a skill's GitHub page in browser",
-        description="Open a skill's GitHub page in the default browser.",
+        help="Open a skill's page in browser (marketplace or GitHub)",
+        description="Open a skill's page in the default browser. "
+        "By default opens the Skilzwave marketplace page, use -g/--git for GitHub.",
     )
     visit_parser.add_argument(
         "source",
-        help=("Source to visit: owner/repo, owner/repo/skill, or full https://github.com/... URL"),
+        help="Source to visit: skill-id, owner/repo, owner/repo/skill, or full URL",
+    )
+    visit_parser.add_argument(
+        "-g",
+        "--git",
+        action="store_true",
+        help="Open GitHub page instead of marketplace (default: marketplace)",
+    )
+    visit_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="Output the URL without opening browser",
     )
 
     # Search command
