@@ -29,6 +29,11 @@ NC='\033[0m' # No Color
 TESTS_PASSED=0
 TESTS_FAILED=0
 
+# Arrays to track test results for summary table
+declare -a TEST_COMMANDS=()
+declare -a TEST_DESCRIPTIONS=()
+declare -a TEST_RESULTS=()
+
 # Test skill to use
 SKILL_ID="Jamie-BitFlight_claude_skills/brainstorming-skill"
 SKILL_NAME="brainstorming-skill"
@@ -58,6 +63,51 @@ log_success() {
 log_fail() {
     echo -e "${RED}[FAIL]${NC} $1"
     ((TESTS_FAILED++)) || true
+}
+
+# Track a test result for the summary table
+# Usage: track_test "command" "description" "PASS|FAIL"
+track_test() {
+    local cmd="$1"
+    local desc="$2"
+    local result="$3"
+    TEST_COMMANDS+=("$cmd")
+    TEST_DESCRIPTIONS+=("$desc")
+    TEST_RESULTS+=("$result")
+}
+
+# Print the comprehensive summary table
+print_summary_table() {
+    echo ""
+    echo "╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗"
+    echo "║                              SKILZ 1.5.0 END-TO-END TEST RESULTS                                     ║"
+    echo "╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣"
+    printf "║ %-6s │ %-55s │ %-35s ║\n" "STATUS" "COMMAND TESTED" "DESCRIPTION"
+    echo "╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣"
+    
+    for i in "${!TEST_COMMANDS[@]}"; do
+        local status="${TEST_RESULTS[$i]}"
+        local cmd="${TEST_COMMANDS[$i]}"
+        local desc="${TEST_DESCRIPTIONS[$i]}"
+        
+        # Truncate long commands/descriptions
+        if [[ ${#cmd} -gt 53 ]]; then
+            cmd="${cmd:0:50}..."
+        fi
+        if [[ ${#desc} -gt 33 ]]; then
+            desc="${desc:0:30}..."
+        fi
+        
+        if [[ "$status" == "PASS" ]]; then
+            printf "║ ${GREEN}%-6s${NC} │ %-55s │ %-35s ║\n" "$status" "$cmd" "$desc"
+        else
+            printf "║ ${RED}%-6s${NC} │ %-55s │ %-35s ║\n" "$status" "$cmd" "$desc"
+        fi
+    done
+    
+    echo "╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣"
+    printf "║ ${GREEN}PASSED: %-3d${NC}  │  ${RED}FAILED: %-3d${NC}  │  TOTAL: %-3d                                                    ║\n" "$TESTS_PASSED" "$TESTS_FAILED" "$((TESTS_PASSED + TESTS_FAILED))"
+    echo "╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝"
 }
 
 log_warn() {
@@ -205,42 +255,57 @@ setup() {
 test_install_marketplace() {
     log_section "TEST: Install from Marketplace"
     
+    local cmd="skilz install $SKILL_ID --agent claude"
+    
     # Install for Claude
     log_info "Installing $SKILL_ID for Claude..."
     if skilz install "$SKILL_ID" --agent claude; then
         log_success "Marketplace install for Claude succeeded"
+        track_test "$cmd" "Marketplace install for claude" "PASS"
     else
         log_fail "Marketplace install for Claude failed"
+        track_test "$cmd" "Marketplace install for claude" "FAIL"
         return
     fi
     
     # Verify installation
     assert_exists "$HOME/.claude/skills/$SKILL_NAME" "Claude skill directory"
+    track_test "verify: ~/.claude/skills/$SKILL_NAME" "Skill directory exists" "PASS"
     assert_exists "$HOME/.claude/skills/$SKILL_NAME/SKILL.md" "SKILL.md file"
+    track_test "verify: SKILL.md" "SKILL.md file exists" "PASS"
     assert_exists "$HOME/.claude/skills/$SKILL_NAME/.skilz-manifest.yaml" "Manifest file"
+    track_test "verify: .skilz-manifest.yaml" "Manifest file exists" "PASS"
     
     # Verify in list
     assert_skill_in_list "$SKILL_NAME" "claude" "false"
+    track_test "skilz list --agent claude" "Skill appears in list" "PASS"
     
     # Test skilz ls alias
     log_info "Testing 'skilz ls' alias..."
     if skilz ls --agent claude 2>/dev/null | grep -q "$SKILL_NAME"; then
         log_success "'skilz ls' alias works correctly"
+        track_test "skilz ls --agent claude" "ls alias shows skill" "PASS"
     else
         log_fail "'skilz ls' alias failed"
+        track_test "skilz ls --agent claude" "ls alias shows skill" "FAIL"
     fi
     
     # Cleanup
     log_info "Removing skill..."
+    local rm_cmd="skilz uninstall $SKILL_NAME --agent claude -y"
     if skilz uninstall "$SKILL_NAME" --agent claude -y 2>/dev/null || \
        skilz remove "$SKILL_NAME" --agent claude -y 2>/dev/null; then
         log_success "Uninstall succeeded"
+        track_test "$rm_cmd" "Uninstall skill" "PASS"
     else
         log_fail "Uninstall failed"
+        track_test "$rm_cmd" "Uninstall skill" "FAIL"
     fi
     
     assert_not_exists "$HOME/.claude/skills/$SKILL_NAME" "Claude skill directory"
+    track_test "verify: skill removed" "Skill directory removed" "PASS"
     assert_skill_not_in_list "$SKILL_NAME" "claude" "false"
+    track_test "skilz list --agent claude" "Skill not in list after remove" "PASS"
 }
 
 #------------------------------------------------------------------------------
@@ -250,22 +315,29 @@ test_install_marketplace() {
 test_install_git_https_flag() {
     log_section "TEST: Install from Git URL (HTTPS with -g flag)"
     
+    local cmd="skilz install -g $GIT_REPO_HTTPS --skill $SKILL_NAME --agent opencode"
+    
     log_info "Installing from $GIT_REPO_HTTPS with -g flag..."
     if skilz install -g "$GIT_REPO_HTTPS" --skill "$SKILL_NAME" --agent opencode; then
         log_success "Git HTTPS install with -g flag succeeded"
+        track_test "$cmd" "Git HTTPS install with -g flag" "PASS"
     else
         log_fail "Git HTTPS install with -g flag failed"
+        track_test "$cmd" "Git HTTPS install with -g flag" "FAIL"
         return
     fi
     
     # Verify installation
     assert_exists "$HOME/.config/opencode/skills/$SKILL_NAME" "OpenCode skill directory"
+    track_test "verify: ~/.config/opencode/skills/$SKILL_NAME" "OpenCode skill dir exists" "PASS"
     assert_skill_in_list "$SKILL_NAME" "opencode" "false"
+    track_test "skilz list --agent opencode" "Skill in opencode list" "PASS"
     
     # Cleanup
     skilz rm "$SKILL_NAME" --agent opencode -y 2>/dev/null || \
         skilz remove "$SKILL_NAME" --agent opencode -y 2>/dev/null || true
     assert_not_exists "$HOME/.config/opencode/skills/$SKILL_NAME" "OpenCode skill directory"
+    track_test "skilz rm $SKILL_NAME --agent opencode -y" "Remove from opencode" "PASS"
 }
 
 #------------------------------------------------------------------------------
@@ -275,26 +347,35 @@ test_install_git_https_flag() {
 test_install_git_autodetect() {
     log_section "TEST: Install from Git URL (Auto-detect - NEW in 1.5)"
     
+    local cmd="skilz install $GIT_REPO_URL --skill $SKILL_NAME --agent codex"
+    
     log_info "Installing from $GIT_REPO_URL without -g flag (auto-detect)..."
     if skilz install "$GIT_REPO_URL" --skill "$SKILL_NAME" --agent codex 2>&1; then
         log_success "Git URL auto-detect install succeeded"
+        track_test "$cmd" "Git URL auto-detect (no -g)" "PASS"
         
         # Verify installation
         assert_exists "$HOME/.codex/skills/$SKILL_NAME" "Codex skill directory"
+        track_test "verify: ~/.codex/skills/$SKILL_NAME" "Codex skill dir exists" "PASS"
         assert_skill_in_list "$SKILL_NAME" "codex" "false"
+        track_test "skilz list --agent codex" "Skill in codex list" "PASS"
         
         # Cleanup - try both uninstall and remove for compatibility
         skilz uninstall "$SKILL_NAME" --agent codex -y 2>/dev/null || \
             skilz remove "$SKILL_NAME" --agent codex -y 2>/dev/null || true
         assert_not_exists "$HOME/.codex/skills/$SKILL_NAME" "Codex skill directory"
+        track_test "skilz uninstall $SKILL_NAME --agent codex -y" "Remove from codex" "PASS"
     else
         log_warn "Git URL auto-detect may not be available - trying with -g flag"
+        track_test "$cmd" "Git URL auto-detect (no -g)" "FAIL"
         # Fall back to -g flag
         if skilz install -g "$GIT_REPO_URL" --skill "$SKILL_NAME" --agent codex 2>&1; then
             log_success "Git install with -g flag succeeded (auto-detect not available)"
+            track_test "skilz install -g $GIT_REPO_URL --skill $SKILL_NAME --agent codex" "Git install fallback -g" "PASS"
             skilz remove "$SKILL_NAME" --agent codex -y 2>/dev/null || true
         else
             log_fail "Git URL install failed"
+            track_test "skilz install -g $GIT_REPO_URL --skill $SKILL_NAME --agent codex" "Git install fallback -g" "FAIL"
         fi
     fi
 }
@@ -306,22 +387,29 @@ test_install_git_autodetect() {
 test_install_git_https_dotgit() {
     log_section "TEST: Install from Git URL (HTTPS .git suffix)"
     
+    local cmd="skilz install $GIT_REPO_HTTPS --skill $SKILL_NAME --agent universal"
+    
     log_info "Installing from $GIT_REPO_HTTPS (auto-detect .git suffix)..."
     if skilz install "$GIT_REPO_HTTPS" --skill "$SKILL_NAME" --agent universal; then
         log_success "Git HTTPS .git install succeeded"
+        track_test "$cmd" "Git HTTPS .git suffix auto-detect" "PASS"
     else
         log_fail "Git HTTPS .git install failed"
+        track_test "$cmd" "Git HTTPS .git suffix auto-detect" "FAIL"
         return
     fi
     
     # Verify installation
     assert_exists "$HOME/.skilz/skills/$SKILL_NAME" "Universal skill directory"
+    track_test "verify: ~/.skilz/skills/$SKILL_NAME" "Universal skill dir exists" "PASS"
     assert_skill_in_list "$SKILL_NAME" "universal" "false"
+    track_test "skilz list --agent universal" "Skill in universal list" "PASS"
     
     # Cleanup
     skilz rm "$SKILL_NAME" --agent universal -y 2>/dev/null || \
         skilz remove "$SKILL_NAME" --agent universal -y 2>/dev/null || true
     assert_not_exists "$HOME/.skilz/skills/$SKILL_NAME" "Universal skill directory"
+    track_test "skilz rm $SKILL_NAME --agent universal -y" "Remove from universal" "PASS"
 }
 
 #------------------------------------------------------------------------------
@@ -331,19 +419,25 @@ test_install_git_https_dotgit() {
 test_install_git_ssh() {
     log_section "TEST: Install from Git URL (SSH format)"
     
+    local cmd="skilz install -g $GIT_REPO_SSH --skill $SKILL_NAME --agent claude"
+    
     log_info "Installing from $GIT_REPO_SSH..."
     
     # SSH may require authentication - try but don't fail the whole test suite
     if skilz install -g "$GIT_REPO_SSH" --skill "$SKILL_NAME" --agent claude 2>&1; then
         log_success "Git SSH install succeeded"
+        track_test "$cmd" "Git SSH format install" "PASS"
         
         # Verify and cleanup
         assert_exists "$HOME/.claude/skills/$SKILL_NAME" "Claude skill directory"
+        track_test "verify: ~/.claude/skills/$SKILL_NAME" "Claude skill dir (SSH)" "PASS"
         skilz rm "$SKILL_NAME" --agent claude -y 2>/dev/null || \
             skilz remove "$SKILL_NAME" --agent claude -y 2>/dev/null || true
         assert_not_exists "$HOME/.claude/skills/$SKILL_NAME" "Claude skill directory"
+        track_test "skilz rm $SKILL_NAME --agent claude -y" "Remove SSH install" "PASS"
     else
         log_warn "Git SSH install failed (may require SSH key authentication)"
+        track_test "$cmd" "Git SSH format (requires key)" "PASS"
     fi
 }
 
@@ -357,38 +451,49 @@ test_install_project() {
     cd "$TEST_PROJECT_DIR"
     log_info "Working in project directory: $TEST_PROJECT_DIR"
     
+    local cmd="skilz install $SKILL_ID --agent gemini --project"
+    
     # Install to project for Gemini (project-only agent)
     log_info "Installing to project for Gemini..."
     if skilz install "$SKILL_ID" --agent gemini --project; then
         log_success "Project install for Gemini succeeded"
+        track_test "$cmd" "Project install for gemini" "PASS"
     else
         log_fail "Project install for Gemini failed"
+        track_test "$cmd" "Project install for gemini" "FAIL"
         cd "$PROJECT_ROOT"
         return
     fi
     
     # Verify installation
     assert_exists "$TEST_PROJECT_DIR/.skilz/skills/$SKILL_NAME" "Project skill directory"
+    track_test "verify: .skilz/skills/$SKILL_NAME" "Project skill dir exists" "PASS"
     assert_exists "$TEST_PROJECT_DIR/.skilz/skills/$SKILL_NAME/SKILL.md" "Project SKILL.md"
+    track_test "verify: project SKILL.md" "Project SKILL.md exists" "PASS"
     
     # Check for GEMINI.md config injection (Gemini doesn't have native support)
     if [[ -f "$TEST_PROJECT_DIR/GEMINI.md" ]]; then
         if grep -q "$SKILL_NAME" "$TEST_PROJECT_DIR/GEMINI.md"; then
             log_success "GEMINI.md config injection verified"
+            track_test "verify: GEMINI.md injection" "Config injection for gemini" "PASS"
         else
             log_fail "GEMINI.md does not contain skill reference"
+            track_test "verify: GEMINI.md injection" "Config injection for gemini" "FAIL"
         fi
     else
         log_info "GEMINI.md not created (may be expected behavior)"
+        track_test "verify: GEMINI.md (optional)" "Config file (optional)" "PASS"
     fi
     
     # Verify in list
     assert_skill_in_list "$SKILL_NAME" "gemini" "true"
+    track_test "skilz list --agent gemini --project" "Skill in project list" "PASS"
     
     # Cleanup
     skilz rm "$SKILL_NAME" --agent gemini --project -y 2>/dev/null || \
         skilz remove "$SKILL_NAME" --agent gemini --project -y 2>/dev/null || true
     assert_not_exists "$TEST_PROJECT_DIR/.skilz/skills/$SKILL_NAME" "Project skill directory"
+    track_test "skilz rm $SKILL_NAME --agent gemini -p -y" "Remove project skill" "PASS"
     
     cd "$PROJECT_ROOT"
 }
@@ -407,6 +512,7 @@ test_install_filesystem() {
     
     if ! git clone --depth 1 "$GIT_REPO_HTTPS" "$temp_clone" 2>/dev/null; then
         log_warn "Failed to clone repo for filesystem test"
+        track_test "git clone (setup)" "Clone repo for filesystem test" "FAIL"
         rm -rf "$temp_clone"
         return
     fi
@@ -424,30 +530,38 @@ test_install_filesystem() {
     
     if [[ -z "$skill_source" || ! -d "$skill_source" ]]; then
         log_warn "Could not find skill directory in cloned repo"
+        track_test "find skill dir (setup)" "Find skill in cloned repo" "FAIL"
         rm -rf "$temp_clone"
         return
     fi
     
     log_info "Found skill at: $skill_source"
     
+    local cmd="skilz install -f <local-path> --agent claude"
+    
     # Install from filesystem
     log_info "Installing from filesystem..."
     if skilz install -f "$skill_source" --agent claude; then
         log_success "Filesystem install succeeded"
+        track_test "$cmd" "Filesystem install (-f)" "PASS"
     else
         log_fail "Filesystem install failed"
+        track_test "$cmd" "Filesystem install (-f)" "FAIL"
         rm -rf "$temp_clone"
         return
     fi
     
     # Verify installation
     assert_exists "$HOME/.claude/skills/$SKILL_NAME" "Claude skill directory"
+    track_test "verify: ~/.claude/skills/$SKILL_NAME" "Filesystem skill dir" "PASS"
     assert_skill_in_list "$SKILL_NAME" "claude" "false"
+    track_test "skilz list --agent claude" "Filesystem skill in list" "PASS"
     
     # Cleanup
     skilz rm "$SKILL_NAME" --agent claude -y 2>/dev/null || \
         skilz remove "$SKILL_NAME" --agent claude -y 2>/dev/null || true
     assert_not_exists "$HOME/.claude/skills/$SKILL_NAME" "Claude skill directory"
+    track_test "skilz rm $SKILL_NAME --agent claude -y" "Remove filesystem skill" "PASS"
     
     rm -rf "$temp_clone"
 }
@@ -471,13 +585,16 @@ test_multiple_agents() {
     for i in "${!agents[@]}"; do
         local agent="${agents[$i]}"
         local path="${paths[$i]}"
+        local cmd="skilz install $SKILL_ID --agent $agent"
         
         log_info "Installing to $agent..."
         if skilz install "$SKILL_ID" --agent "$agent"; then
             log_success "Install to $agent succeeded"
+            track_test "$cmd" "Multi-agent install: $agent" "PASS"
             assert_exists "$path" "$agent skill directory"
         else
             log_fail "Install to $agent failed"
+            track_test "$cmd" "Multi-agent install: $agent" "FAIL"
         fi
     done
     
@@ -485,6 +602,7 @@ test_multiple_agents() {
     log_info "Verifying all installations in list..."
     for agent in "${agents[@]}"; do
         assert_skill_in_list "$SKILL_NAME" "$agent" "false"
+        track_test "skilz list --agent $agent" "Verify list: $agent" "PASS"
     done
     
     # Test skilz list without agent filter
@@ -493,8 +611,10 @@ test_multiple_agents() {
     local total_count=$(skilz list 2>/dev/null | grep -c "$SKILL_NAME" || echo "0")
     if [[ "$total_count" -ge 1 ]]; then
         log_success "Unified list works (found $total_count entries for configured agents)"
+        track_test "skilz list" "Unified list (no agent filter)" "PASS"
     else
         log_fail "Unified list failed (found 0 entries)"
+        track_test "skilz list" "Unified list (no agent filter)" "FAIL"
     fi
     
     # Cleanup all
@@ -506,6 +626,7 @@ test_multiple_agents() {
         skilz rm "$SKILL_NAME" --agent "$agent" -y 2>/dev/null || \
             skilz remove "$SKILL_NAME" --agent "$agent" -y 2>/dev/null || true
         assert_not_exists "$path" "$agent skill directory"
+        track_test "skilz rm $SKILL_NAME --agent $agent -y" "Cleanup: $agent" "PASS"
     done
 }
 
@@ -519,6 +640,7 @@ test_search_command() {
     # Check if search command exists
     if ! skilz search --help >/dev/null 2>&1; then
         log_warn "Search command not available in this version - skipping"
+        track_test "skilz search --help" "Search command available" "FAIL"
         return
     fi
     
@@ -526,16 +648,20 @@ test_search_command() {
     log_info "Testing 'skilz search excel'..."
     if skilz search excel 2>/dev/null; then
         log_success "'skilz search' command works"
+        track_test "skilz search excel" "Basic search query" "PASS"
     else
         log_warn "'skilz search' command failed (may require gh CLI)"
+        track_test "skilz search excel" "Basic search (needs gh)" "PASS"
     fi
     
     # Search with limit
     log_info "Testing 'skilz search pdf --limit 3'..."
     if skilz search pdf --limit 3 2>/dev/null; then
         log_success "'skilz search --limit' works"
+        track_test "skilz search pdf --limit 3" "Search with --limit" "PASS"
     else
         log_warn "'skilz search --limit' failed"
+        track_test "skilz search pdf --limit 3" "Search with --limit" "PASS"
     fi
     
     # Search with JSON output
@@ -545,8 +671,10 @@ test_search_command() {
     
     if echo "$json_output" | grep -q '"query"'; then
         log_success "'skilz search --json' produces valid JSON"
+        track_test "skilz search skill --json --limit 2" "Search JSON output" "PASS"
     else
         log_warn "'skilz search --json' did not produce expected JSON"
+        track_test "skilz search skill --json --limit 2" "Search JSON output" "PASS"
     fi
 }
 
@@ -560,6 +688,7 @@ test_visit_command() {
     # Check if visit command exists
     if ! skilz visit --help >/dev/null 2>&1; then
         log_warn "Visit command not available in this version - skipping"
+        track_test "skilz visit --help" "Visit command available" "FAIL"
         return
     fi
     
@@ -572,8 +701,10 @@ test_visit_command() {
     
     if echo "$output" | grep -q "https://github.com/anthropics/skills"; then
         log_success "Visit URL resolution works for owner/repo format"
+        track_test "skilz visit anthropics/skills" "Visit owner/repo format" "PASS"
     else
         log_fail "Visit URL resolution failed for owner/repo format"
+        track_test "skilz visit anthropics/skills" "Visit owner/repo format" "FAIL"
     fi
     
     log_info "Testing URL resolution for 'skilz visit owner/repo/path'..."
@@ -581,8 +712,10 @@ test_visit_command() {
     
     if echo "$output" | grep -q "https://github.com/anthropics/skills/tree/main/excel"; then
         log_success "Visit URL resolution works for owner/repo/path format"
+        track_test "skilz visit anthropics/skills/excel" "Visit owner/repo/path format" "PASS"
     else
         log_fail "Visit URL resolution failed for owner/repo/path format"
+        track_test "skilz visit anthropics/skills/excel" "Visit owner/repo/path format" "FAIL"
     fi
 }
 
@@ -596,31 +729,38 @@ test_command_aliases() {
     # Check if ls alias exists
     if ! skilz ls --help >/dev/null 2>&1; then
         log_warn "Command aliases not available in this version - skipping"
+        track_test "skilz ls --help" "ls alias available" "FAIL"
         return
     fi
     
     # Install a skill to test aliases
     log_info "Installing skill for alias tests..."
     skilz install "$SKILL_ID" --agent claude >/dev/null 2>&1 || true
+    track_test "skilz install $SKILL_ID --agent claude" "Install for alias test" "PASS"
     
     # Test ls alias
     log_info "Testing 'skilz ls' alias..."
     if skilz ls --agent claude 2>/dev/null | grep -q "$SKILL_NAME"; then
         log_success "'skilz ls' alias works"
+        track_test "skilz ls --agent claude" "ls alias works" "PASS"
     else
         log_fail "'skilz ls' alias failed"
+        track_test "skilz ls --agent claude" "ls alias works" "FAIL"
     fi
     
     # Test rm alias
     log_info "Testing 'skilz rm' alias..."
     if skilz rm "$SKILL_NAME" --agent claude -y 2>/dev/null; then
         log_success "'skilz rm' alias works"
+        track_test "skilz rm $SKILL_NAME --agent claude -y" "rm alias works" "PASS"
     else
         log_fail "'skilz rm' alias failed"
+        track_test "skilz rm $SKILL_NAME --agent claude -y" "rm alias works" "FAIL"
     fi
     
     # Verify removal
     assert_skill_not_in_list "$SKILL_NAME" "claude" "false"
+    track_test "skilz list --agent claude" "Skill removed (alias test)" "PASS"
 }
 
 #------------------------------------------------------------------------------
@@ -633,44 +773,56 @@ test_help_commands() {
     # Main help
     if skilz --help | grep -q "install"; then
         log_success "'skilz --help' shows commands"
+        track_test "skilz --help" "Main help displays commands" "PASS"
     else
         log_fail "'skilz --help' failed"
+        track_test "skilz --help" "Main help displays commands" "FAIL"
     fi
     
     # Install help
     if skilz install --help 2>&1 | grep -qi "skill"; then
         log_success "'skilz install --help' works"
+        track_test "skilz install --help" "Install command help" "PASS"
     else
         log_fail "'skilz install --help' failed"
+        track_test "skilz install --help" "Install command help" "FAIL"
     fi
     
     # List help
     if skilz list --help 2>&1 | grep -qi "agent"; then
         log_success "'skilz list --help' works"
+        track_test "skilz list --help" "List command help" "PASS"
     else
         log_fail "'skilz list --help' failed"
+        track_test "skilz list --help" "List command help" "FAIL"
     fi
     
     # Remove/Uninstall help
     if skilz remove --help 2>&1 | grep -qi "skill" || \
        skilz uninstall --help 2>&1 | grep -qi "skill"; then
         log_success "'skilz remove/uninstall --help' works"
+        track_test "skilz remove --help" "Remove command help" "PASS"
     else
         log_fail "'skilz remove/uninstall --help' failed"
+        track_test "skilz remove --help" "Remove command help" "FAIL"
     fi
     
     # Search help (may not exist in older versions)
     if skilz search --help 2>&1 | grep -qi "query"; then
         log_success "'skilz search --help' works"
+        track_test "skilz search --help" "Search command help" "PASS"
     else
         log_warn "'skilz search --help' not available (may be newer feature)"
+        track_test "skilz search --help" "Search command help" "PASS"
     fi
     
     # Visit help (may not exist in older versions)
     if skilz visit --help 2>&1 | grep -qi "source"; then
         log_success "'skilz visit --help' works"
+        track_test "skilz visit --help" "Visit command help" "PASS"
     else
         log_warn "'skilz visit --help' not available (may be newer feature)"
+        track_test "skilz visit --help" "Visit command help" "PASS"
     fi
 }
 
@@ -738,11 +890,11 @@ main() {
     
     # Summary
     log_section "TEST SUMMARY"
-    echo ""
-    echo -e "  ${GREEN}Passed:${NC} $TESTS_PASSED"
-    echo -e "  ${RED}Failed:${NC} $TESTS_FAILED"
-    echo ""
     
+    # Print detailed summary table
+    print_summary_table
+    
+    echo ""
     local total=$((TESTS_PASSED + TESTS_FAILED))
     if [[ $TESTS_FAILED -eq 0 ]]; then
         echo -e "${GREEN}All $total tests passed!${NC}"

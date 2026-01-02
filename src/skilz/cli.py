@@ -35,21 +35,23 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=f"""
 Examples:
-  skilz install anthropics/web-artifacts-builder
-  skilz install some-skill --agent opencode
-  skilz install some-skill --agent gemini --project
-  skilz list --agent claude
-  skilz read extracting-keywords        # Load skill content for AI agents
-  skilz -y remove skill-id              # Skip confirmation (scripting)
-  skilz config                          # Show configuration
-  skilz --version
+  skilz install anthropics/web-artifacts-builder          # Install from marketplace
+  skilz install https://github.com/owner/repo             # Install from Git URL (auto-detect)
+  skilz install -g https://github.com/owner/repo --all    # Install all skills from repo
+  skilz install -f ~/skills/my-skill -p --agent gemini    # Install from local path
+  skilz search excel --limit 5                            # Search GitHub for skills
+  skilz list --agent claude --json                        # List skills as JSON
+  skilz ls -p                                             # List project skills (alias)
+  skilz rm my-skill -y                                    # Remove without confirmation
+  skilz visit anthropics/skills                           # Open repo in browser
 
 Common options (available on most commands):
-  --agent {{{agents_str}}}
-                              Target agent (auto-detected if not specified)
-  --project                   Use project-level instead of user-level
+  --agent AGENT     Target agent (auto-detected if not specified)
+  -p, --project     Use project-level instead of user-level
 
 Supported agents: {", ".join(agent_choices)}
+
+For detailed help: skilz <command> --help
         """,
     )
 
@@ -97,6 +99,7 @@ Supported agents: {", ".join(agent_choices)}
         help=f"Target agent: {{{agents_str}}} (auto-detected if not specified)",
     )
     install_parser.add_argument(
+        "-p",
         "--project",
         action="store_true",
         help="Install to project directory instead of user directory",
@@ -171,6 +174,7 @@ Supported agents: {", ".join(agent_choices)}
         help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     list_parser.add_argument(
+        "-p",
         "--project",
         action="store_true",
         help="List project-level skills instead of user-level",
@@ -201,6 +205,7 @@ Supported agents: {", ".join(agent_choices)}
         help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     update_parser.add_argument(
+        "-p",
         "--project",
         action="store_true",
         help="Update project-level skills instead of user-level",
@@ -229,6 +234,7 @@ Supported agents: {", ".join(agent_choices)}
         help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     remove_parser.add_argument(
+        "-p",
         "--project",
         action="store_true",
         help="Remove project-level skill instead of user-level",
@@ -270,6 +276,7 @@ Supported agents: {", ".join(agent_choices)}
         help=f"Filter by agent type: {{{agents_str}}} (searches all if not specified)",
     )
     read_parser.add_argument(
+        "-p",
         "--project",
         action="store_true",
         help="Search project-level skills only",
@@ -324,6 +331,7 @@ Supported agents: {", ".join(agent_choices)}
         help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     ls_parser.add_argument(
+        "-p",
         "--project",
         action="store_true",
         help="List project-level skills instead of user-level",
@@ -352,6 +360,7 @@ Supported agents: {", ".join(agent_choices)}
         help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     rm_parser.add_argument(
+        "-p",
         "--project",
         action="store_true",
         help="Remove project-level skill instead of user-level",
@@ -381,6 +390,7 @@ Supported agents: {", ".join(agent_choices)}
         help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
     )
     uninstall_parser.add_argument(
+        "-p",
         "--project",
         action="store_true",
         help="Remove project-level skill instead of user-level",
