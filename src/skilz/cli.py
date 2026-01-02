@@ -157,10 +157,10 @@ Supported agents: {", ".join(agent_choices)}
         help="Force config file updates even for agents with native skill support",
     )
 
-    # List command
+    # List command (alias: ls)
     list_parser = subparsers.add_parser(
         "list",
-        help="List installed skills",
+        help="List installed skills (alias: ls)",
         description="Show all installed skills with their versions and status.",
     )
     list_parser.add_argument(
@@ -286,6 +286,112 @@ Supported agents: {", ".join(agent_choices)}
         help=("Source to visit: owner/repo, owner/repo/skill, or full https://github.com/... URL"),
     )
 
+    # Search command
+    search_parser = subparsers.add_parser(
+        "search",
+        help="Search GitHub for available skills",
+        description="Search GitHub repositories for skills matching a query.",
+    )
+    search_parser.add_argument(
+        "query",
+        help="Search query (e.g., 'excel', 'pdf', 'data analysis')",
+    )
+    search_parser.add_argument(
+        "-l",
+        "--limit",
+        type=int,
+        default=10,
+        help="Maximum number of results (default: 10)",
+    )
+    search_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output as JSON",
+    )
+
+    # Command aliases for Unix-like familiarity
+    # ls alias for list
+    ls_parser = subparsers.add_parser(
+        "ls",
+        help="Alias for 'list' - List installed skills",
+        description="Show all installed skills with their versions and status.",
+    )
+    ls_parser.add_argument(
+        "--agent",
+        choices=agent_choices,
+        default=None,
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
+    )
+    ls_parser.add_argument(
+        "--project",
+        action="store_true",
+        help="List project-level skills instead of user-level",
+    )
+    ls_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output as JSON",
+    )
+
+    # rm alias for remove/uninstall
+    rm_parser = subparsers.add_parser(
+        "rm",
+        help="Alias for 'remove' - Remove a skill",
+        description="Uninstall a skill by removing its directory.",
+    )
+    rm_parser.add_argument(
+        "skill_id",
+        help="Skill to remove (ID or name)",
+    )
+    rm_parser.add_argument(
+        "--agent",
+        choices=agent_choices,
+        default=None,
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
+    )
+    rm_parser.add_argument(
+        "--project",
+        action="store_true",
+        help="Remove project-level skill instead of user-level",
+    )
+    rm_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip confirmation prompt",
+    )
+
+    # uninstall alias for remove
+    uninstall_parser = subparsers.add_parser(
+        "uninstall",
+        help="Alias for 'remove' - Remove a skill",
+        description="Uninstall a skill by removing its directory.",
+    )
+    uninstall_parser.add_argument(
+        "skill_id",
+        help="Skill to remove (ID or name)",
+    )
+    uninstall_parser.add_argument(
+        "--agent",
+        choices=agent_choices,
+        default=None,
+        metavar="AGENT",
+        help=f"Filter by agent type: {{{agents_str}}} (auto-detected if not specified)",
+    )
+    uninstall_parser.add_argument(
+        "--project",
+        action="store_true",
+        help="Remove project-level skill instead of user-level",
+    )
+    uninstall_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip confirmation prompt",
+    )
+
     return parser
 
 
@@ -303,7 +409,7 @@ def main(argv: list[str] | None = None) -> int:
 
         return cmd_install(args)
 
-    if args.command == "list":
+    if args.command in ("list", "ls"):
         from skilz.commands.list_cmd import cmd_list
 
         return cmd_list(args)
@@ -313,7 +419,7 @@ def main(argv: list[str] | None = None) -> int:
 
         return cmd_update(args)
 
-    if args.command == "remove":
+    if args.command in ("remove", "rm", "uninstall"):
         from skilz.commands.remove_cmd import cmd_remove
 
         return cmd_remove(args)
@@ -332,6 +438,11 @@ def main(argv: list[str] | None = None) -> int:
         from skilz.commands.visit_cmd import cmd_visit
 
         return cmd_visit(args)
+
+    if args.command == "search":
+        from skilz.commands.search_cmd import cmd_search
+
+        return cmd_search(args)
 
     # Unknown command (shouldn't happen with subparsers)
     parser.print_help()
