@@ -63,14 +63,24 @@ For detailed usage instructions, see the [User Manual](docs/USER_MANUAL.md).
 # Install a skill from the marketplace (defaults to Claude Code, user-level)
 skilz install anthropics_skills/algorithmic-art
 
+# Install directly from GitHub URL (NEW in 1.5 - no -g flag needed)
+skilz install https://github.com/owner/repo
+
 # Install for a specific agent
 skilz install anthropics_skills/brand-guidelines --agent gemini
 
 # Install at project level (for sandboxed agents)
 skilz install anthropics_skills/frontend-design --agent copilot --project
 
-# List installed skills
+# List installed skills (or use alias: skilz ls)
 skilz list
+
+# Search for skills on GitHub (NEW in 1.5)
+skilz search excel
+skilz search pdf --limit 5
+
+# Visit a skill's GitHub page (NEW in 1.5)
+skilz visit anthropics/skills
 
 # Read skill content (for agents without native skill loading)
 skilz read algorithmic-art
@@ -78,8 +88,8 @@ skilz read algorithmic-art
 # Update all skills to latest registry versions
 skilz update
 
-# Remove a skill
-skilz remove anthropics_skills/algorithmic-art
+# Uninstall a skill (or use alias: skilz rm)
+skilz uninstall anthropics_skills/algorithmic-art
 ```
 
 Each install command:
@@ -166,15 +176,44 @@ skilz update --dry-run                          # Show what would be updated
 skilz update --project                          # Update project-level skills
 ```
 
-### `skilz remove <skill-id>`
+### `skilz uninstall <skill-id>` (alias: `rm`)
 
-Remove an installed skill.
+Uninstall an installed skill.
 
 ```bash
-skilz remove anthropics_skills/theme-factory    # Prompts for confirmation
-skilz remove anthropics_skills/theme-factory -y # Skip confirmation
-skilz remove theme-factory --project            # Remove by name
+skilz uninstall anthropics_skills/theme-factory    # Prompts for confirmation
+skilz uninstall anthropics_skills/theme-factory -y # Skip confirmation
+skilz rm theme-factory --project                   # Remove by name (using alias)
 ```
+
+### `skilz search <query>` (NEW in 1.5)
+
+Search GitHub for available skills.
+
+```bash
+skilz search excel              # Search for excel-related skills
+skilz search pdf --limit 5      # Limit to 5 results
+skilz search "data" --json      # JSON output for scripting
+```
+
+### `skilz visit <source>` (NEW in 1.5)
+
+Open a skill's GitHub page in your default browser.
+
+```bash
+skilz visit anthropics/skills          # Opens repo page
+skilz visit anthropics/skills/excel    # Opens skill directory
+skilz visit https://github.com/...     # Opens full URL
+```
+
+### Command Aliases
+
+For Unix-like familiarity:
+
+| Original | Alias |
+|----------|-------|
+| `skilz list` | `skilz ls` |
+| `skilz uninstall` | `skilz rm` |
 
 For complete documentation including troubleshooting and advanced examples, see the [User Manual](docs/USER_MANUAL.md).
 
@@ -439,10 +478,19 @@ This enables:
 - [x] `skilz read` command for agents without native skill loading
 - [x] Comprehensive User Guide
 
+### Phase 8 - Discovery & UX (Complete)
+
+- [x] `skilz search` command for GitHub skill discovery
+- [x] `skilz visit` command to open skill pages in browser
+- [x] Command aliases (`ls`, `rm`)
+- [x] URL auto-detection for `skilz install`
+- [x] Native agent optimization (skip config sync)
+- [x] `--force-config` flag
+
 ### Future
 
 - [ ] Plugin and marketplace installation support
-- [ ] `skilz search` — search [skillzwave.ai](https://skillzwave.ai) from CLI
+- [ ] `skilz search` integration with [skillzwave.ai](https://skillzwave.ai)
 - [ ] Skill dependency resolution
 
 ---
