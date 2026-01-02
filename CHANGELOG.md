@@ -5,6 +5,42 @@ All notable changes to Skilz CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-01-02
+
+### Added
+
+- **`skilz search` Command**: Search GitHub for available skills
+  - Searches repositories by name/description for skill-related projects
+  - `--limit` option to control number of results
+  - `--json` option for machine-readable output
+  - Uses `gh` CLI for GitHub API access
+- **`skilz visit` Command**: Open skill GitHub pages in browser
+  - Supports `owner/repo` format (opens repo page)
+  - Supports `owner/repo/skill` format (opens skill directory)
+  - Supports full URLs (pass-through)
+- **Command Aliases**: Unix-style command shortcuts
+  - `skilz ls` - alias for `skilz list`
+  - `skilz rm` - alias for `skilz uninstall`
+  - `skilz uninstall` - new primary command (replaces `remove`)
+- **URL Auto-Detection**: No more `-g` flag needed for Git URLs
+  - `skilz install https://github.com/owner/repo` now works directly
+  - Detects HTTPS, HTTP, SSH URLs, and `.git` suffix
+- **`--force-config` Flag**: Override native agent detection
+  - Skip config sync by default for Claude, OpenCode, Codex (native support)
+  - Use `--force-config` to force config file writing
+
+### Changed
+
+- **Native Agent Optimization**: Agents with native skill support skip config file modification
+  - Claude Code, OpenCode, Codex: skip config sync (read skills directory natively)
+  - Gemini: always sync config (no native skill support)
+- `remove` command renamed to `uninstall` (`remove` still works for backward compatibility)
+
+### Fixed
+
+- URL auto-detection for `skilz install` (SKILZ-48)
+- Config sync behavior for native agents (SKILZ-49)
+
 ## [1.1.0] - 2025-12-25
 
 ### Added
