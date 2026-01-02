@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 from typing import cast
 
+from skilz.agent_registry import get_registry
 from skilz.agents import (
     AgentType,
     detect_agent,
@@ -94,6 +95,7 @@ def install_local_skill(
     git_url: str | None = None,
     git_sha: str | None = None,
     skill_name: str | None = None,
+    force_config: bool = False,
 ) -> None:
     """
     Install a skill from a local directory.
@@ -107,6 +109,7 @@ def install_local_skill(
         git_url: Optional git repo URL for manifest (overrides "local" default).
         git_sha: Optional git SHA for manifest (overrides "local" default).
         skill_name: Optional skill name (overrides source_path.name, used for git installs).
+        force_config: If True, write to config files even for native agents.
     """
     source_path = source_path.expanduser().resolve()
 
@@ -170,32 +173,45 @@ def install_local_skill(
 
     # Step 5: Sync skill reference to agent config files (project-level only)
     if project_level:
-        project_dir = Path.cwd()
-        ref_skill_id = f"git/{skill_name}" if is_git_source else skill_id
-        skill_ref = SkillReference(
-            skill_id=ref_skill_id,
-            skill_name=skill_name,
-            skill_path=target_dir,
-        )
+        # Check if agent has native skill support (SKILZ-49)
+        registry = get_registry()
+        agent_config = registry.get_or_raise(resolved_agent)
 
-        if verbose:
-            print("Syncing skill to config files...")
+        # Skip config sync for native agents unless --force-config
+        should_sync = force_config or agent_config.native_skill_support == "none"
 
-        sync_results = sync_skill_to_configs(
-            skill=skill_ref,
-            project_dir=project_dir,
-            agent=resolved_agent if agent else None,
-            verbose=verbose,
-        )
+        if not should_sync:
+            if verbose:
+                print(
+                    f"  Skipping config sync ({agent_config.display_name} has native skill support)"
+                )
+        else:
+            project_dir = Path.cwd()
+            ref_skill_id = f"git/{skill_name}" if is_git_source else skill_id
+            skill_ref = SkillReference(
+                skill_id=ref_skill_id,
+                skill_name=skill_name,
+                skill_path=target_dir,
+            )
 
-        for result in sync_results:
-            if result.error:
-                print(f"  Warning: Could not update {result.config_file}: {result.error}")
-            elif result.created:
-                print(f"  Created: {result.config_file}")
-            elif result.updated:
-                if verbose:
-                    print(f"  Updated: {result.config_file}")
+            if verbose:
+                print("Syncing skill to config files...")
+
+            sync_results = sync_skill_to_configs(
+                skill=skill_ref,
+                project_dir=project_dir,
+                agent=resolved_agent if agent else None,
+                verbose=verbose,
+            )
+
+            for result in sync_results:
+                if result.error:
+                    print(f"  Warning: Could not update {result.config_file}: {result.error}")
+                elif result.created:
+                    print(f"  Created: {result.config_file}")
+                elif result.updated:
+                    if verbose:
+                        print(f"  Updated: {result.config_file}")
 
 
 def install_skill(
@@ -205,6 +221,7 @@ def install_skill(
     verbose: bool = False,
     mode: InstallMode | None = None,
     version_spec: str | None = None,
+    force_config: bool = False,
 ) -> None:
     """
     Install a skill from the registry.
@@ -223,6 +240,7 @@ def install_skill(
               - "branch:NAME": Latest commit from specified branch
               - 40-char hex: Specific commit SHA
               - Other: Treat as tag (tries "X" and "vX" formats)
+        force_config: If True, write to config files even for native agents.
 
     Raises:
         SkillNotFoundError: If the skill ID is not found in any registry.
@@ -426,31 +444,44 @@ def install_skill(
 
     # Step 11: Sync skill reference to agent config files (project-level only)
     if project_level:
-        project_dir = Path.cwd()
-        skill_ref = SkillReference(
-            skill_id=skill_info.skill_id,
-            skill_name=skill_info.skill_name,
-            skill_path=target_dir,
-        )
+        # Check if agent has native skill support (SKILZ-49)
+        registry = get_registry()
+        agent_config = registry.get_or_raise(resolved_agent)
 
-        if verbose:
-            print("Syncing skill to config files...")
+        # Skip config sync for native agents unless --force-config
+        should_sync = force_config or agent_config.native_skill_support == "none"
 
-        # If agent was explicitly specified, only update that agent's config
-        # Otherwise, update all existing config files in the project
-        sync_results = sync_skill_to_configs(
-            skill=skill_ref,
-            project_dir=project_dir,
-            agent=resolved_agent if agent else None,
-            verbose=verbose,
-        )
+        if not should_sync:
+            if verbose:
+                print(
+                    f"  Skipping config sync ({agent_config.display_name} has native skill support)"
+                )
+        else:
+            project_dir = Path.cwd()
+            skill_ref = SkillReference(
+                skill_id=skill_info.skill_id,
+                skill_name=skill_info.skill_name,
+                skill_path=target_dir,
+            )
 
-        # Report what was updated
-        for result in sync_results:
-            if result.error:
-                print(f"  Warning: Could not update {result.config_file}: {result.error}")
-            elif result.created:
-                print(f"  Created: {result.config_file}")
-            elif result.updated:
-                if verbose:
-                    print(f"  Updated: {result.config_file}")
+            if verbose:
+                print("Syncing skill to config files...")
+
+            # If agent was explicitly specified, only update that agent's config
+            # Otherwise, update all existing config files in the project
+            sync_results = sync_skill_to_configs(
+                skill=skill_ref,
+                project_dir=project_dir,
+                agent=resolved_agent if agent else None,
+                verbose=verbose,
+            )
+
+            # Report what was updated
+            for result in sync_results:
+                if result.error:
+                    print(f"  Warning: Could not update {result.config_file}: {result.error}")
+                elif result.created:
+                    print(f"  Created: {result.config_file}")
+                elif result.updated:
+                    if verbose:
+                        print(f"  Updated: {result.config_file}")

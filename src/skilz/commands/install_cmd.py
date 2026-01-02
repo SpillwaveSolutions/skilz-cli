@@ -50,6 +50,7 @@ def cmd_install(args: argparse.Namespace) -> int:
     project_level: bool = getattr(args, "project", False)
     skill_id: str | None = getattr(args, "skill_id", None)
     version_spec: str | None = getattr(args, "version_spec", None)
+    force_config: bool = getattr(args, "force_config", False)
 
     # Handle source options
     file_path: str | None = getattr(args, "file", None)
@@ -86,6 +87,7 @@ def cmd_install(args: argparse.Namespace) -> int:
                 project_level=project_level,
                 verbose=verbose,
                 mode=mode,
+                force_config=force_config,
             )
             return 0
         except SkilzError as e:
@@ -111,6 +113,7 @@ def cmd_install(args: argparse.Namespace) -> int:
             install_all=install_all,
             yes_all=yes_all,
             skill_filter_name=skill_filter_name,
+            force_config=force_config,
         )
 
     try:
@@ -121,6 +124,7 @@ def cmd_install(args: argparse.Namespace) -> int:
             verbose=verbose,
             mode=mode,
             version_spec=version_spec,
+            force_config=force_config,
         )
         return 0
     except SkilzError as e:
