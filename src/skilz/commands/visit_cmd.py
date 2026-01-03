@@ -5,9 +5,8 @@ from __future__ import annotations
 import argparse
 import sys
 import webbrowser
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
-from urllib.error import URLError, HTTPError
-
 
 # Marketplace base URL
 MARKETPLACE_BASE_URL = "https://skillzwave.ai/skill"

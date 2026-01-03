@@ -5,12 +5,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from skilz.commands.visit_cmd import (
+    MARKETPLACE_BASE_URL,
+    check_url_exists,
     cmd_visit,
     open_in_browser,
     resolve_github_url,
     resolve_marketplace_url,
-    check_url_exists,
-    MARKETPLACE_BASE_URL,
 )
 
 
