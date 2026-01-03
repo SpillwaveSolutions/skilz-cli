@@ -571,3 +571,160 @@ class TestInstallMode:
             manifest = mock_write.call_args[0][1]
             assert hasattr(manifest, "install_mode")
             assert manifest.install_mode == "copy"
+
+
+class TestConfigSyncSkip:
+    """Tests for SKILZ-49: Skip config sync for native agents."""
+
+    @pytest.fixture
+    def mock_skill_info(self):
+        """Create a mock SkillInfo for testing."""
+        return SkillInfo(
+            skill_id="test/skill",
+            git_repo="https://github.com/test/repo.git",
+            skill_path="/main/skills/test-skill",
+            git_sha="abc123def456789012345678901234567890abcd",
+        )
+
+    @pytest.fixture
+    def mock_dependencies(self, temp_dir, mock_skill_info):
+        """Set up common mocks for install_skill."""
+        cache_path = temp_dir / "cache" / "repo"
+        cache_path.mkdir(parents=True)
+
+        source_path = cache_path / "skills" / "test-skill"
+        source_path.mkdir(parents=True)
+        (source_path / "SKILL.md").write_text("# Test Skill")
+
+        skills_dir = temp_dir / ".claude" / "skills"
+        skills_dir.mkdir(parents=True)
+
+        return {
+            "cache_path": cache_path,
+            "source_path": source_path,
+            "skills_dir": skills_dir,
+            "skill_info": mock_skill_info,
+            "temp_dir": temp_dir,
+        }
+
+    def test_skip_config_sync_for_claude(self, mock_dependencies, capsys):
+        """Config sync should be skipped for Claude (native_skill_support='all')."""
+        deps = mock_dependencies
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.get_agent_default_mode", return_value="copy"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+            patch("skilz.installer.sync_skill_to_configs") as mock_sync,
+        ):
+            install_skill("test/skill", project_level=True, verbose=True)
+
+            # Sync should NOT be called for Claude (native support)
+            mock_sync.assert_not_called()
+
+        captured = capsys.readouterr()
+        assert "Skipping config sync" in captured.out
+
+    def test_force_config_overrides_native_support(self, mock_dependencies, capsys):
+        """--force-config should trigger sync even for native agents."""
+        deps = mock_dependencies
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.get_agent_default_mode", return_value="copy"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+            patch("skilz.installer.sync_skill_to_configs") as mock_sync,
+        ):
+            mock_sync.return_value = []
+
+            install_skill("test/skill", project_level=True, force_config=True)
+
+            # Sync SHOULD be called with --force-config
+            mock_sync.assert_called_once()
+
+    def test_config_sync_for_gemini(self, mock_dependencies, capsys):
+        """Config sync should happen for Gemini (native_skill_support='none')."""
+        deps = mock_dependencies
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="gemini"),
+            patch("skilz.installer.get_agent_display_name", return_value="Gemini CLI"),
+            patch("skilz.installer.get_agent_default_mode", return_value="copy"),
+            patch("skilz.installer.supports_home_install", return_value=False),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+            patch("skilz.installer.sync_skill_to_configs") as mock_sync,
+        ):
+            mock_sync.return_value = []
+
+            install_skill("test/skill", agent="gemini", project_level=True)
+
+            # Sync SHOULD be called for Gemini (no native support)
+            mock_sync.assert_called_once()
+
+    def test_local_skill_skip_config_sync_for_claude(self, temp_dir, capsys):
+        """Local skill install should skip config sync for Claude."""
+        source = temp_dir / "my-skill"
+        source.mkdir()
+        (source / "SKILL.md").write_text("# My Skill")
+
+        skills_dir = temp_dir / ".claude" / "skills"
+        skills_dir.mkdir(parents=True)
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.ensure_skills_dir", return_value=skills_dir),
+            patch("skilz.installer.write_manifest"),
+            patch("skilz.installer.sync_skill_to_configs") as mock_sync,
+        ):
+            install_local_skill(source, project_level=True, verbose=True)
+
+            # Sync should NOT be called
+            mock_sync.assert_not_called()
+
+        captured = capsys.readouterr()
+        assert "Skipping config sync" in captured.out
+
+    def test_local_skill_force_config_overrides(self, temp_dir):
+        """Local skill with --force-config should sync for Claude."""
+        source = temp_dir / "my-skill"
+        source.mkdir()
+        (source / "SKILL.md").write_text("# My Skill")
+
+        skills_dir = temp_dir / ".claude" / "skills"
+        skills_dir.mkdir(parents=True)
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.ensure_skills_dir", return_value=skills_dir),
+            patch("skilz.installer.write_manifest"),
+            patch("skilz.installer.sync_skill_to_configs") as mock_sync,
+        ):
+            mock_sync.return_value = []
+
+            install_local_skill(source, project_level=True, force_config=True)
+
+            # Sync SHOULD be called with --force-config
+            mock_sync.assert_called_once()

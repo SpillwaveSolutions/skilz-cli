@@ -1,6 +1,6 @@
 # Skilz User Manual
 
-**Version 1.2.0**
+**Version 1.5.0**
 
 Skilz is the universal package manager for AI skills. It installs, manages, and updates skills across multiple AI coding assistants including Claude Code and OpenCode.
 
@@ -15,9 +15,11 @@ Skilz is the universal package manager for AI skills. It installs, manages, and 
 2. [Quick Start](#quick-start)
 3. [Commands](#commands)
    - [skilz install](#skilz-install)
-   - [skilz list](#skilz-list)
+   - [skilz list](#skilz-list) (alias: `ls`)
    - [skilz update](#skilz-update)
-   - [skilz remove](#skilz-remove)
+   - [skilz uninstall](#skilz-uninstall) (alias: `rm`)
+   - [skilz search](#skilz-search) (NEW)
+   - [skilz visit](#skilz-visit) (NEW)
    - [skilz config](#skilz-config)
 4. [Configuration](#configuration)
    - [Config File](#config-file)
@@ -87,14 +89,20 @@ See [Development](#development) for available development commands.
 # Install a skill from the marketplace
 skilz install anthropics_skills/algorithmic-art
 
-# See what's installed
+# Install directly from GitHub URL (NEW in 1.5 - no -g flag needed)
+skilz install https://github.com/owner/repo
+
+# Search for skills on GitHub (NEW in 1.5)
+skilz search excel
+
+# See what's installed (alias: skilz ls)
 skilz list
 
 # Update all skills to latest versions
 skilz update
 
-# Remove a skill you no longer need
-skilz remove algorithmic-art
+# Uninstall a skill you no longer need (alias: skilz rm)
+skilz uninstall algorithmic-art
 ```
 
 ---
@@ -362,42 +370,43 @@ Would update 1 skill(s), 2 already up-to-date
 
 ---
 
-### skilz remove
+### skilz uninstall (alias: rm)
 
-Remove an installed skill.
+Uninstall an installed skill. The `remove` command is still available as an alias for backward compatibility.
 
 **Syntax:**
 ```bash
-skilz remove <skill-id> [options]
+skilz uninstall <skill-id> [options]
+skilz rm <skill-id> [options]  # Unix-style alias
 ```
 
 **Arguments:**
 | Argument | Description |
 |----------|-------------|
-| `skill-id` | The skill to remove (full ID or just the name) |
+| `skill-id` | The skill to uninstall (full ID or just the name) |
 
 **Options:**
 | Option | Description |
 |--------|-------------|
 | `--agent {claude,opencode}` | Filter by agent type |
-| `--project` | Remove from project-level instead of user-level |
+| `--project` | Uninstall from project-level instead of user-level |
 | `-y, --yes` | Skip confirmation prompt |
 | `-v, --verbose` | Show detailed output |
 
 **Examples:**
 
 ```bash
-# Remove with confirmation prompt
-skilz remove anthropics_skills/theme-factory
+# Uninstall with confirmation prompt
+skilz uninstall anthropics_skills/theme-factory
 
-# Remove by skill name only
-skilz remove theme-factory
+# Using rm alias
+skilz rm theme-factory
 
 # Skip confirmation (useful for scripts)
-skilz remove theme-factory -y
+skilz rm theme-factory -y
 
-# Remove from project directory
-skilz remove algorithmic-art --project --yes
+# Uninstall from project directory
+skilz rm algorithmic-art --project --yes
 ```
 
 **Confirmation Prompt:**
@@ -413,12 +422,119 @@ You can use partial names if they're unambiguous:
 
 ```bash
 # These all work if there's only one matching skill:
-skilz remove anthropics_skills/theme-factory  # Full ID
-skilz remove theme-factory                    # Name only
-skilz remove factory                          # Partial match
+skilz rm anthropics_skills/theme-factory  # Full ID
+skilz rm theme-factory                    # Name only
+skilz rm factory                          # Partial match
 ```
 
 If the partial match is ambiguous, Skilz will report an error.
+
+---
+
+### skilz search (NEW in 1.5)
+
+Search GitHub for available skills.
+
+**Syntax:**
+```bash
+skilz search <query> [options]
+```
+
+**Arguments:**
+| Argument | Description |
+|----------|-------------|
+| `query` | Search query (e.g., 'excel', 'pdf', 'data analysis') |
+
+**Options:**
+| Option | Description |
+|--------|-------------|
+| `-l, --limit` | Maximum number of results (default: 10) |
+| `--json` | Output as JSON for scripting |
+
+**Examples:**
+
+```bash
+# Basic search
+skilz search excel
+
+# Limit results
+skilz search pdf --limit 5
+
+# Multi-word queries (use quotes)
+skilz search "data analysis"
+
+# JSON output for scripting
+skilz search excel --json
+```
+
+**Output:**
+
+```
+Found 10 skill(s) matching 'excel':
+
+NAME                          STARS  DESCRIPTION
+--------------------------------------------------------------------------------
+anthropics/excel-skills          150  Excel manipulation for Claude
+user/spreadsheet-tools            45  Create and edit spreadsheets
+...
+```
+
+**Requirements:**
+- Requires [GitHub CLI (`gh`)](https://cli.github.com) for best results
+- Works unauthenticated, but authenticated provides better rate limits
+
+---
+
+### skilz visit (NEW in 1.5)
+
+Open a skill's GitHub page in your default browser.
+
+**Syntax:**
+```bash
+skilz visit <source>
+```
+
+**Arguments:**
+| Argument | Description |
+|----------|-------------|
+| `source` | Repository path or URL to visit |
+
+**Source Formats:**
+| Format | Opens |
+|--------|-------|
+| `owner/repo` | Repository page |
+| `owner/repo/skill` | Skill directory in repo |
+| `https://...` | Full URL directly |
+
+**Examples:**
+
+```bash
+# Open repository page
+skilz visit anthropics/skills
+
+# Open skill directory
+skilz visit anthropics/skills/excel
+
+# Open full URL
+skilz visit https://github.com/user/repo
+```
+
+**Output:**
+
+```
+Opening: https://github.com/anthropics/skills
+```
+
+---
+
+### Command Aliases (NEW in 1.5)
+
+For Unix-like familiarity, Skilz provides these command aliases:
+
+| Original | Alias | Example |
+|----------|-------|---------|
+| `skilz list` | `skilz ls` | `skilz ls --json` |
+| `skilz uninstall` | `skilz rm` | `skilz rm my-skill -y` |
 
 ---
 

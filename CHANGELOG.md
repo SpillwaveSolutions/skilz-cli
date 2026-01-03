@@ -5,6 +5,59 @@ All notable changes to Skilz CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-01-02
+
+### Added
+
+- **`skilz search` Command**: Search GitHub for available skills
+  - Searches repositories by name/description for skill-related projects
+  - `--limit` / `-l` option to control number of results (default: 10)
+  - `--json` option for machine-readable output
+  - Uses `gh` CLI for GitHub API access
+
+- **`skilz visit` Command**: Open skill pages in browser
+  - **Default**: Opens Skilzwave marketplace page (`https://skillzwave.ai/skill/...`)
+  - **`-g` / `--git`**: Force GitHub URL instead of marketplace
+  - **`--dry-run`**: Output URL without opening browser (for scripting)
+  - Automatic fallback: If marketplace returns 404, falls back to GitHub
+  - Supports `owner/repo`, `owner/repo/skill`, and full URL formats
+
+- **Command Aliases**: Unix-style command shortcuts
+  - `skilz ls` - alias for `skilz list`
+  - `skilz rm` - alias for `skilz remove`
+  - `skilz uninstall` - alias for `skilz remove`
+
+- **`-p` Short Flag**: Added `-p` as short alias for `--project` on all commands
+  - Works with: `install`, `list`, `update`, `remove`, `read`, `ls`, `rm`, `uninstall`
+  - Example: `skilz ls -p` instead of `skilz list --project`
+
+- **URL Auto-Detection**: No more `-g` flag needed for Git URLs
+  - `skilz install https://github.com/owner/repo` now works directly
+  - Detects HTTPS, HTTP, SSH URLs, and `.git` suffix
+  - Example: `skilz install https://github.com/Jamie-BitFlight/claude_skills.git --skill brainstorming-skill`
+
+- **`--force-config` Flag**: Override native agent detection
+  - Skip config sync by default for Claude, OpenCode, Codex (native support)
+  - Use `--force-config` to force config file writing when needed
+
+- **End-to-End Test Suite**: Comprehensive 66+ test script (`scripts/end_to_end.sh`)
+  - Tests all major features across multiple agents
+  - Includes summary table with full command details
+
+### Changed
+
+- **Native Agent Optimization**: Agents with native skill support skip config file modification
+  - Claude Code, OpenCode, Codex: skip config sync (read skills directory natively)
+  - Gemini: always sync config (no native skill support)
+- Improved help text with better examples showing new 1.5 features
+- Visit command defaults to marketplace URL (use `-g` for GitHub)
+
+### Fixed
+
+- URL auto-detection for `skilz install` (SKILZ-48)
+- Config sync behavior for native agents (SKILZ-49)
+- E2E test visit command using correct path for anthropics/skills repo
+
 ## [1.1.0] - 2025-12-25
 
 ### Added
