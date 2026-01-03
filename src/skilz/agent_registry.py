@@ -129,12 +129,12 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
         "opencode": AgentConfig(
             name="opencode",
             display_name="OpenCode CLI",
-            home_dir=Path.home() / ".config" / "opencode" / "skills",
-            project_dir=Path(".skilz") / "skills",
+            home_dir=Path.home() / ".config" / "opencode" / "skill",  # singular
+            project_dir=Path(".opencode") / "skill",  # singular
             config_files=("AGENTS.md",),
             supports_home=True,
             default_mode="copy",
-            native_skill_support="home",
+            native_skill_support="all",  # OpenCode reads skills natively
         ),
         "codex": AgentConfig(
             name="codex",

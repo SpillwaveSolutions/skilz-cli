@@ -227,7 +227,7 @@ Skilz supports 14 AI coding assistants:
 |-------|------------|---------------|--------------|
 | Claude Code | `~/.claude/skills/` | `.claude/skills/` | copy |
 | OpenAI Codex | `~/.codex/skills/` | `.codex/skills/` | copy |
-| OpenCode CLI | `~/.config/opencode/skills/` | `.skilz/skills/` | copy |
+| OpenCode CLI | `~/.config/opencode/skill/` | `.opencode/skill/` | copy |
 | Universal | `~/.skilz/skills/` | `.skilz/skills/` | copy |
 | Gemini CLI | - | `.skilz/skills/` | copy |
 | GitHub Copilot | - | `.github/skills/` | copy |

@@ -797,7 +797,7 @@ Skilz supports multiple AI coding assistants. Use `--agent` to target a specific
 | Agent | Skills Directory |
 |-------|------------------|
 | `claude` | `~/.claude/skills/` (user) or `.claude/skills/` (project) |
-| `opencode` | `~/.config/opencode/skills/` (user) or `.opencode/skills/` (project) |
+| `opencode` | `~/.config/opencode/skill/` (user) or `.opencode/skill/` (project) |
 
 **Auto-detection:**
 
@@ -825,8 +825,8 @@ skilz install plantuml --agent opencode
 
 | Level | Claude Code | OpenCode |
 |-------|-------------|----------|
-| User | `~/.claude/skills/` | `~/.config/opencode/skills/` |
-| Project | `.claude/skills/` | `.opencode/skills/` |
+| User | `~/.claude/skills/` | `~/.config/opencode/skill/` |
+| Project | `.claude/skills/` | `.opencode/skill/` |
 
 **When to use project-level:**
 
