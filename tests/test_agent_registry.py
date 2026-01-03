@@ -289,7 +289,9 @@ class TestAgentRegistry:
 
         assert "claude" in all_support
         assert "codex" in all_support
-        assert "opencode" in all_support  # Fixed: opencode now has full native support
+        assert "copilot" in all_support  # SKILZ-54: Copilot has native support
+        assert "opencode" in all_support  # OpenCode has full native support
+        assert len(home_support) == 0  # No agents currently use "home" only
         assert "gemini" in none_support
 
     def test_registry_loads_user_config(self, tmp_path):
