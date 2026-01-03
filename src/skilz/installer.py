@@ -137,10 +137,17 @@ def install_local_skill(
     # Step 1a: Auto-detect project-level for agents without home support
     if not project_level and not supports_home_install(resolved_agent):
         project_level = True
-        if verbose:
+        # Always show message for Copilot, verbose for others
+        if resolved_agent == "copilot":
+            print(
+                "  Info: GitHub Copilot only supports project-level installation (.github/skills/)"
+            )
+        elif verbose:
+            agent_config = get_registry().get(resolved_agent)
+            project_path = agent_config.project_dir if agent_config else ".skills/skills"
             print(
                 f"  Note: {get_agent_display_name(resolved_agent)} only supports "
-                "project-level installation"
+                f"project-level installation ({project_path}/)"
             )
 
     # Step 2: Determine target directory
@@ -261,10 +268,17 @@ def install_skill(
     # Step 1a: Auto-detect project-level for agents without home support
     if not project_level and not supports_home_install(resolved_agent):
         project_level = True
-        if verbose:
+        # Always show message for Copilot, verbose for others
+        if resolved_agent == "copilot":
+            print(
+                "  Info: GitHub Copilot only supports project-level installation (.github/skills/)"
+            )
+        elif verbose:
+            agent_config = get_registry().get(resolved_agent)
+            project_path = agent_config.project_dir if agent_config else ".skills/skills"
             print(
                 f"  Note: {get_agent_display_name(resolved_agent)} only supports "
-                "project-level installation"
+                f"project-level installation ({project_path}/)"
             )
 
     # Step 1b: Determine installation mode

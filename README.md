@@ -70,7 +70,7 @@ skilz install https://github.com/owner/repo
 skilz install anthropics_skills/brand-guidelines --agent gemini
 
 # Install at project level (for sandboxed agents)
-skilz install anthropics_skills/frontend-design --agent copilot --project
+skilz install anthropics_skills/frontend-design --agent copilot -p
 
 # List installed skills (or use alias: skilz ls)
 skilz list
@@ -227,10 +227,10 @@ Skilz supports 14 AI coding assistants:
 |-------|------------|---------------|--------------|
 | Claude Code | `~/.claude/skills/` | `.claude/skills/` | copy |
 | OpenAI Codex | `~/.codex/skills/` | `.codex/skills/` | copy |
-| OpenCode CLI | `~/.config/opencode/skills/` | `.skilz/skills/` | copy |
+| OpenCode CLI | `~/.config/opencode/skill/` | `.opencode/skill/` | copy |
 | Universal | `~/.skilz/skills/` | `.skilz/skills/` | copy |
 | Gemini CLI | - | `.skilz/skills/` | copy |
-| GitHub Copilot | - | `.github/copilot/skills/` | copy |
+| GitHub Copilot | - | `.github/skills/` | copy |
 | Cursor | - | `.skills/skills/` | copy |
 | Aider | - | `.skills/skills/` | copy |
 | Windsurf | - | `.skills/skills/` | copy |

@@ -5,6 +5,37 @@ All notable changes to Skilz CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-01-03
+
+### Added
+
+- **GitHub Copilot Native Skill Support (SKILZ-54)**: Copilot now reads skills natively from `.github/skills/`
+  - Skills installed for Copilot go directly to `.github/skills/` (project-level only)
+  - No config file injection needed - Copilot reads the directory natively
+  - Auto-detects project-level installation with clear info message:
+    `Info: GitHub Copilot only supports project-level installation (.github/skills/)`
+
+- **OpenCode Full Native Support**: OpenCode now has full native skill support (was "home only")
+  - Corrected paths to use singular `skill` format matching OpenCode's configuration
+  - Home directory: `~/.config/opencode/skill/`
+  - Project directory: `.opencode/skill/`
+  - `native_skill_support` changed from "home" to "all"
+
+- **Enhanced E2E Tests**: Added comprehensive GitHub Copilot tests
+  - Tests auto project-level detection
+  - Verifies `.github/skills/` installation path
+  - Validates info message display
+
+### Changed
+
+- **Copilot Project Directory**: Changed from `.github/copilot/skills` to `.github/skills/` (native location)
+- **OpenCode Paths**: Corrected to use singular `skill` instead of `skills` to match OpenCode's actual configuration
+
+### Fixed
+
+- OpenCode skill installation now uses correct paths (`~/.config/opencode/skill/` and `.opencode/skill/`)
+- Agents without home support (Copilot, Gemini, etc.) now always show informative message when auto-switching to project-level
+
 ## [1.5.0] - 2026-01-02
 
 ### Added

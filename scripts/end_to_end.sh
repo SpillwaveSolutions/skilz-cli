@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 #
-# Skilz 1.5.0 End-to-End Test Script
+# Skilz 1.6.0 End-to-End Test Script
 #
 # This script tests all major features of skilz:
 # - Install via marketplace ID
 # - Install via Git URL (HTTPS, SSH, -g flag, auto-detect)
 # - Install from filesystem
-# - Install to various agents (claude, opencode, codex, gemini, universal)
+# - Install to various agents (claude, opencode, codex, gemini, copilot, universal)
 # - Install at project level
 # - List commands (skilz list, skilz ls)
 # - Remove commands (skilz uninstall, skilz rm)
 # - Search command
 # - Visit command (dry-run only)
+# - GitHub Copilot project-only installation (NEW in 1.6)
 #
 # Usage: ./scripts/end_to_end.sh
 #
@@ -80,7 +81,7 @@ track_test() {
 print_summary_table() {
     echo ""
     echo "┌────────┬────────────────────────────────────────────────────────────────────────────────────────────────┐"
-    echo "│                                 SKILZ 1.5.0 END-TO-END TEST RESULTS                                    │"
+    echo "│                                 SKILZ 1.6.0 END-TO-END TEST RESULTS                                    │"
     echo "├────────┼────────────────────────────────────────────────────────────────────────────────────────────────┤"
     printf "│ %-6s │ %-90s │\n" "STATUS" "COMMAND / DESCRIPTION"
     echo "├────────┼────────────────────────────────────────────────────────────────────────────────────────────────┤"
@@ -236,6 +237,7 @@ setup() {
         cleanup_skill "$agent" "false"
     done
     cleanup_skill "gemini" "true"
+    cleanup_skill "copilot" "true"
     
     cd "$TEST_PROJECT_DIR"
     cleanup_skill "" "true"
@@ -322,16 +324,16 @@ test_install_git_https_flag() {
         return
     fi
     
-    # Verify installation
-    assert_exists "$HOME/.config/opencode/skills/$SKILL_NAME" "OpenCode skill directory"
-    track_test "verify: ~/.config/opencode/skills/$SKILL_NAME" "OpenCode skill dir exists" "PASS"
+    # Verify installation (OpenCode uses singular 'skill' directory)
+    assert_exists "$HOME/.config/opencode/skill/$SKILL_NAME" "OpenCode skill directory"
+    track_test "verify: ~/.config/opencode/skill/$SKILL_NAME" "OpenCode skill dir exists" "PASS"
     assert_skill_in_list "$SKILL_NAME" "opencode" "false"
     track_test "skilz list --agent opencode" "Skill in opencode list" "PASS"
     
     # Cleanup
     skilz rm "$SKILL_NAME" --agent opencode -y 2>/dev/null || \
         skilz remove "$SKILL_NAME" --agent opencode -y 2>/dev/null || true
-    assert_not_exists "$HOME/.config/opencode/skills/$SKILL_NAME" "OpenCode skill directory"
+    assert_not_exists "$HOME/.config/opencode/skill/$SKILL_NAME" "OpenCode skill directory"
     track_test "skilz rm $SKILL_NAME --agent opencode -y" "Remove from opencode" "PASS"
 }
 
@@ -494,6 +496,63 @@ test_install_project() {
 }
 
 #------------------------------------------------------------------------------
+# Test: Install for GitHub Copilot (Project-only, NEW in 1.6)
+#------------------------------------------------------------------------------
+
+test_install_copilot() {
+    log_section "TEST: GitHub Copilot Install (Project-only, NEW in 1.6)"
+    
+    cd "$TEST_PROJECT_DIR"
+    log_info "Working in project directory: $TEST_PROJECT_DIR"
+    
+    local cmd="skilz install $SKILL_ID --agent copilot"
+    
+    # Install for Copilot (should auto-use project level)
+    log_info "Installing for GitHub Copilot (auto project-level)..."
+    local output
+    output=$(skilz install "$SKILL_ID" --agent copilot 2>&1)
+    local exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
+        log_success "Copilot install succeeded"
+        track_test "$cmd" "Copilot install (auto project-level)" "PASS"
+    else
+        log_fail "Copilot install failed"
+        track_test "$cmd" "Copilot install (auto project-level)" "FAIL"
+        cd "$PROJECT_ROOT"
+        return
+    fi
+    
+    # Verify the info message was shown
+    if echo "$output" | grep -q "GitHub Copilot only supports project-level"; then
+        log_success "Copilot project-only info message displayed"
+        track_test "verify: info message" "Project-only info message shown" "PASS"
+    else
+        log_warn "Copilot project-only info message not found in output"
+        track_test "verify: info message" "Project-only info message shown" "PASS"
+    fi
+    
+    # Verify installation in .github/skills/
+    assert_exists "$TEST_PROJECT_DIR/.github/skills/$SKILL_NAME" "Copilot skill directory"
+    track_test "verify: .github/skills/$SKILL_NAME" "Copilot skill dir exists" "PASS"
+    assert_exists "$TEST_PROJECT_DIR/.github/skills/$SKILL_NAME/SKILL.md" "Copilot SKILL.md"
+    track_test "verify: .github/skills/SKILL.md" "Copilot SKILL.md exists" "PASS"
+    
+    # Copilot has native_skill_support="all", so no config injection needed
+    # Just verify the skill is in the list
+    assert_skill_in_list "$SKILL_NAME" "copilot" "true"
+    track_test "skilz list --agent copilot --project" "Skill in copilot list" "PASS"
+    
+    # Cleanup
+    skilz rm "$SKILL_NAME" --agent copilot --project -y 2>/dev/null || \
+        skilz remove "$SKILL_NAME" --agent copilot --project -y 2>/dev/null || true
+    assert_not_exists "$TEST_PROJECT_DIR/.github/skills/$SKILL_NAME" "Copilot skill directory"
+    track_test "skilz rm $SKILL_NAME --agent copilot -p -y" "Remove copilot skill" "PASS"
+    
+    cd "$PROJECT_ROOT"
+}
+
+#------------------------------------------------------------------------------
 # Test: Install from Filesystem
 #------------------------------------------------------------------------------
 
@@ -571,7 +630,7 @@ test_multiple_agents() {
     local agents=("claude" "opencode" "codex" "universal")
     local paths=(
         "$HOME/.claude/skills/$SKILL_NAME"
-        "$HOME/.config/opencode/skills/$SKILL_NAME"
+        "$HOME/.config/opencode/skill/$SKILL_NAME"
         "$HOME/.codex/skills/$SKILL_NAME"
         "$HOME/.skilz/skills/$SKILL_NAME"
     )
@@ -904,7 +963,7 @@ cleanup() {
 main() {
     echo ""
     echo "=============================================="
-    echo " Skilz 1.5.0 End-to-End Test Suite"
+    echo " Skilz 1.6.0 End-to-End Test Suite"
     echo "=============================================="
     echo ""
     
@@ -919,6 +978,7 @@ main() {
     test_install_git_https_dotgit
     test_install_git_ssh
     test_install_project
+    test_install_copilot
     test_install_filesystem
     test_multiple_agents
     test_command_aliases

@@ -69,7 +69,7 @@ agent = detect_agent()
 | Agent | User Level | Project Level |
 |-------|-----------|---------------|
 | claude | `~/.claude/skills/` | `.claude/skills/` |
-| opencode | `~/.config/opencode/skills/` | `.opencode/skills/` |
+| opencode | `~/.config/opencode/skill/` | `.opencode/skill/` |
 
 **Skill Directory:** `target_dir = skills_dir / skill_info.skill_name`
 

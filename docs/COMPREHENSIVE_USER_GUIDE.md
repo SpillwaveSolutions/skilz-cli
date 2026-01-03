@@ -55,7 +55,7 @@ Skilz supports 14 AI coding assistants. Each agent has different capabilities:
 |-------|--------------|--------------|---------------|--------------|
 | `claude` | Claude Code | ✅ Yes | All | copy |
 | `codex` | OpenAI Codex | ✅ Yes | All | copy |
-| `opencode` | OpenCode CLI | ✅ Yes | Home only | copy |
+| `opencode` | OpenCode CLI | ✅ Yes | All | copy |
 | `universal` | Universal (Skilz) | ✅ Yes | None | copy |
 | `gemini` | Gemini CLI | ❌ No | None | copy |
 | `copilot` | GitHub Copilot | ❌ No | None | copy |
@@ -145,7 +145,7 @@ If you have skills in OpenCode:
 
 ```bash
 # Copy from OpenCode to current project
-skilz install -f ~/.config/opencode/skills/sdd --project --agent gemini
+skilz install -f ~/.config/opencode/skill/sdd --project --agent gemini
 ```
 
 From OpenAI Codex:
@@ -218,7 +218,7 @@ skilz install anthropics_skills/theme-factory --agent claude
 # OpenAI Codex - installs to ~/.codex/skills/
 skilz install anthropics_skills/theme-factory --agent codex
 
-# OpenCode CLI - installs to ~/.config/opencode/skills/
+# OpenCode CLI - installs to ~/.config/opencode/skill/
 skilz install anthropics_skills/theme-factory --agent opencode
 
 # Universal - installs to ~/.skilz/skills/
@@ -243,10 +243,10 @@ skilz install spillwave/plantuml --agent gemini  # Always project-level
 |-------|-----------------|-------------------|
 | `claude` | `~/.claude/skills/` | `.claude/skills/` |
 | `codex` | `~/.codex/skills/` | `.codex/skills/` |
-| `opencode` | `~/.config/opencode/skills/` | `.skilz/skills/` |
+| `opencode` | `~/.config/opencode/skill/` | `.opencode/skill/` |
 | `universal` | `~/.skilz/skills/` | `.skilz/skills/` |
 | `gemini` | _(not supported)_ | `.skilz/skills/` |
-| `copilot` | _(not supported)_ | `.github/copilot/skills/` |
+| `copilot` | _(not supported)_ | `.github/skills/` |
 | `cursor` | _(not supported)_ | `.skills/skills/` |
 | `aider` | _(not supported)_ | `.skills/skills/` |
 | `qwen` | _(not supported)_ | `.skills/skills/` |
@@ -318,7 +318,7 @@ skilz list --agent opencode
 ```
 
 **Paths:**
-- User: `~/.config/opencode/skills/`
+- User: `~/.config/opencode/skill/`
 - Project: `.skilz/skills/`
 - Config: `AGENTS.md`
 
@@ -362,8 +362,10 @@ skilz list --agent copilot --project
 
 **Paths:**
 - User: _(not supported)_
-- Project: `.github/copilot/skills/`
+- Project: `.github/skills/` (native Copilot skills directory)
 - Config: `.github/copilot-instructions.md`
+
+**Native Support:** GitHub Copilot reads skills from `.github/skills/` natively (announced Dec 18, 2025). Config sync is skipped.
 
 ---
 
@@ -630,7 +632,7 @@ If your team only uses OpenCode, you might want all skills in one place:
 
 ```json
 {
-  "default_skills_dir": "~/.config/opencode/skills"
+  "default_skills_dir": "~/.config/opencode/skill"
 }
 ```
 

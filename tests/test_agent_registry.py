@@ -154,6 +154,19 @@ class TestBuiltinAgents:
         assert claude.default_mode == "copy"
         assert claude.native_skill_support == "all"
 
+    def test_opencode_config(self):
+        """OpenCode agent has correct configuration."""
+        agents = get_builtin_agents()
+        opencode = agents["opencode"]
+
+        assert opencode.name == "opencode"
+        assert opencode.display_name == "OpenCode CLI"
+        assert opencode.home_dir == Path.home() / ".config" / "opencode" / "skill"  # singular
+        assert opencode.project_dir == Path(".opencode") / "skill"  # singular
+        assert opencode.supports_home is True
+        assert opencode.default_mode == "copy"
+        assert opencode.native_skill_support == "all"
+
     def test_gemini_config(self):
         """Gemini agent has correct configuration (project-only)."""
         agents = get_builtin_agents()
@@ -165,6 +178,19 @@ class TestBuiltinAgents:
         assert gemini.supports_home is False
         assert gemini.default_mode == "copy"  # copy for agents without native support
         assert gemini.native_skill_support == "none"
+
+    def test_copilot_native_support(self):
+        """Copilot should have native skill support (SKILZ-54)."""
+        agents = get_builtin_agents()
+        copilot = agents["copilot"]
+
+        assert copilot.name == "copilot"
+        assert copilot.display_name == "GitHub Copilot"
+        assert copilot.home_dir is None  # No home dir support
+        assert copilot.project_dir == Path(".github") / "skills"  # Native location
+        assert copilot.supports_home is False
+        assert copilot.default_mode == "copy"
+        assert copilot.native_skill_support == "all"  # Skip config sync
 
     def test_cursor_uses_folder_rules(self):
         """Cursor agent has uses_folder_rules enabled."""
@@ -263,7 +289,9 @@ class TestAgentRegistry:
 
         assert "claude" in all_support
         assert "codex" in all_support
-        assert "opencode" in home_support
+        assert "copilot" in all_support  # SKILZ-54: Copilot has native support
+        assert "opencode" in all_support  # OpenCode has full native support
+        assert len(home_support) == 0  # No agents currently use "home" only
         assert "gemini" in none_support
 
     def test_registry_loads_user_config(self, tmp_path):
