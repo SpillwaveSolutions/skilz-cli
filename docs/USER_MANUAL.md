@@ -1,6 +1,6 @@
 # Skilz User Manual
 
-**Version 1.5.0**
+**Version 1.6.0**
 
 Skilz is the universal package manager for AI skills. It installs, manages, and updates skills across multiple AI coding assistants including Claude Code and OpenCode.
 
