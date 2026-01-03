@@ -122,7 +122,7 @@ def check_url_exists(url: str, timeout: float = 5.0) -> bool:
     """
     try:
         response = urlopen(url, timeout=timeout)
-        return response.status == 200
+        return bool(response.status == 200)
     except (URLError, HTTPError):
         return False
     except Exception:
