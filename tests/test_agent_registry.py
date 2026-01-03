@@ -166,6 +166,19 @@ class TestBuiltinAgents:
         assert gemini.default_mode == "copy"  # copy for agents without native support
         assert gemini.native_skill_support == "none"
 
+    def test_copilot_native_support(self):
+        """Copilot should have native skill support (SKILZ-54)."""
+        agents = get_builtin_agents()
+        copilot = agents["copilot"]
+
+        assert copilot.name == "copilot"
+        assert copilot.display_name == "GitHub Copilot"
+        assert copilot.home_dir is None  # No home dir support
+        assert copilot.project_dir == Path(".github") / "skills"  # Native location
+        assert copilot.supports_home is False
+        assert copilot.default_mode == "copy"
+        assert copilot.native_skill_support == "all"  # Skip config sync
+
     def test_cursor_uses_folder_rules(self):
         """Cursor agent has uses_folder_rules enabled."""
         agents = get_builtin_agents()

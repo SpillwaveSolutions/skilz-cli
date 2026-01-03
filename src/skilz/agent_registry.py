@@ -161,11 +161,11 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             name="copilot",
             display_name="GitHub Copilot",
             home_dir=None,
-            project_dir=Path(".github") / "copilot" / "skills",
+            project_dir=Path(".github") / "skills",  # Copilot native skills dir
             config_files=(".github/copilot-instructions.md",),
             supports_home=False,
             default_mode="copy",
-            native_skill_support="none",
+            native_skill_support="all",  # Copilot reads .github/skills/ natively
         ),
         "aider": AgentConfig(
             name="aider",

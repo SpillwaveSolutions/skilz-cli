@@ -684,6 +684,33 @@ class TestConfigSyncSkip:
             # Sync SHOULD be called for Gemini (no native support)
             mock_sync.assert_called_once()
 
+    def test_skip_config_sync_for_copilot(self, mock_dependencies, capsys):
+        """Config sync should be skipped for Copilot (native_skill_support='all', SKILZ-54)."""
+        deps = mock_dependencies
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="copilot"),
+            patch("skilz.installer.get_agent_display_name", return_value="GitHub Copilot"),
+            patch("skilz.installer.get_agent_default_mode", return_value="copy"),
+            patch("skilz.installer.supports_home_install", return_value=False),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+            patch("skilz.installer.sync_skill_to_configs") as mock_sync,
+        ):
+            install_skill("test/skill", agent="copilot", project_level=True, verbose=True)
+
+            # Sync should NOT be called for Copilot (native support)
+            mock_sync.assert_not_called()
+
+        captured = capsys.readouterr()
+        assert "Skipping config sync" in captured.out
+
     def test_local_skill_skip_config_sync_for_claude(self, temp_dir, capsys):
         """Local skill install should skip config sync for Claude."""
         source = temp_dir / "my-skill"

@@ -246,7 +246,7 @@ skilz install spillwave/plantuml --agent gemini  # Always project-level
 | `opencode` | `~/.config/opencode/skills/` | `.skilz/skills/` |
 | `universal` | `~/.skilz/skills/` | `.skilz/skills/` |
 | `gemini` | _(not supported)_ | `.skilz/skills/` |
-| `copilot` | _(not supported)_ | `.github/copilot/skills/` |
+| `copilot` | _(not supported)_ | `.github/skills/` |
 | `cursor` | _(not supported)_ | `.skills/skills/` |
 | `aider` | _(not supported)_ | `.skills/skills/` |
 | `qwen` | _(not supported)_ | `.skills/skills/` |
@@ -362,8 +362,10 @@ skilz list --agent copilot --project
 
 **Paths:**
 - User: _(not supported)_
-- Project: `.github/copilot/skills/`
+- Project: `.github/skills/` (native Copilot skills directory)
 - Config: `.github/copilot-instructions.md`
+
+**Native Support:** GitHub Copilot reads skills from `.github/skills/` natively (announced Dec 18, 2025). Config sync is skipped.
 
 ---
 
