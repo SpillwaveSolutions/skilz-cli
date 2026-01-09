@@ -5,6 +5,36 @@ All notable changes to Skilz CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-01-09
+
+### Added
+
+- **List Command Enhancements (SKILZ-68)**: Major improvements to `skilz list` command
+  - Added "Agent" column showing user-friendly agent names (Claude Code, OpenAI Codex, etc.)
+  - Added `--all` flag to scan all 14+ supported agents (default: top 5)
+  - Fixed status logic to use correct `manifest.skill_id` for accurate up-to-date/outdated reporting
+  - Improved home directory discovery with proper agent filtering
+  - Enhanced JSON output with `agent_display_name` field
+
+- **CLI Help Discoverability (SKILZ-66)**: Comprehensive improvements to `--help` output
+  - Added examples for all commands (update, remove, read, config, etc.)
+  - Improved command descriptions for better clarity
+  - Complete coverage of available options and usage patterns
+  - Enhanced user experience with comprehensive examples
+
+### Fixed
+
+- **Visit Command URL Format (SKILZ-70)**: Corrected marketplace URL generation
+  - Fixed base URL: `skillzwave.ai/skill` → `skillzwave.ai/agent-skill`
+  - Fixed slug format: removed `__SKILL` suffix, proper `owner__repo__skill` format
+  - Added support for single skill names with spillwavesolutions organization
+  - Example: `skilz visit sdd` now correctly opens `skillzwave.ai/agent-skill/spillwavesolutions__sdd__sdd`
+
+### Changed
+
+- **Agent Registry Integration**: Scanner now uses registry for agent discovery instead of hardcoded lists
+- **Type Safety**: Updated AgentType to ExtendedAgentType for full agent support
+
 ## [1.7.0] - 2026-01-08
 
 ### Added
