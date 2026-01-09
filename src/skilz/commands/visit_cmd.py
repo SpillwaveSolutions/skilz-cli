@@ -9,7 +9,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 # Marketplace base URL
-MARKETPLACE_BASE_URL = "https://skillzwave.ai/skill"
+MARKETPLACE_BASE_URL = "https://skillzwave.ai/agent-skill"
 
 
 def resolve_github_url(source: str) -> str:
@@ -86,25 +86,37 @@ def resolve_marketplace_url(source: str) -> str:
         return source
 
     # Convert owner/repo/skill format to marketplace format
-    # Marketplace uses: owner__repo__skill-name__SKILL
+    # Marketplace uses: owner__repo__skill-name (no __SKILL suffix)
     parts = source.split("/")
 
     if len(parts) >= 3:
         # owner/repo/skill-name format
         owner = parts[0]
         repo = parts[1]
-        skill_path = "__".join(parts[2:])
-        marketplace_id = f"{owner}__{repo}__{skill_path}__SKILL"
+        skill_name = parts[-1]  # Last part is the skill name
+        marketplace_id = f"{owner}__{repo}__{skill_name}"
     elif len(parts) == 2:
-        # owner/repo format - just the repo page
+        # owner/repo format - assume skill name is repo name
         owner = parts[0]
         repo = parts[1]
-        marketplace_id = f"{owner}__{repo}"
+        skill_name = repo  # Assume skill name = repo name
+        marketplace_id = f"{owner}__{repo}__{skill_name}"
+    elif len(parts) == 1:
+        # Single name - assume it's a skill from spillwavesolutions organization
+        skill_name = parts[0]
+        # For single names, assume spillwavesolutions organization and skill name = repo name
+        marketplace_id = f"spillwavesolutions__{skill_name}__{skill_name}"
     else:
         # Assume it's already a marketplace ID or skill name
-        marketplace_id = source.replace("/", "__")
-        if not marketplace_id.endswith("__SKILL"):
-            marketplace_id = f"{marketplace_id}__SKILL"
+        # Try to parse as owner__repo__skill format
+        if "__" in source and source.count("__") >= 2:
+            marketplace_id = source
+        else:
+            # Fallback: assume it's just a skill name, can't generate proper URL
+            raise ValueError(
+                f"Cannot generate marketplace URL for '{source}'. "
+                "Expected format: owner/repo, owner/repo/skill-name, or skill-name"
+            )
 
     return f"{MARKETPLACE_BASE_URL}/{marketplace_id}/"
 
