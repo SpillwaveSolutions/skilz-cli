@@ -60,26 +60,29 @@ For detailed usage instructions, see the [User Manual](docs/USER_MANUAL.md).
 ## Quick Start
 
 ```bash
-# Install a skill from the marketplace (defaults to Claude Code, user-level)
+# Install a skill from the marketplace using NEW format (defaults to Claude Code, user-level)
+skilz install anthropics/skills/algorithmic-art
+
+# Install using LEGACY format (backwards compatible)
 skilz install anthropics_skills/algorithmic-art
 
 # Install directly from GitHub URL (NEW in 1.5 - no -g flag needed)
 skilz install https://github.com/owner/repo
 
-# Install for a specific agent
-skilz install anthropics_skills/brand-guidelines --agent opencode
+# Install for a specific agent using NEW format
+skilz install anthropics/skills/brand-guidelines --agent opencode
 
 # Install at project level (for sandboxed agents)
-skilz install anthropics_skills/frontend-design --agent copilot -p
+skilz install anthropics/skills/frontend-design --agent copilot -p
 
 # Gemini CLI native support (NEW in 1.7 - requires experimental.skills plugin)
-skilz install anthropics_skills/pdf-reader --agent gemini --project
+skilz install anthropics/skills/pdf-reader --agent gemini --project
 
 # Legacy Gemini workflow (NEW in 1.7 - for users without experimental.skills)
-skilz install anthropics_skills/pdf-reader --agent universal --project --config GEMINI.md
+skilz install anthropics/skills/pdf-reader --agent universal --project --config GEMINI.md
 
 # Universal agent with custom config (NEW in 1.7)
-skilz install anthropics_skills/excel --agent universal --project --config CUSTOM.md
+skilz install anthropics/skills/excel --agent universal --project --config CUSTOM.md
 
 # List installed skills (or use alias: skilz ls)
 skilz list
@@ -98,8 +101,17 @@ skilz read algorithmic-art
 skilz update
 
 # Uninstall a skill (or use alias: skilz rm)
-skilz uninstall anthropics_skills/algorithmic-art
+skilz uninstall anthropics/skills/algorithmic-art
 ```
+
+### Skill ID Formats
+
+Skilz supports two skill ID formats:
+
+- **NEW Format (Recommended)**: `owner/repo/skill-name` — e.g., `anthropics/skills/theme-factory`
+- **LEGACY Format**: `owner_repo/skill-name` — e.g., `anthropics_skills/theme-factory`
+
+Both formats work identically. Use whichever you prefer!
 
 Each install command:
 
@@ -125,7 +137,12 @@ The skill page for [Theme Factory](https://skillzwave.ai/skill/anthropics_skills
 skilz install anthropics_skills/theme-factory
 ```
 
-The string `anthropics_skills/theme-factory` is the **Skill ID** — the format is `owner_repo/skill-name` where underscores separate owner and repo.
+The string `anthropics_skills/theme-factory` is the **Skill ID**. Skilz supports two formats:
+
+- **NEW Format (Recommended)**: `owner/repo/skill-name` — e.g., `anthropics/skills/theme-factory`
+- **LEGACY Format**: `owner_repo/skill-name` — e.g., `anthropics_skills/theme-factory` (underscores separate owner and repo)
+
+Both formats work identically and resolve to the same skill. The NEW format is more intuitive and matches GitHub repository structure.
 
 ---
 

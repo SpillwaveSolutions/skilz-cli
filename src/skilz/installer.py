@@ -14,6 +14,7 @@ from skilz.agents import (
     get_agent_display_name,
     supports_home_install,
 )
+from skilz.api_client import get_skill_id_format
 from skilz.config_sync import SkillReference, sync_skill_to_configs
 from skilz.errors import InstallError
 from skilz.git_ops import (
@@ -345,11 +346,18 @@ def install_skill(
 
     # Step 2: Look up skill in registry
     if verbose:
+        format_type = get_skill_id_format(skill_id)
         print(f"Looking up skill: {skill_id}")
+        print(f"  [INFO] Skill ID format: {format_type.upper()}")
+        if format_type in ["new", "legacy", "slug"]:
+            print("  [INFO] Attempting REST API lookup at skillzwave.ai...")
 
     skill_info: SkillInfo = lookup_skill(skill_id, verbose=verbose)
 
     if verbose:
+        format_type = get_skill_id_format(skill_id)
+        if format_type in ["new", "legacy", "slug"]:
+            print(f"  [SUCCESS] REST API resolved skill: {skill_id}")
         print(f"  Found: {skill_info.git_repo}")
         print(f"  Path: {skill_info.skill_path}")
         print(f"  SHA: {skill_info.git_sha[:8]}...")

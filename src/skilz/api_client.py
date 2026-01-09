@@ -33,10 +33,13 @@ def parse_skill_id(skill_id: str) -> tuple[str, str, str]:
     """
     Parse a skill ID into owner, repo, and skill_name.
 
-    Format: {owner}_{repo}/{skill_name}
+    Supports three formats:
+    - NEW:    owner/repo/skill_name  (2 slashes)
+    - LEGACY: owner_repo/skill_name  (1 slash, underscore separates owner/repo)
+    - SLUG:   owner__repo__skill     (double underscores, advanced users)
 
     Args:
-        skill_id: The skill ID to parse (e.g., "Jamie-BitFlight_claude_skills/clang-format")
+        skill_id: The skill ID to parse
 
     Returns:
         Tuple of (owner, repo, skill_name)
@@ -44,48 +47,98 @@ def parse_skill_id(skill_id: str) -> tuple[str, str, str]:
     Raises:
         ValueError: If the skill_id format is invalid
     """
-    if "/" not in skill_id:
+    # Check for SLUG format (double underscores)
+    if "__" in skill_id:
+        parts = skill_id.split("__")
+        if len(parts) >= 3:
+            owner = parts[0]
+            repo = parts[1]
+            skill_name = "__".join(parts[2:])  # Handle skill names with __
+            if owner and repo and skill_name:
+                return owner.lower(), repo.lower(), skill_name.lower()
+        raise ValueError(f"Invalid slug format: '{skill_id}'. Expected format: owner__repo__skill")
+
+    # Count slashes to determine format
+    slash_count = skill_id.count("/")
+
+    # NEW format: owner/repo/skill (2 slashes)
+    if slash_count == 2:
+        owner, repo, skill_name = skill_id.split("/")
+        if owner and repo and skill_name:
+            return owner, repo, skill_name
         raise ValueError(
-            f"Invalid skill ID format: '{skill_id}'. Expected format: owner_repo/skill_name"
+            f"Invalid skill ID format: '{skill_id}'. Expected format: owner/repo/skill_name"
         )
 
-    owner_repo, skill_name = skill_id.rsplit("/", 1)
-
-    if "_" not in owner_repo:
-        raise ValueError(
-            f"Invalid skill ID format: '{skill_id}'. "
-            "Expected format: owner_repo/skill_name (with underscore between owner and repo)"
-        )
-
-    # Split on FIRST underscore (GitHub owners can't contain underscores, only hyphens)
-    idx = owner_repo.find("_")
-    owner = owner_repo[:idx]
-    repo = owner_repo[idx + 1 :]
-
-    if not owner or not repo or not skill_name:
+    # LEGACY format: owner_repo/skill (1 slash with underscore)
+    if slash_count == 1:
+        owner_repo, skill_name = skill_id.rsplit("/", 1)
+        if "_" not in owner_repo:
+            raise ValueError(
+                f"Invalid skill ID format: '{skill_id}'. "
+                "Expected format: owner_repo/skill_name or owner/repo/skill_name"
+            )
+        # Split on FIRST underscore (GitHub owners can have hyphens, not underscores)
+        idx = owner_repo.find("_")
+        owner = owner_repo[:idx]
+        repo = owner_repo[idx + 1 :]
+        if owner and repo and skill_name:
+            return owner, repo, skill_name
         raise ValueError(
             f"Invalid skill ID format: '{skill_id}'. "
             "Owner, repo, and skill_name must all be non-empty"
         )
 
-    return owner, repo, skill_name
+    raise ValueError(
+        f"Invalid skill ID format: '{skill_id}'. "
+        "Expected: owner/repo/skill, owner_repo/skill, or owner__repo__skill"
+    )
 
 
 def is_marketplace_skill_id(skill_id: str) -> bool:
     """
-    Check if a skill ID is in the marketplace format.
+    Check if a skill ID is in a recognized marketplace format.
 
-    Marketplace format: {owner}_{repo}/{skill_name}
-    Legacy format: {owner}/{skill_name} (no underscore before /)
+    Recognized formats:
+    - NEW:    owner/repo/skill_name  (2 slashes)
+    - LEGACY: owner_repo/skill_name  (1 slash with underscore)
+    - SLUG:   owner__repo__skill     (double underscores)
 
     Returns:
         True if the skill ID appears to be a marketplace skill ID
     """
-    if "/" not in skill_id:
-        return False
+    # SLUG format
+    if "__" in skill_id:
+        return skill_id.count("__") >= 2
 
-    owner_repo, _ = skill_id.rsplit("/", 1)
-    return "_" in owner_repo
+    # NEW format: 2 slashes
+    if skill_id.count("/") == 2:
+        return True
+
+    # LEGACY format: 1 slash with underscore before it
+    if "/" in skill_id:
+        owner_repo, _ = skill_id.rsplit("/", 1)
+        return "_" in owner_repo
+
+    return False
+
+
+def get_skill_id_format(skill_id: str) -> str:
+    """
+    Determine the format type of a skill ID.
+
+    Returns:
+        One of: 'new', 'legacy', 'slug', 'unknown'
+    """
+    if "__" in skill_id and skill_id.count("__") >= 2:
+        return "slug"
+    if skill_id.count("/") == 2:
+        return "new"
+    if "/" in skill_id:
+        owner_repo, _ = skill_id.rsplit("/", 1)
+        if "_" in owner_repo:
+            return "legacy"
+    return "unknown"
 
 
 def fetch_skill_by_name(
