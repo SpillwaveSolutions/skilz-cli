@@ -81,11 +81,11 @@ skilz remove <skill-id> [--agent claude|opencode] [--project] [--yes]
 
 ### List Output (Default)
 ```
-Skill                          Version    Installed           Status
-─────────────────────────────────────────────────────────────────────
-spillwave/plantuml             f2489dcd   2025-01-15 14:32   up-to-date
-anthropics/web-artifacts       00756142   2025-01-15 14:33   outdated
-spillwave/design-doc-mermaid   e1c29a38   2025-01-15 14:34   up-to-date
+Agent    Skill                          Version    Mode     Status
+────────────────────────────────────────────────────────────────────────────
+claude   spillwave/plantuml             f2489dcd   [copy]   up-to-date
+gemini   anthropics/web-artifacts       00756142   [copy]   outdated
+claude   spillwave/design-doc-mermaid   e1c29a38   [copy]   up-to-date
 ```
 
 ### List Output (JSON)
@@ -93,10 +93,13 @@ spillwave/design-doc-mermaid   e1c29a38   2025-01-15 14:34   up-to-date
 [
   {
     "skill_id": "spillwave/plantuml",
+    "skill_name": "plantuml",
+    "agent": "claude",
     "git_sha": "f2489dcd...",
     "installed_at": "2025-01-15T14:32:00Z",
     "status": "up-to-date",
-    "path": "/Users/.../.claude/skills/plantuml"
+    "path": "/Users/.../.claude/skills/plantuml",
+    "project_level": false
   }
 ]
 ```

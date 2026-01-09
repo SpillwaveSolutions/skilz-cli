@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 #
-# E2E Tests for Bug Fixes: SKILZ-64 and SKILZ-65
+# E2E Tests for Bug Fixes: SKILZ-64, SKILZ-65, and SKILZ-68
 #
 # SKILZ-64: Temp directory warning during git installs should not appear
 # SKILZ-65: --config flag should work for git installs
+# SKILZ-68: List command issues (4 sub-issues):
+#   - Only 2 agents scanned (now scans 5+ by default, all with --all)
+#   - No Agent column in table output (now shows Agent column)
+#   - Home installs not reliably discovered (now uses registry)
+#   - Status always shows "unknown" (now uses manifest.skill_id)
 #
 # These tests should FAIL initially, then PASS after fixes
 #
@@ -43,6 +48,44 @@ log_failure() {
 
 log_warning() {
     echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+# Helper function to check if skill appears in skilz list output
+check_skill_in_list() {
+    local skill_name="$1"
+    local agent="$2"
+    local expected_in_output="$3"
+    local list_cmd="${4:-skilz list}"
+
+    log_info "Checking if skill '$skill_name' appears in '$list_cmd' output..."
+
+    local output
+    output=$(eval "$list_cmd" 2>&1)
+
+    if [[ "$expected_in_output" == "true" ]]; then
+        if echo "$output" | grep -q "$skill_name"; then
+            if [[ -n "$agent" ]] && echo "$output" | grep -q "$agent"; then
+                log_success "Skill '$skill_name' found in list output with agent '$agent'"
+                return 0
+            else
+                log_success "Skill '$skill_name' found in list output"
+                return 0
+            fi
+        else
+            log_failure "Skill '$skill_name' NOT found in list output"
+            echo "List output: $output"
+            return 1
+        fi
+    else
+        if echo "$output" | grep -q "$skill_name"; then
+            log_failure "Skill '$skill_name' unexpectedly found in list output"
+            echo "List output: $output"
+            return 1
+        else
+            log_success "Skill '$skill_name' correctly NOT found in list output"
+            return 0
+        fi
+    fi
 }
 
 run_test() {
@@ -121,7 +164,10 @@ test_bug1_git_install_no_temp_warning() {
         return 1
     else
         log_success "$test_name: No temp directory warnings found"
-        return 0
+
+        # SKILZ-68: Check that skill appears in list output
+        check_skill_in_list "$TEST_SKILL_NAME" "Gemini CLI" "true" "skilz list --project"
+        return $?
     fi
 }
 
@@ -180,7 +226,10 @@ test_bug2_git_config_flag_works() {
             # Check if it contains skill reference
             if grep -q "$TEST_SKILL_NAME" "$TEST_CONFIG_FILE"; then
                 log_success "$test_name: --config flag worked for git install"
-                return 0
+
+                # SKILZ-68: Check that skill appears in list output
+                check_skill_in_list "$TEST_SKILL_NAME" "Gemini CLI" "true" "skilz list --project"
+                return $?
             else
                 log_failure "$test_name: Config file created but doesn't contain skill reference"
                 cat "$TEST_CONFIG_FILE"
@@ -213,6 +262,9 @@ test_bug2_git_config_vs_force_config() {
     if skilz install "$TEST_SKILL_URL" --project --agent gemini --force-config; then
         if [[ -f "AGENTS.md" ]] && grep -q "$TEST_SKILL_NAME" "AGENTS.md"; then
             log_success "Baseline: --force-config works"
+
+            # SKILZ-68: Check that skill appears in list output
+            check_skill_in_list "$TEST_SKILL_NAME" "Gemini CLI" "true" "skilz list --project"
         else
             log_failure "Baseline: --force-config doesn't work"
             return 1
@@ -248,11 +300,118 @@ test_bug2_git_config_vs_force_config() {
 }
 
 # ============================================================================
+# BUG 3 TESTS: SKILZ-68 - List Command Issues (4 sub-issues)
+# ============================================================================
+
+test_bug3_list_shows_multiple_agents() {
+    # Test that skilz list shows skills from multiple agents (not just 2)
+    # This should PASS after SKILZ-68 fix
+
+    local test_name="BUG3_LIST_MULTIPLE_AGENTS"
+    local description="skilz list should show skills from multiple agents"
+
+    log_info "Testing Bug 3: skilz list should show multiple agents"
+
+    local output
+    output=$(skilz list 2>&1)
+
+    # Count unique agents in output (should be more than 2)
+    local agent_count
+    agent_count=$(echo "$output" | grep -E "^[A-Za-z ]+  " | awk '{print $1, $2}' | sort | uniq | wc -l)
+
+    if [[ $agent_count -gt 2 ]]; then
+        log_success "$test_name: Found $agent_count different agents (more than 2)"
+        return 0
+    else
+        log_failure "$test_name: Only found $agent_count agents (should be more than 2)"
+        echo "Output: $output"
+        return 1
+    fi
+}
+
+test_bug3_list_has_agent_column() {
+    # Test that skilz list output includes Agent column
+    # This should PASS after SKILZ-68 fix
+
+    local test_name="BUG3_LIST_AGENT_COLUMN"
+    local description="skilz list should have Agent column in table output"
+
+    log_info "Testing Bug 3: skilz list should have Agent column"
+
+    local output
+    output=$(skilz list 2>&1)
+
+    # Check for "Agent" in header
+    if echo "$output" | head -1 | grep -q "Agent"; then
+        log_success "$test_name: Agent column found in table header"
+        return 0
+    else
+        log_failure "$test_name: Agent column missing from table header"
+        echo "Header: $(echo "$output" | head -1)"
+        return 1
+    fi
+}
+
+test_bug3_list_all_flag_works() {
+    # Test that --all flag works and shows more agents
+    # This should PASS after SKILZ-68 fix
+
+    local test_name="BUG3_LIST_ALL_FLAG"
+    local description="--all flag should show all agents"
+
+    log_info "Testing Bug 3: --all flag should work"
+
+    local output_normal
+    local output_all
+    output_normal=$(skilz list 2>&1)
+    output_all=$(skilz list --all 2>&1)
+
+    # --all should show at least as many agents as normal list
+    local normal_count
+    local all_count
+    normal_count=$(echo "$output_normal" | grep -c "  " | head -10)  # Rough count
+    all_count=$(echo "$output_all" | grep -c "  " | head -10)       # Rough count
+
+    if [[ $all_count -ge $normal_count ]]; then
+        log_success "$test_name: --all flag works (shows $all_count vs $normal_count skills)"
+        return 0
+    else
+        log_failure "$test_name: --all flag doesn't work properly"
+        echo "Normal output: $output_normal"
+        echo "All output: $output_all"
+        return 1
+    fi
+}
+
+test_bug3_list_json_has_agent_fields() {
+    # Test that JSON output includes agent and agent_display_name fields
+    # This should PASS after SKILZ-68 fix
+
+    local test_name="BUG3_LIST_JSON_AGENT"
+    local description="JSON output should include agent fields"
+
+    log_info "Testing Bug 3: JSON output should include agent fields"
+
+    local output
+    output=$(skilz list --json 2>&1)
+
+    # Check if it's valid JSON and has agent fields
+    if echo "$output" | jq -e '.[0].agent and .[0].agent_display_name' >/dev/null 2>&1; then
+        log_success "$test_name: JSON output includes agent and agent_display_name fields"
+        return 0
+    else
+        log_failure "$test_name: JSON output missing agent fields"
+        echo "JSON output: $output"
+        return 1
+    fi
+}
+
+# ============================================================================
 # MAIN TEST EXECUTION
 # ============================================================================
 
 main() {
-    log_info "Starting E2E Tests for SKILZ-64 and SKILZ-65 Bug Fixes"
+    log_info "Starting E2E Tests for SKILZ-64, SKILZ-65, and SKILZ-68 Bug Fixes"
     log_info "These tests should FAIL initially, then PASS after fixes"
     echo
 
@@ -274,6 +433,16 @@ main() {
 
     test_bug2_git_config_flag_works
     test_bug2_git_config_vs_force_config
+
+    echo
+    echo "=========================================="
+    log_info "Testing BUG 3: SKILZ-68 - List Command Issues"
+    echo "=========================================="
+
+    test_bug3_list_shows_multiple_agents
+    test_bug3_list_has_agent_column
+    test_bug3_list_all_flag_works
+    test_bug3_list_json_has_agent_fields
 
     # Cleanup
     cleanup_test_env

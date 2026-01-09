@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 
-from skilz.agents import AgentType, get_agent_display_name
+from skilz.agents import ExtendedAgentType, get_agent_display_name
 from skilz.registry import lookup_skill
 from skilz.scanner import InstalledSkill, scan_installed_skills
 
@@ -21,7 +21,7 @@ def get_skill_status(skill: InstalledSkill, verbose: bool = False) -> str:
         Status string: "up-to-date", "outdated", or "unknown".
     """
     try:
-        registry_skill = lookup_skill(skill.skill_id, verbose=verbose)
+        registry_skill = lookup_skill(skill.manifest.skill_id, verbose=verbose)
 
         if skill.manifest.git_sha == registry_skill.git_sha:
             return "up-to-date"
@@ -65,10 +65,10 @@ def format_table_output(skills: list[InstalledSkill], verbose: bool = False) -> 
         return "No skills installed."
 
     # Column headers
-    headers = ["Skill", "Version", "Mode", "Status"]
+    headers = ["Agent", "Skill", "Version", "Mode", "Status"]
 
     # Build rows
-    rows: list[tuple[str, str, str, str]] = []
+    rows: list[tuple[str, str, str, str, str]] = []
     broken_skills: list[InstalledSkill] = []
 
     for skill in skills:
@@ -79,8 +79,10 @@ def format_table_output(skills: list[InstalledSkill], verbose: bool = False) -> 
             status = get_skill_status(skill, verbose=verbose)
 
         mode = get_mode_display(skill)
+        agent_display = get_agent_display_name(skill.agent)
         rows.append(
             (
+                agent_display,
                 skill.skill_id,
                 skill.git_sha_short,
                 mode,
@@ -94,6 +96,7 @@ def format_table_output(skills: list[InstalledSkill], verbose: bool = False) -> 
         max(len(headers[1]), max(len(r[1]) for r in rows)),
         max(len(headers[2]), max(len(r[2]) for r in rows)),
         max(len(headers[3]), max(len(r[3]) for r in rows)),
+        max(len(headers[4]), max(len(r[4]) for r in rows)),
     ]
 
     # Build output
@@ -104,7 +107,9 @@ def format_table_output(skills: list[InstalledSkill], verbose: bool = False) -> 
     lines.append(header_line)
 
     # Separator line
-    separator = "\u2500" * (sum(col_widths) + 6)  # Unicode box drawing char
+    separator = "\u2500" * (
+        sum(col_widths) + 8
+    )  # Unicode box drawing char (4 spaces between 5 columns)
     lines.append(separator)
 
     # Data rows
@@ -167,6 +172,7 @@ def format_json_output(skills: list[InstalledSkill], verbose: bool = False) -> s
             "status": status,
             "path": str(skill.path),
             "agent": skill.agent,
+            "agent_display_name": get_agent_display_name(skill.agent),
             "project_level": skill.project_level,
             "install_mode": skill.install_mode,
             "is_symlink": skill.install_mode == "symlink",
@@ -193,8 +199,9 @@ def cmd_list(args: argparse.Namespace) -> int:
     """
     verbose = getattr(args, "verbose", False)
     json_output = getattr(args, "json", False)
-    agent: AgentType | None = getattr(args, "agent", None)
+    agent: ExtendedAgentType | None = getattr(args, "agent", None)
     project_level: bool = getattr(args, "project", False)
+    scan_all: bool = getattr(args, "all", False)
 
     if verbose:
         agent_name = get_agent_display_name(agent) if agent else "all agents"
@@ -205,6 +212,7 @@ def cmd_list(args: argparse.Namespace) -> int:
         skills = scan_installed_skills(
             agent=agent,
             project_level=project_level,
+            scan_all=scan_all,
         )
 
         if json_output:

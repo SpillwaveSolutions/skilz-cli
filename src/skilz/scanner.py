@@ -4,9 +4,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
-from skilz.agents import AGENT_PATHS, AgentType, get_skills_dir
+from skilz.agent_registry import get_registry
+from skilz.agents import ExtendedAgentType, get_skills_dir
 from skilz.link_ops import get_symlink_target, is_broken_symlink, is_symlink
 from skilz.manifest import InstallMode, SkillManifest, read_manifest
+
+# Top agents to scan by default (covers 99% of users)
+TOP_AGENTS = ["claude", "opencode", "gemini", "codex", "copilot"]
 
 
 @dataclass
@@ -17,7 +21,7 @@ class InstalledSkill:
     skill_name: str
     path: Path
     manifest: SkillManifest
-    agent: AgentType
+    agent: ExtendedAgentType
     project_level: bool
     install_mode: InstallMode = "copy"
     canonical_path: Path | None = None
@@ -52,7 +56,7 @@ class InstalledSkill:
 
 def scan_skills_directory(
     skills_dir: Path,
-    agent: AgentType,
+    agent: ExtendedAgentType,
     project_level: bool,
 ) -> list[InstalledSkill]:
     """
@@ -142,7 +146,7 @@ def scan_skills_directory(
 def _create_broken_skill_placeholder(
     skill_dir: Path,
     canonical_path: Path | None,
-    agent: AgentType,
+    agent: ExtendedAgentType,
     project_level: bool,
 ) -> InstalledSkill:
     """Create a placeholder InstalledSkill for a broken symlink.
@@ -182,19 +186,21 @@ def _create_broken_skill_placeholder(
 
 
 def scan_installed_skills(
-    agent: AgentType | None = None,
+    agent: ExtendedAgentType | None = None,
     project_level: bool = False,
     project_dir: Path | None = None,
+    scan_all: bool = False,
 ) -> list[InstalledSkill]:
     """
     Scan for installed skills across all relevant directories.
 
     Args:
         agent: If specified, only scan for this agent type.
-               If None, scan all known agents.
+                If None, scan all known agents.
         project_level: If True, scan project-level directories.
-                      If False, scan user-level directories.
+                       If False, scan user-level directories.
         project_dir: Project directory for project-level scans.
+        scan_all: If True, scan all registry agents. If False, scan top 5 agents.
 
     Returns:
         List of all installed skills found.
@@ -202,9 +208,31 @@ def scan_installed_skills(
     installed: list[InstalledSkill] = []
 
     # Determine which agents to scan
-    agents_to_scan: list[AgentType] = (
-        [agent] if agent else cast(list[AgentType], list(AGENT_PATHS.keys()))
-    )
+    if agent:
+        # Specific agent requested
+        agents_to_scan = [agent]
+    else:
+        # Get agents from registry
+        registry = get_registry()
+
+        if scan_all:
+            # Scan all registry agents that support the requested level
+            if project_level:
+                all_agents = registry.list_agents()
+            else:
+                all_agents = registry.get_agents_with_home_support()
+            agents_to_scan = cast(list[ExtendedAgentType], all_agents)
+        else:
+            # Scan top agents by default (covers 99% of users)
+            if project_level:
+                # For project level, use all top agents
+                agents_to_scan = cast(list[ExtendedAgentType], TOP_AGENTS)
+            else:
+                # For user level, only agents with home support
+                home_supported = registry.get_agents_with_home_support()
+                agents_to_scan = cast(
+                    list[ExtendedAgentType], [a for a in TOP_AGENTS if a in home_supported]
+                )
 
     for scan_agent in agents_to_scan:
         skills_dir = get_skills_dir(
@@ -215,7 +243,7 @@ def scan_installed_skills(
 
         found = scan_skills_directory(
             skills_dir=skills_dir,
-            agent=scan_agent,
+            agent=scan_agent,  # type: ignore
             project_level=project_level,
         )
         installed.extend(found)
@@ -228,7 +256,7 @@ def scan_installed_skills(
 
 def find_installed_skill(
     skill_id_or_name: str,
-    agent: AgentType | None = None,
+    agent: ExtendedAgentType | None = None,
     project_level: bool = False,
     project_dir: Path | None = None,
 ) -> InstalledSkill | None:
