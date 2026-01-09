@@ -3,12 +3,11 @@
 These tests should FAIL initially due to the bugs, then PASS after fixes.
 """
 
-import pytest
+import os
+import sys
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
-import tempfile
-import sys
-import os
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -90,7 +89,8 @@ class TestBugFixes:
                 # Check stderr for warnings
                 stderr_output = stderr_capture.getvalue()
                 assert "doesn't match skill name" in stderr_output, (
-                    f"Local install should warn about mismatched directory names, but got: {stderr_output}"
+                    "Local install should warn about mismatched directory names, "
+                    f"but got: {stderr_output}"
                 )
 
     # ============================================================================
@@ -128,8 +128,9 @@ class TestBugFixes:
 
         This should PASS both before and after the fix (existing validation).
         """
-        from skilz.commands.install_cmd import cmd_install
         import argparse
+
+        from skilz.commands.install_cmd import cmd_install
 
         # Mock args with --config but no --project
         mock_args = argparse.Namespace(
