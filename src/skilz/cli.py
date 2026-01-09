@@ -39,10 +39,17 @@ Examples:
   skilz install https://github.com/owner/repo             # Install from Git URL (auto-detect)
   skilz install -g https://github.com/owner/repo --all    # Install all skills from repo
   skilz install -f ~/skills/my-skill -p --agent gemini    # Install from local path
+  skilz update                                            # Update all skills to latest versions
+  skilz update anthropics/web-artifacts-builder           # Update specific skill
+  skilz remove my-skill                                   # Remove a skill (with confirmation)
+  skilz rm my-skill -y                                    # Remove without confirmation
   skilz search excel --limit 5                            # Search GitHub for skills
   skilz list --agent claude --json                        # List skills as JSON
+  skilz list --all                                        # List skills from all agents
   skilz ls -p                                             # List project skills (alias)
-  skilz rm my-skill -y                                    # Remove without confirmation
+  skilz read extracting-keywords                          # Read skill content for AI
+  skilz config                                            # Show current configuration
+  skilz config --init                                     # Run configuration setup
   skilz visit anthropics/skills                           # Open repo in browser
 
 Common options (available on most commands):
@@ -82,8 +89,8 @@ For detailed help: skilz <command> --help
     # Install command
     install_parser = subparsers.add_parser(
         "install",
-        help="Install a skill from the registry",
-        description="Install a skill by its ID from the registry.",
+        help="Install skills from marketplace, Git, or local files",
+        description="Install a skill by its ID from the registry, Git repository, or local path.",
     )
     install_parser.add_argument(
         "skill_id",
@@ -169,7 +176,7 @@ For detailed help: skilz <command> --help
     list_parser = subparsers.add_parser(
         "list",
         help="List installed skills (alias: ls)",
-        description="Show all installed skills with their versions and status.",
+        description="Show all installed skills with their versions, status, and agent information.",
     )
     list_parser.add_argument(
         "--agent",
@@ -271,7 +278,7 @@ For detailed help: skilz <command> --help
     # Read command
     read_parser = subparsers.add_parser(
         "read",
-        help="Read and output skill content",
+        help="Read skill content for AI consumption",
         description="Load a skill's SKILL.md content for AI agent consumption.",
     )
     read_parser.add_argument(
