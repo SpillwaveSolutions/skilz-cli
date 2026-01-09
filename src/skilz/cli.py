@@ -189,6 +189,11 @@ For detailed help: skilz <command> --help
         action="store_true",
         help="Output as JSON",
     )
+    list_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Scan all agents (default: top 5)",
+    )
 
     # Update command
     update_parser = subparsers.add_parser(

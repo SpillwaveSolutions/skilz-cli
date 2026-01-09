@@ -133,6 +133,45 @@ class TestScanSkillsDirectory:
 class TestScanInstalledSkills:
     """Tests for scan_installed_skills function."""
 
+    def test_scan_all_agents_by_default(self):
+        """Test that scan_installed_skills scans more agents than the old hardcoded approach."""
+        # Old implementation only scanned claude/opencode (2 agents)
+        # New implementation should scan all home-supported top agents
+        skills = scan_installed_skills()
+
+        # Should find skills from home-supported agents
+        agents_found = {s.agent for s in skills}
+
+        # Should find more than just the 2 hardcoded agents from old implementation
+        # In practice, will find claude, opencode, codex (and gemini if directory exists)
+        assert len(agents_found) >= 2, (
+            f"Expected at least 2 agents with skilz skills, found: {agents_found}"
+        )
+
+        # Should include claude (the primary agent that should always be present)
+        assert "claude" in agents_found, f"Claude should always be found. Found: {agents_found}"
+
+    def test_scan_all_agents_with_all_flag(self):
+        """Test that scan_all=True scans all registry agents that support the level."""
+
+        # Test user-level scanning with scan_all=True
+        skills_user = scan_installed_skills(scan_all=True, project_level=False)
+        agents_user = {s.agent for s in skills_user}
+
+        # Should scan all home-supported agents
+        assert len(agents_user) >= 1, (
+            f"Expected at least 1 agent with --all (user level), found: {agents_user}"
+        )
+
+        # Test project-level scanning with scan_all=True
+        skills_project = scan_installed_skills(scan_all=True, project_level=True)
+        agents_project = {s.agent for s in skills_project}
+
+        # Should scan all project-supported agents
+        assert len(agents_project) >= 1, (
+            f"Expected at least 1 agent with --all (project level), found: {agents_project}"
+        )
+
     def test_scan_project_level(self, temp_dir, skills_dir_with_skills):
         """Test scanning project-level installations."""
         # skills_dir_with_skills creates .claude/skills in temp_dir

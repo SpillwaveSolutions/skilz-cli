@@ -128,6 +128,7 @@ class TestFormatTableOutput:
         with patch("skilz.commands.list_cmd.get_skill_status", return_value="up-to-date"):
             output = format_table_output([sample_installed_skill])
 
+        assert "Agent" in output
         assert "Skill" in output
         assert "Version" in output
         assert "Mode" in output
@@ -138,6 +139,7 @@ class TestFormatTableOutput:
         with patch("skilz.commands.list_cmd.get_skill_status", return_value="up-to-date"):
             output = format_table_output([sample_installed_skill])
 
+        assert "Claude Code" in output  # Agent display name
         assert "spillwave/plantuml" in output
         assert "f2489dcd" in output  # Short SHA
         assert "up-to-date" in output
@@ -166,6 +168,7 @@ class TestFormatJsonOutput:
         assert skill["git_sha"] == "f2489dcd47799e4aaff3ae0a34cde0ebf2288a66"
         assert skill["status"] == "up-to-date"
         assert skill["agent"] == "claude"
+        assert skill["agent_display_name"] == "Claude Code"
         assert skill["project_level"] is False
         assert "path" in skill
         assert "installed_at" in skill
@@ -208,6 +211,23 @@ class TestCmdList:
         parsed = json.loads(captured.out)
         assert parsed == []
         assert result == 0
+
+    def test_list_command_with_all_flag(self, skills_dir_with_skills, capsys):
+        """Test list command with --all flag."""
+        args = argparse.Namespace(
+            agent=None,
+            project=False,
+            json=False,
+            verbose=False,
+            all=True,
+        )
+
+        result = cmd_list(args)
+
+        assert result == 0
+        captured = capsys.readouterr()
+        # Should have output (skills found)
+        assert len(captured.out.strip()) > 0
 
     def test_list_command_handles_error(self, capsys):
         """Test list command error handling."""

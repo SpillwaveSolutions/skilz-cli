@@ -249,8 +249,9 @@ skilz list [options]
 **Options:**
 | Option | Description |
 |--------|-------------|
-| `--agent {claude,opencode}` | Filter by agent type |
+| `--agent {claude,opencode,...}` | Filter by agent type |
 | `--project` | List project-level skills instead of user-level |
+| `--all` | Scan all agents (default: top 5) |
 | `--json` | Output as JSON (for scripting) |
 | `-v, --verbose` | Show detailed output |
 
@@ -266,6 +267,9 @@ skilz list --project
 # List only Claude Code skills
 skilz list --agent claude
 
+# List skills from all agents (not just top 5)
+skilz list --all
+
 # Get JSON output for scripting
 skilz list --json
 ```
@@ -273,11 +277,11 @@ skilz list --json
 **Table Output:**
 
 ```
-Skill                               Version   Installed   Status
-────────────────────────────────────────────────────────────────────────
-anthropics_skills/algorithmic-art   00756142  2025-01-15  up-to-date
-anthropics_skills/brand-guidelines  f2489dcd  2025-01-15  up-to-date
-anthropics_skills/theme-factory     e1c29a38  2025-01-15  outdated
+Agent         Skill                               Version   Mode     Status
+────────────────────────────────────────────────────────────────────────────────
+Claude Code   anthropics_skills/algorithmic-art   00756142  [copy]   up-to-date
+OpenAI Codex  anthropics_skills/brand-guidelines  f2489dcd  [copy]   up-to-date
+Claude Code   anthropics_skills/theme-factory     e1c29a38  [copy]   outdated
 ```
 
 **Status Values:**
@@ -300,6 +304,7 @@ anthropics_skills/theme-factory     e1c29a38  2025-01-15  outdated
     "status": "up-to-date",
     "path": "/Users/you/.claude/skills/algorithmic-art",
     "agent": "claude",
+    "agent_display_name": "Claude Code",
     "project_level": false
   }
 ]

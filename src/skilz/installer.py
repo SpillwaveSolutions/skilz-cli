@@ -7,7 +7,7 @@ from typing import cast
 
 from skilz.agent_registry import get_registry
 from skilz.agents import (
-    AgentType,
+    ExtendedAgentType,
     detect_agent,
     ensure_skills_dir,
     get_agent_default_mode,
@@ -90,7 +90,7 @@ def copy_skill_files(source_dir: Path, target_dir: Path, verbose: bool = False) 
 
 def install_local_skill(
     source_path: Path,
-    agent: AgentType | None = None,
+    agent: ExtendedAgentType | None = None,
     project_level: bool = False,
     verbose: bool = False,
     mode: InstallMode | None = None,
@@ -129,13 +129,13 @@ def install_local_skill(
 
     # Step 0: Validate skill name for native agents (Gemini, Claude, OpenCode)
     # This validation is only needed when agent is specified or can be detected
-    resolved_agent_for_validation: AgentType | None = None
+    resolved_agent_for_validation: ExtendedAgentType | None = None
     if agent is not None:
         resolved_agent_for_validation = agent
     else:
         # Try to detect agent early for validation
         try:
-            resolved_agent_for_validation = cast(AgentType, detect_agent())
+            resolved_agent_for_validation = cast(ExtendedAgentType, detect_agent())
         except Exception:
             pass  # Will be detected again later
 
@@ -174,9 +174,9 @@ def install_local_skill(
                     )
 
     # Step 1: Determine target agent
-    resolved_agent: AgentType
+    resolved_agent: ExtendedAgentType
     if agent is None:
-        resolved_agent = cast(AgentType, detect_agent())
+        resolved_agent = cast(ExtendedAgentType, detect_agent())
         if verbose:
             print(f"Auto-detected agent: {get_agent_display_name(resolved_agent)}")
     else:
@@ -279,7 +279,7 @@ def install_local_skill(
 
 def install_skill(
     skill_id: str,
-    agent: AgentType | None = None,
+    agent: ExtendedAgentType | None = None,
     project_level: bool = False,
     verbose: bool = False,
     mode: InstallMode | None = None,
@@ -313,9 +313,9 @@ def install_skill(
         InstallError: If installation fails for other reasons.
     """
     # Step 1: Determine target agent
-    resolved_agent: AgentType
+    resolved_agent: ExtendedAgentType
     if agent is None:
-        resolved_agent = cast(AgentType, detect_agent())
+        resolved_agent = cast(ExtendedAgentType, detect_agent())
         if verbose:
             print(f"Auto-detected agent: {get_agent_display_name(resolved_agent)}")
     else:
