@@ -23,6 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Legacy Gemini workflow: `skilz install <skill> --agent universal --project --config GEMINI.md`
   - Universal agent config updated: `config_files=("AGENTS.md",)` (was empty tuple)
 
+- **NEW Install Format Support (SKILZ-FORMAT-001)**: Revolutionary new skill ID format with REST-first resolution
+  - **NEW Format**: `skilz install owner/repo/skill` (intuitive GitHub-style format)
+  - **LEGACY Format**: `skilz install owner_repo/skill` (backwards compatible)
+  - **SLUG Format**: `skilz install owner__repo__skill` (direct Firestore doc ID)
+  - **REST-First Resolution**: All formats try REST API before GitHub fallback
+  - **Enhanced Logging**: Verbose mode shows format detection and resolution method
+  - **Format Detection**: Automatic detection with `get_skill_id_format()` function
+  - **100% Backwards Compatible**: All existing skill IDs continue to work unchanged
+
 - **Custom Config File Targeting**: New `--config` flag for install command
   - Syntax: `skilz install <skill> --project --config <filename>`
   - Requires `--project` flag (only works with project-level installs)
@@ -30,24 +39,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Only updates specified file (overrides auto-detection)
   - Use case: Legacy Gemini users without `experimental.skills` plugin
 
-- **Comprehensive Integration Tests**: Added 9 new integration tests for universal agent
-  - Test default AGENTS.md creation
-  - Test custom config file targeting
-  - Test CLI validation (--config requires --project)
-  - Test multiple skills with custom config
-  - Test legacy Gemini workflow
-  - Test arbitrary custom filenames
-  - Test config file isolation (only target updated)
-  - All 617 tests passing (100% success rate)
+- **Comprehensive Integration Tests**: Added 34 new tests across multiple areas
+  - **NEW Format Tests**: 25 new API client tests for format detection and parsing
+    - `TestParseSkillIdNewFormat`: Tests NEW format parsing (owner/repo/skill)
+    - `TestParseSkillIdSlugFormat`: Tests SLUG format parsing (owner__repo__skill)
+    - `TestIsMarketplaceSkillIdFormats`: Tests marketplace format recognition
+    - `TestGetSkillIdFormat`: Tests automatic format detection
+  - **Universal Agent Tests**: 9 integration tests for project-level support
+    - Test default AGENTS.md creation
+    - Test custom config file targeting
+    - Test CLI validation (--config requires --project)
+    - Test multiple skills with custom config
+    - Test legacy Gemini workflow
+    - Test arbitrary custom filenames
+    - Test config file isolation (only target updated)
+  - **Quality Metrics**: All 633 tests passing (100% success rate)
 
-- **Enhanced E2E Test Suite**: Updated end-to-end tests for 1.7.0
-  - Isolated test environment in `e2e/test_folder/` with mock Python project
-  - New `test_gemini_native()` test for native `.gemini/skills/` support
-  - New `test_universal_custom_config()` test for custom config workflows
-  - Tests verify no GEMINI.md created for native agents
-  - Tests verify custom config files work with arbitrary names
+- **Enhanced E2E Test Suite**: Comprehensive end-to-end testing for 1.7.0
+  - **REST Marketplace E2E Testing**: New comprehensive test suite (`scripts/test_rest_marketplace_e2e.sh`)
+    - **API Endpoint Validation**: Tests REST API reachability and response format
+    - **Format Detection Accuracy**: Validates NEW/LEGACY/SLUG format recognition
+    - **Resolution Testing**: Tests successful installation for all supported formats
+    - **Error Handling**: Validates 404/400 responses for non-existent skills
+    - **Verbose Logging**: Verifies format detection and REST vs GitHub resolution logging
+    - **Real-World Testing**: Uses live skillzwave.ai API with actual skills
+  - **API Integration Testing**: New integration test suite (`scripts/test_api_integration.sh`)
+    - Tests REST API endpoints with real marketplace data
+    - Validates JSON response structure and required fields
+    - Tests error handling for invalid requests
+  - **Existing E2E Tests**: Updated for 1.7.0 features
+    - Isolated test environment in `e2e/test_folder/` with mock Python project
+    - New `test_gemini_native()` test for native `.gemini/skills/` support
+    - New `test_universal_custom_config()` test for custom config workflows
+    - Tests verify no GEMINI.md created for native agents
+    - Tests verify custom config files work with arbitrary names
 
 ### Changed
+
+- **API Client Architecture**: Major enhancements to `src/skilz/api_client.py`
+  - **Replaced `parse_skill_id()`**: Now supports 3 formats (NEW/LEGACY/SLUG)
+  - **Enhanced `is_marketplace_skill_id()`**: Recognizes all marketplace formats
+  - **Added `get_skill_id_format()`**: Returns format type for any skill ID
+  - **Improved Error Messages**: More descriptive error messages for invalid formats
+  - **REST-First Resolution**: All marketplace formats try REST API before GitHub
+
+- **Installer Logging**: Enhanced verbose output in `src/skilz/installer.py`
+  - **Format Detection Logging**: Shows detected format type (NEW/LEGACY/SLUG/UNKNOWN)
+  - **REST API Logging**: Shows when REST API lookup is attempted
+  - **Success Logging**: Shows when REST API successfully resolves a skill
+  - **Resolution Method**: Clear indication of REST vs GitHub resolution
 
 - **Gemini Agent Config**: Updated to support native skill directories
   - `home_dir`: Changed from `None` to `Path.home() / ".gemini" / "skills"`
