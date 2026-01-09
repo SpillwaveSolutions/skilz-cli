@@ -417,6 +417,7 @@ def sync_skill_to_configs(
     project_dir: Path,
     agent: str | None = None,
     verbose: bool = False,
+    target_files: tuple[str, ...] | None = None,  # SKILZ-50: Custom file override
 ) -> list[ConfigSyncResult]:
     """Sync a skill reference to all relevant config files.
 
@@ -426,6 +427,9 @@ def sync_skill_to_configs(
         agent: If specified, only sync to this agent's config files.
                If None, sync to all agent config files that exist.
         verbose: If True, print progress information.
+        target_files: Optional tuple of config file names to update (e.g., ("GEMINI.md",)).
+                     If provided, overrides auto-detection and only updates these files.
+                     The agent parameter is ignored when target_files is specified.
 
     Returns:
         List of ConfigSyncResult for each config file processed.
@@ -433,15 +437,37 @@ def sync_skill_to_configs(
     results: list[ConfigSyncResult] = []
     registry = get_registry()
 
-    # Determine which config files to update
-    config_files = detect_project_config_files(project_dir, agent)
+    # SKILZ-50: Use custom target files if provided
+    if target_files:
+        # Convert file names to (agent, path) tuples
+        # For custom files, try to match to known agents, otherwise use "universal"
+        from skilz.agent_registry import get_builtin_agents
 
-    if not config_files and agent:
-        # Agent specified but no config files found - create the first one
-        agent_config = registry.get(agent)
-        if agent_config and agent_config.config_files:
-            first_config = project_dir / agent_config.config_files[0]
-            config_files = [(agent, first_config)]
+        config_files: list[tuple[str, Path]] = []
+        all_agents = get_builtin_agents()
+
+        for file_name in target_files:
+            config_path = project_dir / file_name
+            # Try to find agent that owns this config file
+            agent_owner = None
+            for agent_name, agent_cfg in all_agents.items():
+                if file_name in agent_cfg.config_files:
+                    agent_owner = agent_name
+                    break
+            # If no owner found, use "universal" as fallback
+            if not agent_owner:
+                agent_owner = "universal"
+            config_files.append((agent_owner, config_path))
+    else:
+        # Original behavior: auto-detect config files
+        config_files = detect_project_config_files(project_dir, agent)
+
+        if not config_files and agent:
+            # Agent specified but no config files found - create the first one
+            agent_config = registry.get(agent)
+            if agent_config and agent_config.config_files:
+                first_config = project_dir / agent_config.config_files[0]
+                config_files = [(agent, first_config)]
 
     for agent_name, config_path in config_files:
         agent_config = registry.get(agent_name)

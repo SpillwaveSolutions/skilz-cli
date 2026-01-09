@@ -5,6 +5,102 @@ All notable changes to Skilz CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-01-08
+
+### Added
+
+- **Gemini CLI Native Skill Support (SKILZ-49)**: Gemini now reads skills natively from `.gemini/skills/`
+  - Project-level: Skills installed to `.gemini/skills/` (native location)
+  - User-level: Skills installed to `~/.gemini/skills/` (native location)
+  - No config file injection needed when using native directories
+  - Requires Gemini CLI with `experimental.skills` plugin enabled
+  - Auto-detects Gemini from `.gemini/` directory (project and user level)
+
+- **Universal Agent Project-Level Support (SKILZ-50)**: Universal agent now supports project installations
+  - Install to project: `skilz install <skill> --agent universal --project`
+  - Default behavior: Updates `AGENTS.md` config file
+  - Custom config support: `--config <filename>` flag to target specific config files
+  - Legacy Gemini workflow: `skilz install <skill> --agent universal --project --config GEMINI.md`
+  - Universal agent config updated: `config_files=("AGENTS.md",)` (was empty tuple)
+
+- **Custom Config File Targeting**: New `--config` flag for install command
+  - Syntax: `skilz install <skill> --project --config <filename>`
+  - Requires `--project` flag (only works with project-level installs)
+  - Supports any filename: `GEMINI.md`, `CUSTOM_SKILLS.md`, etc.
+  - Only updates specified file (overrides auto-detection)
+  - Use case: Legacy Gemini users without `experimental.skills` plugin
+
+- **Comprehensive Integration Tests**: Added 9 new integration tests for universal agent
+  - Test default AGENTS.md creation
+  - Test custom config file targeting
+  - Test CLI validation (--config requires --project)
+  - Test multiple skills with custom config
+  - Test legacy Gemini workflow
+  - Test arbitrary custom filenames
+  - Test config file isolation (only target updated)
+  - All 617 tests passing (100% success rate)
+
+- **Enhanced E2E Test Suite**: Updated end-to-end tests for 1.7.0
+  - Isolated test environment in `e2e/test_folder/` with mock Python project
+  - New `test_gemini_native()` test for native `.gemini/skills/` support
+  - New `test_universal_custom_config()` test for custom config workflows
+  - Tests verify no GEMINI.md created for native agents
+  - Tests verify custom config files work with arbitrary names
+
+### Changed
+
+- **Gemini Agent Config**: Updated to support native skill directories
+  - `home_dir`: Changed from `None` to `Path.home() / ".gemini" / "skills"`
+  - `project_dir`: Changed from `.skilz/skills` to `.gemini/skills`
+  - `supports_home`: Changed from `False` to `True`
+  - `native_skill_support`: Changed from "none" to "all"
+
+- **Universal Agent Config**: Updated to enable project-level installations
+  - `config_files`: Changed from empty tuple `()` to `("AGENTS.md",)`
+  - Now supports both user-level (`~/.skilz/skills/`) and project-level (`.skilz/skills/`)
+
+- **Config Sync Enhancement**: `sync_skill_to_configs()` now supports `target_files` parameter
+  - When `target_files` specified, only those files are updated
+  - Overrides auto-detection for explicit control
+  - Enables custom config workflows for any agent
+
+- **Agent Auto-Detection**: Enhanced detection to include Gemini
+  - Priority order: config default → `.claude/` → `.gemini/` → `.codex/` → `~/.claude/` → `~/.gemini/` → `~/.codex/` → `~/.config/opencode/` → default (Claude)
+
+### Enhanced
+
+- **Skill Path Fallback Discovery (Feature 11)**: When installing a skill whose expected path doesn't exist in the repository, skilz now always displays a warning message when the skill is found at a different location. Previously this information was only shown in verbose mode. This helps users understand when marketplace/registry data may be stale due to repository reorganizations.
+  - Warning format: `Warning: Skill 'skill-name' found at different path than expected`
+  - Warning goes to stderr (not stdout) for proper script integration
+  - Verbose mode shows expected and found paths for debugging
+  - Installation continues successfully from the discovered location
+
+### Fixed
+
+- **Codex Agent Auto-Detection (BUG-001)**: Codex agent now properly detected from directories
+  - Fixed detection from project-level `.codex/` directory
+  - Fixed detection from user-level `~/.codex/` directory
+  - Added to auto-detection priority list (was missing despite being in registry)
+  - Added 3 tests to verify Codex detection works correctly
+
+### Migration Notes
+
+**For Gemini CLI Users:**
+- **With experimental.skills plugin**: Use native support with `--agent gemini --project`
+  - Skills install to `.gemini/skills/` (native location)
+  - No config file needed - Gemini reads directory natively
+- **Without experimental.skills plugin**: Use legacy workflow with universal agent
+  - `skilz install <skill> --agent universal --project --config GEMINI.md`
+  - Skills install to `.skilz/skills/`
+  - GEMINI.md file created for Gemini CLI to read
+
+**For Universal Agent Users:**
+- Project-level installations now supported with automatic AGENTS.md creation
+- Use `--config <filename>` to target specific config files
+- Backward compatible: User-level installs work as before
+
+See [GEMINI_MIGRATION.md](docs/GEMINI_MIGRATION.md) and [UNIVERSAL_AGENT_GUIDE.md](docs/UNIVERSAL_AGENT_GUIDE.md) for detailed guides.
+
 ## [1.6.0] - 2026-01-03
 
 ### Added

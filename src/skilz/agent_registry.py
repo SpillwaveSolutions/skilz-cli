@@ -150,12 +150,13 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
         "gemini": AgentConfig(
             name="gemini",
             display_name="Gemini CLI",
-            home_dir=None,
-            project_dir=Path(".skilz") / "skills",
+            home_dir=Path.home() / ".gemini" / "skills",
+            project_dir=Path(".gemini") / "skills",
             config_files=("GEMINI.md",),
-            supports_home=False,
+            supports_home=True,
             default_mode="copy",
-            native_skill_support="none",
+            native_skill_support="all",
+            invocation="/skills or activate_skill tool",
         ),
         "copilot": AgentConfig(
             name="copilot",
@@ -253,7 +254,7 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             display_name="Universal (Skilz)",
             home_dir=Path.home() / ".skilz" / "skills",
             project_dir=Path(".skilz") / "skills",
-            config_files=(),
+            config_files=("AGENTS.md",),  # SKILZ-50: Enable project-level config sync
             supports_home=True,
             default_mode="copy",
             native_skill_support="none",

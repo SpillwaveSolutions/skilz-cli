@@ -51,6 +51,12 @@ def cmd_install(args: argparse.Namespace) -> int:
     skill_id: str | None = getattr(args, "skill_id", None)
     version_spec: str | None = getattr(args, "version_spec", None)
     force_config: bool = getattr(args, "force_config", False)
+    config_file: str | None = getattr(args, "config", None)  # SKILZ-50
+
+    # Validate --config flag (SKILZ-50)
+    if config_file and not project_level:
+        print("Error: --config requires --project flag", file=sys.stderr)
+        return 1
 
     # Handle source options
     file_path: str | None = getattr(args, "file", None)
@@ -88,6 +94,7 @@ def cmd_install(args: argparse.Namespace) -> int:
                 verbose=verbose,
                 mode=mode,
                 force_config=force_config,
+                config_file=config_file,  # SKILZ-50
             )
             return 0
         except SkilzError as e:
@@ -125,6 +132,7 @@ def cmd_install(args: argparse.Namespace) -> int:
             mode=mode,
             version_spec=version_spec,
             force_config=force_config,
+            config_file=config_file,  # SKILZ-50
         )
         return 0
     except SkilzError as e:

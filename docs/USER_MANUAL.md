@@ -30,6 +30,8 @@ Skilz is the universal package manager for AI skills. It installs, manages, and 
 5. [Shell Completion](#shell-completion)
 6. [Global Flags](#global-flags)
 7. [Working with Multiple Agents](#working-with-multiple-agents)
+   - [Gemini CLI Support (NEW in 1.7)](#gemini-cli-support-new-in-17)
+   - [Universal Agent Custom Config (NEW in 1.7)](#universal-agent-custom-config-new-in-17)
 8. [Project vs User Level Installation](#project-vs-user-level-installation)
 9. [Scripting & Automation](#scripting--automation)
 10. [Troubleshooting](#troubleshooting)
@@ -794,18 +796,25 @@ skilz -y config --init
 
 Skilz supports multiple AI coding assistants. Use `--agent` to target a specific one:
 
-| Agent | Skills Directory |
-|-------|------------------|
-| `claude` | `~/.claude/skills/` (user) or `.claude/skills/` (project) |
-| `opencode` | `~/.config/opencode/skill/` (user) or `.opencode/skill/` (project) |
+| Agent | Skills Directory | Notes |
+|-------|------------------|-------|
+| `claude` | `~/.claude/skills/` (user) or `.claude/skills/` (project) | Native support |
+| `gemini` | `~/.gemini/skills/` (user) or `.gemini/skills/` (project) | Native support (NEW in 1.7, requires plugin) |
+| `codex` | `~/.codex/skills/` (user) or `.codex/skills/` (project) | Auto-detected from `.codex/` |
+| `opencode` | `~/.config/opencode/skill/` (user) or `.opencode/skill/` (project) | Native support |
+| `universal` | `~/.skilz/skills/` (user) or `.skilz/skills/` (project) | Supports custom config files (NEW in 1.7) |
 
 **Auto-detection:**
 
 If you don't specify `--agent`, Skilz auto-detects based on:
 1. Presence of `.claude/` in current directory
-2. Presence of `~/.claude/` (user has Claude Code)
-3. Presence of `~/.config/opencode/` (user has OpenCode)
-4. Defaults to `claude` if ambiguous
+2. Presence of `.gemini/` in current directory
+3. Presence of `.codex/` in current directory
+4. Presence of `~/.claude/` (user has Claude Code)
+5. Presence of `~/.gemini/` (user has Gemini CLI)
+6. Presence of `~/.codex/` (user has OpenAI Codex)
+7. Presence of `~/.config/opencode/` (user has OpenCode)
+8. Defaults to `claude` if none detected
 
 **Installing to multiple agents:**
 
@@ -814,6 +823,108 @@ If you don't specify `--agent`, Skilz auto-detects based on:
 skilz install plantuml --agent claude
 skilz install plantuml --agent opencode
 ```
+
+### Gemini CLI Support (NEW in 1.7)
+
+Skilz 1.7+ supports two modes for Gemini CLI:
+
+#### Native Support (Recommended)
+
+**Requirements:** Gemini CLI with `experimental.skills` plugin installed.
+
+**Features:**
+- Project-level: `.gemini/skills/`
+- User-level: `~/.gemini/skills/`
+- No config file needed (Gemini reads skills directly)
+
+**Example:**
+```bash
+# Install to Gemini (native mode)
+skilz install anthropics_skills/pdf-reader --agent gemini --project
+
+# Skill is installed to:
+# .gemini/skills/pdf-reader/
+
+# Gemini CLI automatically detects and loads the skill
+```
+
+**When to use:** If you have the `experimental.skills` plugin, this is the recommended approach.
+
+---
+
+#### Legacy Mode (Universal Agent)
+
+**For users without `experimental.skills` plugin.**
+
+**Features:**
+- Project-level: `.skilz/skills/`
+- Config file: `GEMINI.md` (requires `--config` flag)
+- Manual skill documentation in config
+
+**Example:**
+```bash
+# Install using universal agent with Gemini config
+skilz install anthropics_skills/pdf-reader --agent universal --project --config GEMINI.md
+
+# Skill is installed to:
+# .skilz/skills/pdf-reader/
+# GEMINI.md is created/updated with skill entry
+
+# Configure Gemini CLI to read GEMINI.md
+```
+
+**When to use:** If you don't have the `experimental.skills` plugin or prefer explicit config files.
+
+---
+
+**How to check which mode you have:**
+
+```bash
+# Try native installation
+skilz install test-skill --agent gemini --project
+
+# If successful → You have native support
+# If error "Gemini does not support project-level installations" → Use legacy mode
+```
+
+**Migration Guide:** See [GEMINI_MIGRATION.md](GEMINI_MIGRATION.md) for detailed migration instructions.
+
+---
+
+### Universal Agent Custom Config (NEW in 1.7)
+
+The universal agent now supports project-level installations with custom configuration files.
+
+#### Default Behavior
+
+```bash
+skilz install <skill> --agent universal --project
+# Creates/updates: AGENTS.md
+# Skill location: .skilz/skills/<skill>/
+```
+
+#### Custom Config File
+
+```bash
+skilz install <skill> --agent universal --project --config GEMINI.md
+# Creates/updates: GEMINI.md (not AGENTS.md)
+# Skill location: .skilz/skills/<skill>/
+```
+
+#### Requirements
+
+- `--config` flag **requires** `--project` flag
+- Works with any filename (e.g., `GEMINI.md`, `CUSTOM.md`, `AI_CONFIG.md`)
+- Only the specified file is updated (overrides auto-detection)
+
+#### Use Cases
+
+1. **Legacy Gemini workflow** (without native plugin support)
+2. **Multi-agent projects** with different config files per agent
+3. **Custom organization** (e.g., `DOCUMENTS.md`, `DATA.md`, etc.)
+4. **Explicit documentation** of available skills
+
+**Complete Guide:** See [UNIVERSAL_AGENT_GUIDE.md](UNIVERSAL_AGENT_GUIDE.md) for detailed examples and use cases.
 
 ---
 

@@ -104,6 +104,11 @@ For detailed help: skilz <command> --help
         action="store_true",
         help="Install to project directory instead of user directory",
     )
+    install_parser.add_argument(
+        "--config",
+        metavar="FILE",
+        help="Config file to update (requires --project). Example: --config GEMINI.md",
+    )
 
     # Installation mode flags (mutually exclusive)
     mode_group = install_parser.add_mutually_exclusive_group()

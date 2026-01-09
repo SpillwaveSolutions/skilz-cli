@@ -22,6 +22,8 @@ class TestCmdInstall:
             copy=False,
             symlink=False,
             version_spec=None,
+            force_config=False,
+            config=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -36,6 +38,7 @@ class TestCmdInstall:
             mode=None,
             version_spec=None,
             force_config=False,
+            config_file=None,
         )
 
     def test_install_with_agent(self):
@@ -50,6 +53,8 @@ class TestCmdInstall:
             copy=False,
             symlink=False,
             version_spec=None,
+            force_config=False,
+            config=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -64,6 +69,7 @@ class TestCmdInstall:
             mode=None,
             version_spec=None,
             force_config=False,
+            config_file=None,
         )
 
     def test_install_with_claude_agent(self):
@@ -78,6 +84,8 @@ class TestCmdInstall:
             copy=False,
             symlink=False,
             version_spec=None,
+            force_config=False,
+            config=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -92,6 +100,7 @@ class TestCmdInstall:
             mode=None,
             version_spec=None,
             force_config=False,
+            config_file=None,
         )
 
     def test_install_skill_not_found_error(self, capsys):
@@ -206,6 +215,7 @@ class TestCmdInstall:
             mode=None,
             version_spec=None,
             force_config=False,
+            config_file=None,
         )
 
     def test_install_with_copy_flag(self):
@@ -220,6 +230,8 @@ class TestCmdInstall:
             copy=True,
             symlink=False,
             version_spec=None,
+            force_config=False,
+            config=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -234,6 +246,7 @@ class TestCmdInstall:
             mode="copy",
             version_spec=None,
             force_config=False,
+            config_file=None,
         )
 
     def test_install_with_symlink_flag(self):
@@ -248,6 +261,8 @@ class TestCmdInstall:
             copy=False,
             symlink=True,
             version_spec=None,
+            force_config=False,
+            config=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -262,6 +277,7 @@ class TestCmdInstall:
             mode="symlink",
             version_spec=None,
             force_config=False,
+            config_file=None,
         )
 
     def test_install_no_source_error(self, capsys):
@@ -315,6 +331,8 @@ class TestCmdInstall:
             copy=False,
             symlink=False,
             version_spec=None,
+            force_config=False,
+            config=None,
         )
 
         with patch("skilz.installer.install_local_skill") as mock_install:
@@ -405,6 +423,8 @@ class TestUrlAutoDetection:
             copy=False,
             symlink=False,
             version_spec=None,
+            force_config=False,
+            config=None,
             install_all=False,
             yes_all=False,
             skill=None,
@@ -431,6 +451,8 @@ class TestUrlAutoDetection:
             copy=False,
             symlink=False,
             version_spec=None,
+            force_config=False,
+            config=None,
             install_all=False,
             yes_all=False,
             skill=None,
@@ -457,6 +479,8 @@ class TestUrlAutoDetection:
             copy=False,
             symlink=False,
             version_spec=None,
+            force_config=False,
+            config=None,
             install_all=False,
             yes_all=False,
             skill=None,
@@ -483,6 +507,8 @@ class TestUrlAutoDetection:
             copy=False,
             symlink=False,
             version_spec=None,
+            force_config=False,
+            config=None,
         )
 
         with patch("skilz.installer.install_skill") as mock_install:
@@ -492,3 +518,48 @@ class TestUrlAutoDetection:
         mock_install.assert_called_once()
         call_args = mock_install.call_args[1]
         assert call_args["skill_id"] == "anthropics/excel"
+
+    def test_config_flag_requires_project(self, capsys):
+        """--config flag requires --project flag (SKILZ-50)."""
+        args = argparse.Namespace(
+            skill_id="test/skill",
+            agent="universal",
+            project=False,  # Missing --project
+            config="GEMINI.md",  # But has --config
+            verbose=False,
+            file=None,
+            git=None,
+            copy=False,
+            symlink=False,
+            version_spec=None,
+            force_config=False,
+        )
+
+        result = cmd_install(args)
+
+        assert result == 1  # Should fail
+        captured = capsys.readouterr()
+        assert "--config requires --project" in captured.err
+
+    def test_config_flag_with_project(self):
+        """--config flag works when --project is provided (SKILZ-50)."""
+        args = argparse.Namespace(
+            skill_id="test/skill",
+            agent="universal",
+            project=True,  # Has --project
+            config="GEMINI.md",  # And --config
+            verbose=False,
+            file=None,
+            git=None,
+            copy=False,
+            symlink=False,
+            version_spec=None,
+            force_config=False,
+        )
+
+        with patch("skilz.installer.install_skill") as mock_install:
+            result = cmd_install(args)
+
+        # Should succeed (validation passes)
+        assert result == 0
+        mock_install.assert_called_once()

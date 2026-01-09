@@ -1,6 +1,7 @@
 """Core installation logic for Skilz."""
 
 import shutil
+import sys
 from pathlib import Path
 from typing import cast
 
@@ -96,6 +97,7 @@ def install_local_skill(
     git_sha: str | None = None,
     skill_name: str | None = None,
     force_config: bool = False,
+    config_file: str | None = None,  # SKILZ-50: Custom config file target
 ) -> None:
     """
     Install a skill from a local directory.
@@ -110,6 +112,7 @@ def install_local_skill(
         git_sha: Optional git SHA for manifest (overrides "local" default).
         skill_name: Optional skill name (overrides source_path.name, used for git installs).
         force_config: If True, write to config files even for native agents.
+        config_file: Optional config file to update (requires project_level=True).
     """
     source_path = source_path.expanduser().resolve()
 
@@ -122,6 +125,51 @@ def install_local_skill(
     if skill_name is None:
         skill_name = source_path.name
     skill_id = f"local/{skill_name}"
+
+    # Step 0: Validate skill name for native agents (Gemini, Claude, OpenCode)
+    # This validation is only needed when agent is specified or can be detected
+    resolved_agent_for_validation: AgentType | None = None
+    if agent is not None:
+        resolved_agent_for_validation = agent
+    else:
+        # Try to detect agent early for validation
+        try:
+            resolved_agent_for_validation = cast(AgentType, detect_agent())
+        except Exception:
+            pass  # Will be detected again later
+
+    if resolved_agent_for_validation:
+        from skilz.agent_registry import get_registry, validate_skill_name
+
+        registry = get_registry()
+        agent_config = registry.get(resolved_agent_for_validation)
+
+        # Only validate for agents with native skill support
+        if agent_config and agent_config.native_skill_support != "none":
+            validation = validate_skill_name(skill_name)
+            if not validation.is_valid:
+                error_msg = f"Invalid skill name '{skill_name}' for {agent_config.display_name}.\n"
+                error_msg += "\n".join(f"  - {err}" for err in validation.errors)
+                if validation.suggested_name:
+                    error_msg += f"\n\nSuggested name: {validation.suggested_name}"
+                    error_msg += "\n\nUpdate your SKILL.md frontmatter:"
+                    error_msg += f"\n---\nname: {validation.suggested_name}\ndescription: ...\n---"
+                raise InstallError(str(source_path), error_msg)
+
+            # Check if directory name matches skill name
+            from skilz.agent_registry import check_skill_directory_name
+
+            matches, suggested_path = check_skill_directory_name(source_path, skill_name)
+            if not matches and suggested_path:
+                print(
+                    f"Warning: Directory name '{source_path.name}' doesn't match "
+                    f"skill name '{skill_name}'",
+                    file=sys.stderr,
+                )
+                print(
+                    f"  For better organization, consider renaming to: {suggested_path}",
+                    file=sys.stderr,
+                )
 
     # Step 1: Determine target agent
     resolved_agent: AgentType
@@ -204,11 +252,15 @@ def install_local_skill(
             if verbose:
                 print("Syncing skill to config files...")
 
+            # SKILZ-50: Use custom config file if provided
+            target_files = (config_file,) if config_file else None
+
             sync_results = sync_skill_to_configs(
                 skill=skill_ref,
                 project_dir=project_dir,
                 agent=resolved_agent if agent else None,
                 verbose=verbose,
+                target_files=target_files,
             )
 
             for result in sync_results:
@@ -229,6 +281,7 @@ def install_skill(
     mode: InstallMode | None = None,
     version_spec: str | None = None,
     force_config: bool = False,
+    config_file: str | None = None,  # SKILZ-50: Custom config file target
 ) -> None:
     """
     Install a skill from the registry.
@@ -248,6 +301,7 @@ def install_skill(
               - 40-char hex: Specific commit SHA
               - Other: Treat as tag (tries "X" and "vX" formats)
         force_config: If True, write to config files even for native agents.
+        config_file: Optional config file to update (requires project_level=True).
 
     Raises:
         SkillNotFoundError: If the skill ID is not found in any registry.
@@ -382,9 +436,15 @@ def install_skill(
 
         if found_path:
             source_dir = found_path
+            # Always warn user about path change (not just verbose mode)
+            print(
+                f"Warning: Skill '{skill_info.skill_name}' found at different path than expected",
+                file=sys.stderr,
+            )
             if verbose:
                 rel_path = source_dir.relative_to(cache_path)
-                print(f"  Using found location: {rel_path}")
+                print(f"  Expected: {skill_info.skill_path}", file=sys.stderr)
+                print(f"  Found at: {rel_path}", file=sys.stderr)
         else:
             raise InstallError(
                 skill_id,
@@ -481,6 +541,9 @@ def install_skill(
             if verbose:
                 print("Syncing skill to config files...")
 
+            # SKILZ-50: Use custom config file if provided
+            target_files = (config_file,) if config_file else None
+
             # If agent was explicitly specified, only update that agent's config
             # Otherwise, update all existing config files in the project
             sync_results = sync_skill_to_configs(
@@ -488,6 +551,7 @@ def install_skill(
                 project_dir=project_dir,
                 agent=resolved_agent if agent else None,
                 verbose=verbose,
+                target_files=target_files,
             )
 
             # Report what was updated
