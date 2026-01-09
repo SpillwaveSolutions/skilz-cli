@@ -4,10 +4,7 @@ Tests SKILZ-50: Universal agent project-level installations with --config flag.
 """
 
 import argparse
-from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 from skilz.commands.install_cmd import cmd_install
 from skilz.installer import install_local_skill

@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from skilz.agents import detect_agent
-from skilz.commands.list_cmd import cmd_list
 from skilz.installer import install_local_skill
 from skilz.manifest import read_manifest
 
