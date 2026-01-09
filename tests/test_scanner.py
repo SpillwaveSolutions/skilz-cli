@@ -134,43 +134,93 @@ class TestScanInstalledSkills:
     """Tests for scan_installed_skills function."""
 
     def test_scan_all_agents_by_default(self):
-        """Test that scan_installed_skills scans more agents than the old hardcoded approach."""
-        # Old implementation only scanned claude/opencode (2 agents)
-        # New implementation should scan all home-supported top agents
-        skills = scan_installed_skills()
+        """Test that scan_installed_skills uses registry instead of hardcoded agents."""
+        from skilz.agent_registry import get_registry
+        from unittest.mock import patch
 
-        # Should find skills from home-supported agents
-        agents_found = {s.agent for s in skills}
+        # Mock the actual directory scanning to avoid filesystem dependencies
+        with patch("skilz.scanner.scan_skills_directory") as mock_scan:
+            mock_scan.return_value = []  # No skills found (like in CI)
 
-        # Should find more than just the 2 hardcoded agents from old implementation
-        # In practice, will find claude, opencode, codex (and gemini if directory exists)
-        assert len(agents_found) >= 2, (
-            f"Expected at least 2 agents with skilz skills, found: {agents_found}"
-        )
+            # Call the scanner
+            skills = scan_installed_skills()
 
-        # Should include claude (the primary agent that should always be present)
-        assert "claude" in agents_found, f"Claude should always be found. Found: {agents_found}"
+            # Verify the scanner was called with the correct agents
+            registry = get_registry()
+            home_supported = registry.get_agents_with_home_support()
+            top_home_supported = [
+                a
+                for a in ["claude", "opencode", "gemini", "codex", "copilot"]
+                if a in home_supported
+            ]
+
+            # Should have attempted to scan the top home-supported agents
+            assert mock_scan.call_count == len(top_home_supported), (
+                f"Expected {len(top_home_supported)} agent scans, got {mock_scan.call_count}"
+            )
+
+            # Verify it scanned the expected agents (check call arguments)
+            scanned_agents = {call.kwargs["agent"] for call in mock_scan.call_args_list}
+            expected_agents = set(top_home_supported)
+
+            assert scanned_agents == expected_agents, (
+                f"Expected to scan {expected_agents}, actually scanned {scanned_agents}"
+            )
 
     def test_scan_all_agents_with_all_flag(self):
         """Test that scan_all=True scans all registry agents that support the level."""
+        from skilz.agent_registry import get_registry
+        from unittest.mock import patch
+
+        registry = get_registry()
 
         # Test user-level scanning with scan_all=True
-        skills_user = scan_installed_skills(scan_all=True, project_level=False)
-        agents_user = {s.agent for s in skills_user}
+        with patch("skilz.scanner.scan_skills_directory") as mock_scan:
+            mock_scan.return_value = []
 
-        # Should scan all home-supported agents
-        assert len(agents_user) >= 1, (
-            f"Expected at least 1 agent with --all (user level), found: {agents_user}"
-        )
+            skills_user = scan_installed_skills(scan_all=True, project_level=False)
+
+            # Should have scanned all home-supported agents
+            home_supported = registry.get_agents_with_home_support()
+            assert mock_scan.call_count == len(home_supported), (
+                f"Expected {len(home_supported)} home agent scans, got {mock_scan.call_count}"
+            )
+
+            # Verify the correct agents were scanned
+            scanned_agents = {call.kwargs["agent"] for call in mock_scan.call_args_list}
+            assert scanned_agents == set(home_supported), (
+                f"Expected to scan {set(home_supported)}, actually scanned {scanned_agents}"
+            )
 
         # Test project-level scanning with scan_all=True
-        skills_project = scan_installed_skills(scan_all=True, project_level=True)
-        agents_project = {s.agent for s in skills_project}
+        with patch("skilz.scanner.scan_skills_directory") as mock_scan:
+            mock_scan.return_value = []
 
-        # Should scan all project-supported agents
-        assert len(agents_project) >= 1, (
-            f"Expected at least 1 agent with --all (project level), found: {agents_project}"
-        )
+            skills_project = scan_installed_skills(scan_all=True, project_level=True)
+
+            # Should have scanned all agents (project level supports all)
+            all_agents = registry.list_agents()
+            assert mock_scan.call_count == len(all_agents), (
+                f"Expected {len(all_agents)} project agent scans, got {mock_scan.call_count}"
+            )
+
+            # Verify the correct agents were scanned
+            scanned_agents = {call.kwargs["agent"] for call in mock_scan.call_args_list}
+            assert scanned_agents == set(all_agents), (
+                f"Expected to scan {set(all_agents)}, actually scanned {scanned_agents}"
+            )
+
+        # Test project-level scanning with scan_all=True
+        with patch("skilz.scanner.scan_skills_directory") as mock_scan:
+            mock_scan.return_value = []
+
+            skills_project = scan_installed_skills(scan_all=True, project_level=True)
+
+            # Should have scanned all agents (project level supports all)
+            all_agents = registry.list_agents()
+            assert mock_scan.call_count == len(all_agents), (
+                f"Expected {len(all_agents)} project agent scans, got {mock_scan.call_count}"
+            )
 
     def test_scan_project_level(self, temp_dir, skills_dir_with_skills):
         """Test scanning project-level installations."""
