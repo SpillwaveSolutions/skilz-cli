@@ -6,6 +6,7 @@ import pytest
 
 from skilz.api_client import (
     fetch_skill_coordinates,
+    get_skill_id_format,
     is_marketplace_skill_id,
     parse_skill_id,
 )
@@ -39,7 +40,7 @@ class TestParseSkillId:
 
     def test_invalid_no_slash(self):
         """Test that missing slash raises ValueError."""
-        with pytest.raises(ValueError, match="Expected format"):
+        with pytest.raises(ValueError, match="Expected:"):
             parse_skill_id("no-slash-here")
 
     def test_invalid_no_underscore(self):
@@ -124,3 +125,84 @@ class TestFetchSkillCoordinates:
 
         assert result.skill_path == "skills/skill/SKILL.md"
         assert mock_request.call_count == 2
+
+
+class TestParseSkillIdNewFormat:
+    """Tests for NEW format: owner/repo/skill"""
+
+    def test_new_format_basic(self):
+        """Test NEW format: owner/repo/skill"""
+        owner, repo, skill = parse_skill_id("davila7/claude-code-templates/slack-gif-creator")
+        assert owner == "davila7"
+        assert repo == "claude-code-templates"
+        assert skill == "slack-gif-creator"
+
+    def test_new_format_with_hyphens(self):
+        """Test NEW format with hyphens in all parts"""
+        owner, repo, skill = parse_skill_id("my-org/my-repo/my-skill")
+        assert owner == "my-org"
+        assert repo == "my-repo"
+        assert skill == "my-skill"
+
+
+class TestParseSkillIdSlugFormat:
+    """Tests for SLUG format: owner__repo__skill"""
+
+    def test_slug_format(self):
+        """Test SLUG format: owner__repo__skill"""
+        owner, repo, skill = parse_skill_id("davila7__claude-code-templates__slack-gif-creator")
+        assert owner == "davila7"
+        assert repo == "claude-code-templates"
+        assert skill == "slack-gif-creator"
+
+    def test_slug_format_lowercase(self):
+        """Test SLUG format normalizes to lowercase"""
+        owner, repo, skill = parse_skill_id("Davila7__Claude-Code-Templates__Slack-GIF-Creator")
+        assert owner == "davila7"
+        assert repo == "claude-code-templates"
+        assert skill == "slack-gif-creator"
+
+
+class TestIsMarketplaceSkillIdFormats:
+    """Tests for is_marketplace_skill_id with all formats"""
+
+    def test_new_format_is_marketplace(self):
+        """NEW format is recognized as marketplace"""
+        assert is_marketplace_skill_id("owner/repo/skill") is True
+
+    def test_legacy_format_is_marketplace(self):
+        """LEGACY format is recognized as marketplace"""
+        assert is_marketplace_skill_id("owner_repo/skill") is True
+
+    def test_slug_format_is_marketplace(self):
+        """SLUG format is recognized as marketplace"""
+        assert is_marketplace_skill_id("owner__repo__skill") is True
+
+    def test_github_url_not_marketplace(self):
+        """GitHub URL is not marketplace format"""
+        assert is_marketplace_skill_id("https://github.com/owner/repo") is False
+
+    def test_simple_path_not_marketplace(self):
+        """Simple path is not marketplace format"""
+        assert is_marketplace_skill_id("just-a-name") is False
+
+
+class TestGetSkillIdFormat:
+    """Tests for get_skill_id_format()"""
+
+    def test_new_format_detected(self):
+        """NEW format correctly detected"""
+        assert get_skill_id_format("owner/repo/skill") == "new"
+
+    def test_legacy_format_detected(self):
+        """LEGACY format correctly detected"""
+        assert get_skill_id_format("owner_repo/skill") == "legacy"
+
+    def test_slug_format_detected(self):
+        """SLUG format correctly detected"""
+        assert get_skill_id_format("owner__repo__skill") == "slug"
+
+    def test_unknown_format_detected(self):
+        """Unknown format correctly detected"""
+        assert get_skill_id_format("just-a-name") == "unknown"
+        assert get_skill_id_format("owner/skill") == "unknown"  # Missing repo
