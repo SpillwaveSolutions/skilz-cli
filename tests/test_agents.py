@@ -42,9 +42,92 @@ class TestDetectAgent:
 
         assert agent == "claude"
 
+    def test_detect_gemini_from_project_dir(self, temp_dir, monkeypatch):
+        """Detect Gemini from .gemini in project directory (SKILZ-49)."""
+        # Create a fake home without claude
+        fake_home = temp_dir / "home"
+        fake_home.mkdir()
+        monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+        (temp_dir / ".gemini").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "gemini"
+
+    def test_detect_gemini_from_user_dir(self, temp_dir, monkeypatch):
+        """Detect Gemini from ~/.gemini (SKILZ-49)."""
+        # Create a fake home with .gemini but no .claude
+        fake_home = temp_dir / "home"
+        (fake_home / ".gemini").mkdir(parents=True)
+        monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+        # Use a different temp dir as project dir (no .gemini there)
+        project_dir = temp_dir / "project"
+        project_dir.mkdir()
+
+        agent = detect_agent(project_dir)
+
+        assert agent == "gemini"
+
+    def test_detect_claude_priority_over_gemini(self, temp_dir, monkeypatch):
+        """Claude takes priority over Gemini when both present (SKILZ-49)."""
+        # Create both .claude and .gemini in project
+        (temp_dir / ".claude").mkdir()
+        (temp_dir / ".gemini").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        # Claude should be detected first
+        assert agent == "claude"
+
+    def test_detect_codex_from_project_dir(self, temp_dir, monkeypatch):
+        """Detect Codex from .codex in project directory (BUG-001)."""
+        # Create a fake home without claude or gemini
+        fake_home = temp_dir / "home"
+        fake_home.mkdir()
+        monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+        (temp_dir / ".codex").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "codex"
+
+    def test_detect_codex_from_user_dir(self, temp_dir, monkeypatch):
+        """Detect Codex from ~/.codex (BUG-001)."""
+        # Create a fake home with .codex but no .claude or .gemini
+        fake_home = temp_dir / "home"
+        (fake_home / ".codex").mkdir(parents=True)
+        monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+        # Use a different temp dir as project dir (no .codex there)
+        project_dir = temp_dir / "project"
+        project_dir.mkdir()
+
+        agent = detect_agent(project_dir)
+
+        assert agent == "codex"
+
+    def test_detect_gemini_priority_over_codex(self, temp_dir, monkeypatch):
+        """Gemini takes priority over Codex when both present (BUG-001)."""
+        # Create a fake home without claude
+        fake_home = temp_dir / "home"
+        fake_home.mkdir()
+        monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+        # Create both .gemini and .codex in project
+        (temp_dir / ".gemini").mkdir()
+        (temp_dir / ".codex").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        # Gemini should be detected first
+        assert agent == "gemini"
+
     def test_detect_opencode(self, temp_dir, monkeypatch):
         """Detect OpenCode from ~/.config/opencode."""
-        # Create a fake home with opencode but no claude
+        # Create a fake home with opencode but no claude or gemini
         fake_home = temp_dir / "home"
         (fake_home / ".config" / "opencode").mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: fake_home)

@@ -659,14 +659,14 @@ class TestConfigSyncSkip:
             mock_sync.assert_called_once()
 
     def test_config_sync_for_gemini(self, mock_dependencies, capsys):
-        """Config sync should happen for Gemini (native_skill_support='none')."""
+        """Config sync should be skipped for Gemini (native_skill_support='all', SKILZ-49)."""
         deps = mock_dependencies
 
         with (
             patch("skilz.installer.detect_agent", return_value="gemini"),
             patch("skilz.installer.get_agent_display_name", return_value="Gemini CLI"),
             patch("skilz.installer.get_agent_default_mode", return_value="copy"),
-            patch("skilz.installer.supports_home_install", return_value=False),
+            patch("skilz.installer.supports_home_install", return_value=True),
             patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
             patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
             patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
@@ -681,8 +681,8 @@ class TestConfigSyncSkip:
 
             install_skill("test/skill", agent="gemini", project_level=True)
 
-            # Sync SHOULD be called for Gemini (no native support)
-            mock_sync.assert_called_once()
+            # Sync should NOT be called for Gemini (now has native support)
+            mock_sync.assert_not_called()
 
     def test_skip_config_sync_for_copilot(self, mock_dependencies, capsys):
         """Config sync should be skipped for Copilot (native_skill_support='all', SKILZ-54)."""
@@ -755,3 +755,111 @@ class TestConfigSyncSkip:
 
             # Sync SHOULD be called with --force-config
             mock_sync.assert_called_once()
+
+
+class TestInstallSkillPathFallback:
+    """Tests for skill path fallback with warning (Feature 11)."""
+
+    @pytest.fixture
+    def mock_dependencies(self, temp_dir):
+        """Common test fixtures for path fallback tests."""
+        cache_path = temp_dir / "cache"
+        cache_path.mkdir()
+
+        source_path = cache_path / "skills" / "test-skill"
+        source_path.mkdir(parents=True)
+        (source_path / "SKILL.md").write_text("# Test Skill")
+
+        skills_dir = temp_dir / ".claude" / "skills"
+        skills_dir.mkdir(parents=True)
+
+        skill_info = SkillInfo(
+            skill_id="test/skill",
+            git_repo="https://github.com/test/repo.git",
+            skill_path="/main/old-location/SKILL.md",
+            git_sha="abc123def456",
+        )
+
+        return {
+            "cache_path": cache_path,
+            "source_path": source_path,
+            "skills_dir": skills_dir,
+            "skill_info": skill_info,
+        }
+
+    def test_install_skill_warns_on_path_change(self, mock_dependencies, capsys):
+        """Warning is displayed when skill found at different path."""
+        deps = mock_dependencies
+        nonexistent = deps["cache_path"] / "nonexistent"
+        found_path = deps["cache_path"] / "new-location" / "my-skill"
+        found_path.mkdir(parents=True)
+        (found_path / "SKILL.md").write_text("# Test")
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "old-location")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=nonexistent),
+            patch("skilz.installer.find_skill_by_name", return_value=found_path),
+            patch("skilz.installer.write_manifest"),
+        ):
+            install_skill("test/skill", project_level=True)
+
+        captured = capsys.readouterr()
+        # skill_name is derived from skill_path: /main/old-location/SKILL.md -> "old-location"
+        assert "Warning: Skill 'old-location' found at different path than expected" in captured.err
+
+    def test_install_skill_no_warning_when_path_matches(self, mock_dependencies, capsys):
+        """No warning when skill found at expected path."""
+        deps = mock_dependencies
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "skills/test-skill")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=deps["source_path"]),
+            patch("skilz.installer.write_manifest"),
+        ):
+            install_skill("test/skill", project_level=True)
+
+        captured = capsys.readouterr()
+        assert "Warning:" not in captured.err
+        assert "different path" not in captured.err
+
+    def test_install_skill_warning_goes_to_stderr(self, mock_dependencies, capsys):
+        """Warning message goes to stderr, not stdout."""
+        deps = mock_dependencies
+        nonexistent = deps["cache_path"] / "nonexistent"
+        found_path = deps["cache_path"] / "new-location" / "my-skill"
+        found_path.mkdir(parents=True)
+        (found_path / "SKILL.md").write_text("# Test")
+
+        with (
+            patch("skilz.installer.detect_agent", return_value="claude"),
+            patch("skilz.installer.get_agent_display_name", return_value="Claude Code"),
+            patch("skilz.installer.lookup_skill", return_value=deps["skill_info"]),
+            patch("skilz.installer.ensure_skills_dir", return_value=deps["skills_dir"]),
+            patch("skilz.installer.needs_install", return_value=(True, "not_installed")),
+            patch("skilz.installer.clone_or_fetch", return_value=deps["cache_path"]),
+            patch("skilz.installer.parse_skill_path", return_value=("main", "old-location")),
+            patch("skilz.installer.checkout_sha"),
+            patch("skilz.installer.get_skill_source_path", return_value=nonexistent),
+            patch("skilz.installer.find_skill_by_name", return_value=found_path),
+            patch("skilz.installer.write_manifest"),
+        ):
+            install_skill("test/skill", project_level=True)
+
+        captured = capsys.readouterr()
+        # Warning should be in stderr, not stdout
+        assert "Warning:" in captured.err
+        assert "Warning:" not in captured.out

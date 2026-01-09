@@ -67,10 +67,19 @@ skilz install anthropics_skills/algorithmic-art
 skilz install https://github.com/owner/repo
 
 # Install for a specific agent
-skilz install anthropics_skills/brand-guidelines --agent gemini
+skilz install anthropics_skills/brand-guidelines --agent opencode
 
 # Install at project level (for sandboxed agents)
 skilz install anthropics_skills/frontend-design --agent copilot -p
+
+# Gemini CLI native support (NEW in 1.7 - requires experimental.skills plugin)
+skilz install anthropics_skills/pdf-reader --agent gemini --project
+
+# Legacy Gemini workflow (NEW in 1.7 - for users without experimental.skills)
+skilz install anthropics_skills/pdf-reader --agent universal --project --config GEMINI.md
+
+# Universal agent with custom config (NEW in 1.7)
+skilz install anthropics_skills/excel --agent universal --project --config CUSTOM.md
 
 # List installed skills (or use alias: skilz ls)
 skilz list
@@ -130,6 +139,64 @@ Skilz reads from a registry file that maps Skill IDs to their Git locations:
 | `~/.skilz/registry.yaml` | User-level |
 
 The registry tells Skilz exactly where to find each skill and which version to install.
+
+---
+
+## Agent Installation Modes (NEW in 1.7)
+
+Skilz supports different installation modes depending on the AI agent:
+
+### Native Agent Support
+
+Agents with **native skill support** read skills directly from their designated directories:
+
+- **Claude Code**: `.claude/skills/` → No config file needed
+- **OpenCode**: `.opencode/skill/` → No config file needed  
+- **Codex**: `.codex/skills/` → No config file needed
+- **GitHub Copilot**: `.github/skills/` → No config file needed
+- **Gemini CLI** (NEW in 1.7): `.gemini/skills/` → Requires `experimental.skills` plugin
+
+**Example:**
+```bash
+# Install for Gemini with native support (requires experimental.skills plugin)
+skilz install pdf-reader --agent gemini --project
+# → Installs to: .gemini/skills/pdf-reader/
+# → Config file: None (Gemini reads directory natively)
+```
+
+### Legacy/Universal Mode
+
+For agents without native support or legacy workflows, use the **universal agent** with custom config files:
+
+**Example:**
+```bash
+# Legacy Gemini workflow (for users without experimental.skills plugin)
+skilz install pdf-reader --agent universal --project --config GEMINI.md
+# → Installs to: .skilz/skills/pdf-reader/
+# → Config file: GEMINI.md (created/updated with skill reference)
+```
+
+**Custom Config Example:**
+```bash
+# Use any custom config file name
+skilz install excel --agent universal --project --config MY_SKILLS.md
+# → Installs to: .skilz/skills/excel/
+# → Config file: MY_SKILLS.md (created/updated)
+```
+
+### When to Use Which Mode
+
+| Scenario | Command | Result |
+|----------|---------|--------|
+| Gemini with plugin | `--agent gemini --project` | Native: `.gemini/skills/` |
+| Gemini without plugin | `--agent universal --project --config GEMINI.md` | Universal: `.skilz/skills/` + GEMINI.md |
+| Claude Code | `--agent claude` | Native: `~/.claude/skills/` |
+| Multi-agent project | `--agent universal --project` | Universal: `.skilz/skills/` + AGENTS.md |
+| Custom workflow | `--agent universal --project --config CUSTOM.md` | Universal: `.skilz/skills/` + CUSTOM.md |
+
+For detailed migration guides, see:
+- [Gemini Migration Guide](docs/GEMINI_MIGRATION.md)
+- [Universal Agent Guide](docs/UNIVERSAL_AGENT_GUIDE.md)
 
 ---
 

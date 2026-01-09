@@ -131,15 +131,19 @@ def detect_agent(project_dir: Path | None = None) -> str:
     Detection order:
     1. Check config file for agent_default setting
     2. Check for .claude/ in project directory
-    3. Check for ~/.claude/ (user has Claude Code installed)
-    4. Check for ~/.config/opencode/ (user has OpenCode installed)
-    5. Default to "claude" if ambiguous
+    3. Check for .gemini/ in project directory (Gemini CLI native skills)
+    4. Check for .codex/ in project directory (OpenAI Codex native skills)
+    5. Check for ~/.claude/ (user has Claude Code installed)
+    6. Check for ~/.gemini/ (user has Gemini CLI native skills)
+    7. Check for ~/.codex/ (user has OpenAI Codex installed)
+    8. Check for ~/.config/opencode/ (user has OpenCode installed)
+    9. Default to "claude" if ambiguous
 
     Args:
         project_dir: Project directory to check. Uses cwd if None.
 
     Returns:
-        The detected agent type (e.g., "claude", "opencode", "gemini").
+        The detected agent type (e.g., "claude", "opencode", "gemini", "codex").
     """
     # Check config for default agent first
     try:
@@ -153,13 +157,25 @@ def detect_agent(project_dir: Path | None = None) -> str:
 
     project = project_dir or Path.cwd()
 
-    # Check project-level Claude first
+    # Check project-level markers (highest priority)
     if (project / ".claude").exists():
         return "claude"
 
-    # Check user-level Claude (use Path.home() at detection time, not cached)
+    if (project / ".gemini").exists():
+        return "gemini"
+
+    if (project / ".codex").exists():
+        return "codex"
+
+    # Check user-level markers (use Path.home() at detection time, not cached)
     if (Path.home() / ".claude").exists():
         return "claude"
+
+    if (Path.home() / ".gemini").exists():
+        return "gemini"
+
+    if (Path.home() / ".codex").exists():
+        return "codex"
 
     # Check user-level OpenCode
     if (Path.home() / ".config" / "opencode").exists():
@@ -173,7 +189,7 @@ def detect_agent(project_dir: Path | None = None) -> str:
 
         # Check less common agents
         for agent_name in registry.list_agents():
-            if agent_name in ("claude", "opencode"):
+            if agent_name in ("claude", "opencode", "gemini", "codex"):
                 continue  # Already checked above
             agent = registry.get(agent_name)
             if agent:

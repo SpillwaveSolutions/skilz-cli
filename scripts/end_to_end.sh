@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Skilz 1.6.0 End-to-End Test Script
+# Skilz 1.7.0 End-to-End Test Script
 #
 # This script tests all major features of skilz:
 # - Install via marketplace ID
@@ -8,11 +8,13 @@
 # - Install from filesystem
 # - Install to various agents (claude, opencode, codex, gemini, copilot, universal)
 # - Install at project level
+# - Gemini native support (NEW in 1.7)
+# - Universal agent with custom config (NEW in 1.7)
 # - List commands (skilz list, skilz ls)
 # - Remove commands (skilz uninstall, skilz rm)
 # - Search command
 # - Visit command (dry-run only)
-# - GitHub Copilot project-only installation (NEW in 1.6)
+# - GitHub Copilot project-only installation
 #
 # Usage: ./scripts/end_to_end.sh
 #
@@ -42,10 +44,9 @@ GIT_REPO_HTTPS="https://github.com/Jamie-BitFlight/claude_skills.git"
 GIT_REPO_SSH="git@github.com:Jamie-BitFlight/claude_skills.git"
 GIT_REPO_URL="https://github.com/Jamie-BitFlight/claude_skills"
 
-# Test project directory
+# Test directories
+E2E_DIR=""
 TEST_PROJECT_DIR=""
-
-# Backup directories (to restore after tests)
 BACKUP_DIR=""
 
 #------------------------------------------------------------------------------
@@ -81,7 +82,7 @@ track_test() {
 print_summary_table() {
     echo ""
     echo "┌────────┬────────────────────────────────────────────────────────────────────────────────────────────────┐"
-    echo "│                                 SKILZ 1.6.0 END-TO-END TEST RESULTS                                    │"
+    echo "│                                 SKILZ 1.7.0 END-TO-END TEST RESULTS                                    │"
     echo "├────────┼────────────────────────────────────────────────────────────────────────────────────────────────┤"
     printf "│ %-6s │ %-90s │\n" "STATUS" "COMMAND / DESCRIPTION"
     echo "├────────┼────────────────────────────────────────────────────────────────────────────────────────────────┤"
@@ -209,13 +210,59 @@ setup() {
     log_info "Script directory: $SCRIPT_DIR"
     log_info "Project root: $PROJECT_ROOT"
     
+    # Create isolated e2e test folder
+    E2E_DIR="$PROJECT_ROOT/e2e"
+    TEST_PROJECT_DIR="$E2E_DIR/test_folder"
+    
+    log_info "Creating isolated test environment: $TEST_PROJECT_DIR"
+    mkdir -p "$TEST_PROJECT_DIR"
+    
+    # Create mock Python project structure
+    mkdir -p "$TEST_PROJECT_DIR/src"
+    mkdir -p "$TEST_PROJECT_DIR/tests"
+    
+    # Create mock pyproject.toml
+    cat > "$TEST_PROJECT_DIR/pyproject.toml" <<'EOF'
+[tool.poetry]
+name = "skilz-e2e-test"
+version = "0.1.0"
+description = "Test project for Skilz E2E tests"
+authors = ["Skilz Test <test@skilz.test>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+EOF
+    
+    # Create mock requirements.txt
+    cat > "$TEST_PROJECT_DIR/requirements.txt" <<'EOF'
+# Test dependencies
+pytest>=7.0.0
+EOF
+    
+    # Create mock setup.py
+    cat > "$TEST_PROJECT_DIR/setup.py" <<'EOF'
+from setuptools import setup, find_packages
+
+setup(
+    name="skilz-e2e-test",
+    version="0.1.0",
+    packages=find_packages(),
+)
+EOF
+    
+    # Create __init__.py files
+    touch "$TEST_PROJECT_DIR/src/__init__.py"
+    touch "$TEST_PROJECT_DIR/tests/__init__.py"
+    
+    log_success "Created mock project structure"
+    
     # Create backup directory for any existing installations
     BACKUP_DIR=$(mktemp -d)
     log_info "Backup directory: $BACKUP_DIR"
-    
-    # Create test project directory
-    TEST_PROJECT_DIR=$(mktemp -d)
-    log_info "Test project directory: $TEST_PROJECT_DIR"
     
     # Install the current version of skilz
     log_info "Installing skilz from source..."
@@ -448,16 +495,16 @@ test_install_project() {
     cd "$TEST_PROJECT_DIR"
     log_info "Working in project directory: $TEST_PROJECT_DIR"
     
-    local cmd="skilz install $SKILL_ID --agent gemini --project"
+    local cmd="skilz install $SKILL_ID --agent claude --project"
     
-    # Install to project for Gemini (project-only agent)
-    log_info "Installing to project for Gemini..."
-    if skilz install "$SKILL_ID" --agent gemini --project; then
-        log_success "Project install for Gemini succeeded"
-        track_test "$cmd" "Project install for gemini" "PASS"
+    # Install to project for Claude
+    log_info "Installing to project for Claude..."
+    if skilz install "$SKILL_ID" --agent claude --project; then
+        log_success "Project install for Claude succeeded"
+        track_test "$cmd" "Project install for claude" "PASS"
     else
-        log_fail "Project install for Gemini failed"
-        track_test "$cmd" "Project install for gemini" "FAIL"
+        log_fail "Project install for Claude failed"
+        track_test "$cmd" "Project install for claude" "FAIL"
         cd "$PROJECT_ROOT"
         return
     fi
@@ -468,29 +515,159 @@ test_install_project() {
     assert_exists "$TEST_PROJECT_DIR/.skilz/skills/$SKILL_NAME/SKILL.md" "Project SKILL.md"
     track_test "verify: project SKILL.md" "Project SKILL.md exists" "PASS"
     
-    # Check for GEMINI.md config injection (Gemini doesn't have native support)
-    if [[ -f "$TEST_PROJECT_DIR/GEMINI.md" ]]; then
-        if grep -q "$SKILL_NAME" "$TEST_PROJECT_DIR/GEMINI.md"; then
-            log_success "GEMINI.md config injection verified"
-            track_test "verify: GEMINI.md injection" "Config injection for gemini" "PASS"
+    # Check for CLAUDE.md config injection
+    if [[ -f "$TEST_PROJECT_DIR/CLAUDE.md" ]]; then
+        if grep -q "$SKILL_NAME" "$TEST_PROJECT_DIR/CLAUDE.md"; then
+            log_success "CLAUDE.md config injection verified"
+            track_test "verify: CLAUDE.md injection" "Config injection for claude" "PASS"
         else
-            log_fail "GEMINI.md does not contain skill reference"
-            track_test "verify: GEMINI.md injection" "Config injection for gemini" "FAIL"
+            log_fail "CLAUDE.md does not contain skill reference"
+            track_test "verify: CLAUDE.md injection" "Config injection for claude" "FAIL"
         fi
     else
-        log_info "GEMINI.md not created (may be expected behavior)"
-        track_test "verify: GEMINI.md (optional)" "Config file (optional)" "PASS"
+        log_info "CLAUDE.md not created (may be expected behavior)"
+        track_test "verify: CLAUDE.md (optional)" "Config file (optional)" "PASS"
+    fi
+    
+    # Verify in list
+    assert_skill_in_list "$SKILL_NAME" "claude" "true"
+    track_test "skilz list --agent claude --project" "Skill in project list" "PASS"
+    
+    # Cleanup
+    rm -f "$TEST_PROJECT_DIR/CLAUDE.md"
+    skilz rm "$SKILL_NAME" --agent claude --project -y 2>/dev/null || \
+        skilz remove "$SKILL_NAME" --agent claude --project -y 2>/dev/null || true
+    assert_not_exists "$TEST_PROJECT_DIR/.skilz/skills/$SKILL_NAME" "Project skill directory"
+    track_test "skilz rm $SKILL_NAME --agent claude -p -y" "Remove project skill" "PASS"
+    
+    cd "$PROJECT_ROOT"
+}
+
+#------------------------------------------------------------------------------
+# Test: Gemini Native Support (NEW in 1.7)
+#------------------------------------------------------------------------------
+
+test_gemini_native() {
+    log_section "TEST: Gemini Native Support (NEW in 1.7)"
+    
+    cd "$TEST_PROJECT_DIR"
+    log_info "Working in project directory: $TEST_PROJECT_DIR"
+    
+    local cmd="skilz install $SKILL_ID --agent gemini --project"
+    
+    # Install to native .gemini/skills/ directory
+    log_info "Installing to native Gemini directory..."
+    if skilz install "$SKILL_ID" --agent gemini --project; then
+        log_success "Gemini native install succeeded"
+        track_test "$cmd" "Gemini native (.gemini/skills/)" "PASS"
+    else
+        log_fail "Gemini native install failed"
+        track_test "$cmd" "Gemini native (.gemini/skills/)" "FAIL"
+        cd "$PROJECT_ROOT"
+        return
+    fi
+    
+    # Verify installation in .gemini/skills/ (native location)
+    assert_exists "$TEST_PROJECT_DIR/.gemini/skills/$SKILL_NAME" "Gemini native skill directory"
+    track_test "verify: .gemini/skills/$SKILL_NAME" "Native Gemini dir exists" "PASS"
+    
+    # Native agents should NOT create config files
+    if [[ -f "$TEST_PROJECT_DIR/GEMINI.md" ]]; then
+        log_warn "GEMINI.md created (native agents should skip config sync)"
+        track_test "verify: no GEMINI.md" "Native agent skips config" "FAIL"
+    else
+        log_success "GEMINI.md correctly NOT created (native support)"
+        track_test "verify: no GEMINI.md" "Native agent skips config" "PASS"
     fi
     
     # Verify in list
     assert_skill_in_list "$SKILL_NAME" "gemini" "true"
-    track_test "skilz list --agent gemini --project" "Skill in project list" "PASS"
+    track_test "skilz list --agent gemini --project" "Skill in native list" "PASS"
     
     # Cleanup
-    skilz rm "$SKILL_NAME" --agent gemini --project -y 2>/dev/null || \
-        skilz remove "$SKILL_NAME" --agent gemini --project -y 2>/dev/null || true
-    assert_not_exists "$TEST_PROJECT_DIR/.skilz/skills/$SKILL_NAME" "Project skill directory"
-    track_test "skilz rm $SKILL_NAME --agent gemini -p -y" "Remove project skill" "PASS"
+    skilz rm "$SKILL_NAME" --agent gemini --project -y 2>/dev/null || true
+    assert_not_exists "$TEST_PROJECT_DIR/.gemini/skills/$SKILL_NAME" "Gemini skill directory"
+    track_test "skilz rm $SKILL_NAME --agent gemini -p -y" "Remove native skill" "PASS"
+    
+    cd "$PROJECT_ROOT"
+}
+
+#------------------------------------------------------------------------------
+# Test: Universal Agent Custom Config (NEW in 1.7 - SKILZ-50)
+#------------------------------------------------------------------------------
+
+test_universal_custom_config() {
+    log_section "TEST: Universal Agent Custom Config (NEW in 1.7 - SKILZ-50)"
+    
+    cd "$TEST_PROJECT_DIR"
+    log_info "Working in project directory: $TEST_PROJECT_DIR"
+    
+    # Test 1: Universal + GEMINI.md (legacy Gemini workflow)
+    local cmd="skilz install $SKILL_ID --agent universal --project --config GEMINI.md"
+    
+    log_info "Testing universal agent with custom config file..."
+    if skilz install "$SKILL_ID" --agent universal --project --config GEMINI.md; then
+        log_success "Universal + --config GEMINI.md succeeded"
+        track_test "$cmd" "Universal with custom config" "PASS"
+    else
+        log_fail "Universal + --config GEMINI.md failed"
+        track_test "$cmd" "Universal with custom config" "FAIL"
+        cd "$PROJECT_ROOT"
+        return
+    fi
+    
+    # Verify installation in ./skilz/skills/ (universal location)
+    assert_exists "$TEST_PROJECT_DIR/.skilz/skills/$SKILL_NAME" "Universal skill directory"
+    track_test "verify: .skilz/skills/$SKILL_NAME" "Universal skill dir exists" "PASS"
+    
+    # Verify GEMINI.md was created and contains skill reference
+    if [[ -f "$TEST_PROJECT_DIR/GEMINI.md" ]]; then
+        if grep -q "$SKILL_NAME" "$TEST_PROJECT_DIR/GEMINI.md"; then
+            log_success "GEMINI.md created with skill reference"
+            track_test "verify: GEMINI.md updated" "Custom config updated" "PASS"
+        else
+            log_fail "GEMINI.md exists but no skill reference"
+            track_test "verify: GEMINI.md updated" "Custom config updated" "FAIL"
+        fi
+    else
+        log_fail "GEMINI.md was not created"
+        track_test "verify: GEMINI.md created" "Custom config created" "FAIL"
+    fi
+    
+    # Verify AGENTS.md was NOT created (only custom file should be updated)
+    if [[ ! -f "$TEST_PROJECT_DIR/AGENTS.md" ]]; then
+        log_success "AGENTS.md correctly NOT created (only custom config)"
+        track_test "verify: no AGENTS.md" "Only custom config updated" "PASS"
+    else
+        log_warn "AGENTS.md created (should only update specified file)"
+        track_test "verify: no AGENTS.md" "Only custom config updated" "FAIL"
+    fi
+    
+    # Cleanup
+    rm -f "$TEST_PROJECT_DIR/GEMINI.md"
+    skilz rm "$SKILL_NAME" --agent universal --project -y 2>/dev/null || true
+    
+    # Test 2: Universal + custom file
+    log_info "Testing with completely custom config file..."
+    if skilz install "$SKILL_ID" --agent universal --project --config CUSTOM_SKILLS.md; then
+        log_success "Universal + --config CUSTOM_SKILLS.md succeeded"
+        track_test "skilz install --config CUSTOM_SKILLS.md" "Arbitrary custom config" "PASS"
+        
+        if [[ -f "$TEST_PROJECT_DIR/CUSTOM_SKILLS.md" ]] && \
+           grep -q "$SKILL_NAME" "$TEST_PROJECT_DIR/CUSTOM_SKILLS.md"; then
+            log_success "CUSTOM_SKILLS.md created with skill reference"
+            track_test "verify: CUSTOM_SKILLS.md" "Custom filename works" "PASS"
+        else
+            log_fail "CUSTOM_SKILLS.md not created or missing reference"
+            track_test "verify: CUSTOM_SKILLS.md" "Custom filename works" "FAIL"
+        fi
+        
+        rm -f "$TEST_PROJECT_DIR/CUSTOM_SKILLS.md"
+        skilz rm "$SKILL_NAME" --agent universal --project -y 2>/dev/null || true
+    fi
+    
+    assert_not_exists "$TEST_PROJECT_DIR/.skilz/skills/$SKILL_NAME" "Universal skill directory"
+    track_test "cleanup universal skills" "Cleanup successful" "PASS"
     
     cd "$PROJECT_ROOT"
 }
@@ -934,10 +1111,10 @@ cleanup() {
     
     log_info "Cleaning up test directories..."
     
-    # Remove test project directory
-    if [[ -n "$TEST_PROJECT_DIR" && -d "$TEST_PROJECT_DIR" ]]; then
-        rm -rf "$TEST_PROJECT_DIR"
-        log_info "Removed test project directory"
+    # Clean up e2e test folder
+    if [[ -n "$E2E_DIR" && -d "$E2E_DIR" ]]; then
+        log_info "Removing e2e test directory: $E2E_DIR"
+        rm -rf "$E2E_DIR"
     fi
     
     # Remove backup directory
@@ -948,7 +1125,7 @@ cleanup() {
     
     # Final cleanup of any remaining test skills
     log_info "Final cleanup of any remaining test installations..."
-    for agent in claude opencode codex universal; do
+    for agent in claude opencode codex universal gemini; do
         skilz rm "$SKILL_NAME" --agent "$agent" -y 2>/dev/null || \
             skilz remove "$SKILL_NAME" --agent "$agent" -y 2>/dev/null || true
     done
@@ -963,7 +1140,7 @@ cleanup() {
 main() {
     echo ""
     echo "=============================================="
-    echo " Skilz 1.6.0 End-to-End Test Suite"
+    echo " Skilz 1.7.0 End-to-End Test Suite"
     echo "=============================================="
     echo ""
     
@@ -978,6 +1155,8 @@ main() {
     test_install_git_https_dotgit
     test_install_git_ssh
     test_install_project
+    test_gemini_native
+    test_universal_custom_config
     test_install_copilot
     test_install_filesystem
     test_multiple_agents

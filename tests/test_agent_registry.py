@@ -168,16 +168,32 @@ class TestBuiltinAgents:
         assert opencode.native_skill_support == "all"
 
     def test_gemini_config(self):
-        """Gemini agent has correct configuration (project-only)."""
+        """Gemini agent has correct configuration with native support (SKILZ-49)."""
         agents = get_builtin_agents()
         gemini = agents["gemini"]
 
         assert gemini.name == "gemini"
         assert gemini.display_name == "Gemini CLI"
-        assert gemini.home_dir is None
-        assert gemini.supports_home is False
-        assert gemini.default_mode == "copy"  # copy for agents without native support
-        assert gemini.native_skill_support == "none"
+        assert gemini.home_dir == Path.home() / ".gemini" / "skills"
+        assert gemini.project_dir == Path(".gemini") / "skills"
+        assert gemini.supports_home is True  # Now supports user-level
+        assert gemini.default_mode == "copy"
+        assert gemini.native_skill_support == "all"  # Native support enabled
+        assert gemini.invocation == "/skills or activate_skill tool"
+
+    def test_universal_config(self):
+        """Universal agent has correct configuration (SKILZ-50)."""
+        agents = get_builtin_agents()
+        universal = agents["universal"]
+
+        assert universal.name == "universal"
+        assert universal.display_name == "Universal (Skilz)"
+        assert universal.home_dir == Path.home() / ".skilz" / "skills"
+        assert universal.project_dir == Path(".skilz") / "skills"
+        assert universal.config_files == ("AGENTS.md",)  # Now has config file
+        assert universal.supports_home is True
+        assert universal.default_mode == "copy"
+        assert universal.native_skill_support == "none"  # Not native
 
     def test_copilot_native_support(self):
         """Copilot should have native skill support (SKILZ-54)."""
@@ -268,7 +284,7 @@ class TestAgentRegistry:
         assert skills_dir == Path.home() / ".claude" / "skills"
 
     def test_registry_get_agents_with_home_support(self):
-        """get_agents_with_home_support returns agents supporting home install."""
+        """get_agents_with_home_support returns agents with user-level support."""
         registry = AgentRegistry()
 
         agents = registry.get_agents_with_home_support()
@@ -277,7 +293,7 @@ class TestAgentRegistry:
         assert "opencode" in agents
         assert "codex" in agents
         assert "universal" in agents
-        assert "gemini" not in agents
+        assert "gemini" in agents  # SKILZ-49: Gemini now has home support
 
     def test_registry_get_agents_by_native_support(self):
         """get_agents_by_native_support filters by support level."""
@@ -291,8 +307,9 @@ class TestAgentRegistry:
         assert "codex" in all_support
         assert "copilot" in all_support  # SKILZ-54: Copilot has native support
         assert "opencode" in all_support  # OpenCode has full native support
+        assert "gemini" in all_support  # SKILZ-49: Gemini has native support
         assert len(home_support) == 0  # No agents currently use "home" only
-        assert "gemini" in none_support
+        assert "gemini" not in none_support  # Gemini moved from none to all
 
     def test_registry_loads_user_config(self, tmp_path):
         """Registry merges user configuration on top of built-ins."""
