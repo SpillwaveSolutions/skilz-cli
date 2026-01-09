@@ -141,14 +141,17 @@ cat AGENTS.md | grep web-scraper         # ✅ Referenced
 
 ### US-3: Config File Override
 
-**As a** power user testing skill installations  
-**I want to** control which config file gets updated  
+**As a** power user testing skill installations
+**I want to** control which config file gets updated
 **So that** I can test without breaking my main setup
 
 **Acceptance Criteria:**
 ```bash
-# Test installation with custom config
+# Test installation with custom config (registry install)
 skilz install test-skill --agent universal --project --config TEST.md
+
+# Test git installation with custom config
+skilz install https://github.com/owner/repo --agent universal --project --config TEST.md
 
 # Verify only TEST.md was modified
 cat TEST.md | grep test-skill   # ✅ Referenced
@@ -298,9 +301,11 @@ def sync_skill_to_configs(
 ### Phase 10d: Config Sync Enhancement
 - [ ] Add `target_files` parameter to `sync_skill_to_configs()`
 - [ ] Update sync logic to use custom files when provided
+- [ ] Add `config_file` parameter to `install_from_git()` function
+- [ ] Pass `config_file` through git install flow to local install
 - [ ] Preserve backward compatibility (default behavior unchanged)
-- **Files:** `src/skilz/config_sync.py`, `tests/test_config_sync.py`
-- **Effort:** 2 hours
+- **Files:** `src/skilz/config_sync.py`, `src/skilz/git_install.py`, `tests/test_config_sync.py`
+- **Effort:** 3 hours
 
 ### Phase 10e: Integration Testing
 - [ ] Test: Universal project install creates AGENTS.md

@@ -121,6 +121,7 @@ def cmd_install(args: argparse.Namespace) -> int:
             yes_all=yes_all,
             skill_filter_name=skill_filter_name,
             force_config=force_config,
+            config_file=config_file,  # SKILZ-65: Pass custom config file
         )
 
     try:
