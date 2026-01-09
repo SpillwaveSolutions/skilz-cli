@@ -157,20 +157,21 @@ def install_local_skill(
                     error_msg += f"\n---\nname: {validation.suggested_name}\ndescription: ...\n---"
                 raise InstallError(str(source_path), error_msg)
 
-            # Check if directory name matches skill name
-            from skilz.agent_registry import check_skill_directory_name
+            # Check if directory name matches skill name (skip for git installs with temp dirs)
+            if git_url is None:  # Only validate permanent directories, not temp git clone dirs
+                from skilz.agent_registry import check_skill_directory_name
 
-            matches, suggested_path = check_skill_directory_name(source_path, skill_name)
-            if not matches and suggested_path:
-                print(
-                    f"Warning: Directory name '{source_path.name}' doesn't match "
-                    f"skill name '{skill_name}'",
-                    file=sys.stderr,
-                )
-                print(
-                    f"  For better organization, consider renaming to: {suggested_path}",
-                    file=sys.stderr,
-                )
+                matches, suggested_path = check_skill_directory_name(source_path, skill_name)
+                if not matches and suggested_path:
+                    print(
+                        f"Warning: Directory name '{source_path.name}' doesn't match "
+                        f"skill name '{skill_name}'",
+                        file=sys.stderr,
+                    )
+                    print(
+                        f"  For better organization, consider renaming to: {suggested_path}",
+                        file=sys.stderr,
+                    )
 
     # Step 1: Determine target agent
     resolved_agent: AgentType
@@ -233,8 +234,10 @@ def install_local_skill(
         registry = get_registry()
         agent_config = registry.get_or_raise(resolved_agent)
 
-        # Skip config sync for native agents unless --force-config
-        should_sync = force_config or agent_config.native_skill_support == "none"
+        # Skip config sync for native agents unless --force-config or --config specified
+        should_sync = (
+            force_config or config_file is not None or agent_config.native_skill_support == "none"
+        )
 
         if not should_sync:
             if verbose:
@@ -530,8 +533,10 @@ def install_skill(
         registry = get_registry()
         agent_config = registry.get_or_raise(resolved_agent)
 
-        # Skip config sync for native agents unless --force-config
-        should_sync = force_config or agent_config.native_skill_support == "none"
+        # Skip config sync for native agents unless --force-config or --config specified
+        should_sync = (
+            force_config or config_file is not None or agent_config.native_skill_support == "none"
+        )
 
         if not should_sync:
             if verbose:

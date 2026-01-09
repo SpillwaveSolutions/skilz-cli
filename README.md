@@ -625,6 +625,12 @@ task test:fast        # Run tests without verbose output
 task coverage         # Run tests with coverage report
 task coverage:html    # Generate HTML coverage report
 
+# E2E Testing
+./scripts/end_to_end.sh                    # Full E2E test suite
+./scripts/test_rest_marketplace_e2e.sh     # Live API testing
+./scripts/test_api_integration.sh          # API integration tests
+./scripts/test_bug_fixes_e2e.sh            # Bug fix regression tests
+
 # Code Quality
 task lint             # Run linter (ruff)
 task lint:fix         # Auto-fix linting issues

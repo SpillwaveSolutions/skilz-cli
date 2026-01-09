@@ -25,6 +25,35 @@ The following tools are required (install globally or in your environment):
 pip install build twine
 ```
 
+### 2. E2E Testing
+
+Before deploying, run the comprehensive E2E test suite to ensure all functionality works:
+
+```bash
+# Run full E2E test suite (tests all major features)
+./scripts/end_to_end.sh
+
+# Run API integration tests (tests marketplace endpoints)
+./scripts/test_api_integration.sh
+
+# Run REST marketplace tests (tests live API with real data)
+./scripts/test_rest_marketplace_e2e.sh
+
+# Run bug fix regression tests (tests recent fixes)
+./scripts/test_bug_fixes_e2e.sh
+```
+
+**E2E Test Coverage:**
+- ✅ Marketplace ID installation (`skilz install owner_repo/skill`)
+- ✅ Git URL installation (`skilz install https://github.com/...`)
+- ✅ Local file installation (`skilz install -f path/to/skill`)
+- ✅ All supported agents (Claude, OpenCode, Gemini, Codex, Copilot, Universal)
+- ✅ Project-level installations (`--project` flag)
+- ✅ Custom config file targeting (`--config FILE`)
+- ✅ List, remove, search, and visit commands
+- ✅ API endpoint validation and error handling
+- ✅ Regression testing for recent bug fixes
+
 ### 2. PyPI Account Setup
 
 1. **Create account**: https://pypi.org/account/register/
@@ -56,6 +85,27 @@ password = pypi-YOUR_TESTPYPI_TOKEN_HERE
 ```bash
 chmod 600 ~/.pypirc
 ```
+
+## Quality Assurance
+
+### Testing Strategy
+
+Skilz uses a comprehensive multi-layer testing approach:
+
+1. **Unit Tests**: 633+ tests covering individual functions and modules
+2. **Integration Tests**: API client and config sync testing
+3. **E2E Tests**: Real-world scenario testing with isolated environments
+4. **Regression Tests**: Bug fix validation with before/after testing
+
+### Pre-Deployment Checklist
+
+- [ ] `task check` passes (lint + typecheck + test)
+- [ ] `./scripts/end_to_end.sh` passes (full feature test)
+- [ ] `./scripts/test_rest_marketplace_e2e.sh` passes (live API test)
+- [ ] `./scripts/test_bug_fixes_e2e.sh` passes (regression test)
+- [ ] Version updated in `src/skilz/__init__.py` and `pyproject.toml`
+- [ ] CHANGELOG.md updated with release notes
+- [ ] GitHub release created and tagged
 
 ## Release Process
 

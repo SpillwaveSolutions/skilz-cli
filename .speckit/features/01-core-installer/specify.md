@@ -70,6 +70,7 @@ Implement the core `skilz install` command that:
 - Re-running install for same skill+SHA is a no-op
 - If SHA differs from manifest, reinstall with new version
 - Clear output indicating "already installed" vs "updated"
+- Directory name validation only applies to permanent skill directories, not temp git clone directories
 
 ## Functional Requirements
 
@@ -99,6 +100,7 @@ Implement the core `skilz install` command that:
 - SHA not found: show SHA and suggest checking registry
 - Permission denied: show path and suggest permissions fix
 - Registry not found: show expected paths
+- Directory name validation: only warn for permanent skill directories, not temp git clone directories
 
 ## Non-Functional Requirements
 
