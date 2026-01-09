@@ -84,21 +84,19 @@ class TestResolveMarketplaceUrl:
     def test_owner_repo_skill_format(self):
         """owner/repo/skill should resolve to marketplace URL."""
         url = resolve_marketplace_url("Jamie-BitFlight/claude_skills/brainstorming-skill")
-        expected = (
-            f"{MARKETPLACE_BASE_URL}/Jamie-BitFlight__claude_skills__brainstorming-skill__SKILL/"
-        )
+        expected = f"{MARKETPLACE_BASE_URL}/Jamie-BitFlight__claude_skills__brainstorming-skill/"
         assert url == expected
 
     def test_owner_repo_format(self):
         """owner/repo should resolve to marketplace URL."""
         url = resolve_marketplace_url("anthropics/skills")
-        expected = f"{MARKETPLACE_BASE_URL}/anthropics__skills/"
+        expected = f"{MARKETPLACE_BASE_URL}/anthropics__skills__skills/"
         assert url == expected
 
     def test_nested_skill_path(self):
         """owner/repo/path/to/skill should work."""
         url = resolve_marketplace_url("owner/repo/skills/xlsx")
-        expected = f"{MARKETPLACE_BASE_URL}/owner__repo__skills__xlsx__SKILL/"
+        expected = f"{MARKETPLACE_BASE_URL}/owner__repo__xlsx/"
         assert url == expected
 
     def test_https_passthrough(self):
@@ -114,7 +112,7 @@ class TestResolveMarketplaceUrl:
     def test_single_skill_name(self):
         """Single skill name should be converted."""
         url = resolve_marketplace_url("my-skill")
-        expected = f"{MARKETPLACE_BASE_URL}/my-skill__SKILL/"
+        expected = f"{MARKETPLACE_BASE_URL}/spillwavesolutions__my-skill__my-skill/"
         assert url == expected
 
 
