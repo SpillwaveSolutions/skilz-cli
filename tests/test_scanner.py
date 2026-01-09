@@ -135,15 +135,16 @@ class TestScanInstalledSkills:
 
     def test_scan_all_agents_by_default(self):
         """Test that scan_installed_skills uses registry instead of hardcoded agents."""
-        from skilz.agent_registry import get_registry
         from unittest.mock import patch
+
+        from skilz.agent_registry import get_registry
 
         # Mock the actual directory scanning to avoid filesystem dependencies
         with patch("skilz.scanner.scan_skills_directory") as mock_scan:
             mock_scan.return_value = []  # No skills found (like in CI)
 
             # Call the scanner
-            skills = scan_installed_skills()
+            scan_installed_skills()
 
             # Verify the scanner was called with the correct agents
             registry = get_registry()
@@ -167,10 +168,19 @@ class TestScanInstalledSkills:
                 f"Expected to scan {expected_agents}, actually scanned {scanned_agents}"
             )
 
+            # Verify it scanned the expected agents (check call arguments)
+            scanned_agents = {call.kwargs["agent"] for call in mock_scan.call_args_list}
+            expected_agents = set(top_home_supported)
+
+            assert scanned_agents == expected_agents, (
+                f"Expected to scan {expected_agents}, actually scanned {scanned_agents}"
+            )
+
     def test_scan_all_agents_with_all_flag(self):
         """Test that scan_all=True scans all registry agents that support the level."""
-        from skilz.agent_registry import get_registry
         from unittest.mock import patch
+
+        from skilz.agent_registry import get_registry
 
         registry = get_registry()
 
@@ -178,7 +188,7 @@ class TestScanInstalledSkills:
         with patch("skilz.scanner.scan_skills_directory") as mock_scan:
             mock_scan.return_value = []
 
-            skills_user = scan_installed_skills(scan_all=True, project_level=False)
+            scan_installed_skills(scan_all=True, project_level=False)
 
             # Should have scanned all home-supported agents
             home_supported = registry.get_agents_with_home_support()
@@ -196,7 +206,7 @@ class TestScanInstalledSkills:
         with patch("skilz.scanner.scan_skills_directory") as mock_scan:
             mock_scan.return_value = []
 
-            skills_project = scan_installed_skills(scan_all=True, project_level=True)
+            scan_installed_skills(scan_all=True, project_level=True)
 
             # Should have scanned all agents (project level supports all)
             all_agents = registry.list_agents()
@@ -214,7 +224,7 @@ class TestScanInstalledSkills:
         with patch("skilz.scanner.scan_skills_directory") as mock_scan:
             mock_scan.return_value = []
 
-            skills_project = scan_installed_skills(scan_all=True, project_level=True)
+            scan_installed_skills(scan_all=True, project_level=True)
 
             # Should have scanned all agents (project level supports all)
             all_agents = registry.list_agents()
