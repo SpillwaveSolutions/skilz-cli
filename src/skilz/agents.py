@@ -9,11 +9,14 @@ Supports 14+ AI coding assistants following the agentskills.io standard.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from skilz.agent_registry import AgentConfig
+
+logger = logging.getLogger(__name__)
 
 # Backward-compatible AgentType (original two agents)
 # New code should use get_all_agent_types() or agent_registry directly
@@ -124,20 +127,38 @@ def get_agent_paths() -> dict[str, dict[str, Path]]:
         return result
 
 
+def _check_parent_skilz(project_dir: Path) -> str | None:
+    """Check for ../skilz/skills directory (universal agent pattern).
+
+    Args:
+        project_dir: The project directory to check from.
+
+    Returns:
+        "universal" if parent skilz/skills exists, None otherwise.
+    """
+    parent = project_dir.parent
+    parent_skilz = parent / "skilz" / "skills"
+    if parent_skilz.exists() and parent_skilz.is_dir():
+        logger.debug("[SKILZ-081] Found parent skilz/skills at %s", parent_skilz)
+        return "universal"
+    return None
+
+
 def detect_agent(project_dir: Path | None = None) -> str:
     """
     Auto-detect which AI agent is being used.
 
     Detection order:
     1. Check config file for agent_default setting
-    2. Check for .claude/ in project directory
-    3. Check for .gemini/ in project directory (Gemini CLI native skills)
-    4. Check for .codex/ in project directory (OpenAI Codex native skills)
-    5. Check for ~/.claude/ (user has Claude Code installed)
-    6. Check for ~/.gemini/ (user has Gemini CLI native skills)
-    7. Check for ~/.codex/ (user has OpenAI Codex installed)
-    8. Check for ~/.config/opencode/ (user has OpenCode installed)
-    9. Default to "claude" if ambiguous
+    2. Check for ../skilz/skills (parent directory universal pattern)
+    3. Check for .claude/ in project directory
+    4. Check for .gemini/ in project directory (Gemini CLI native skills)
+    5. Check for .codex/ in project directory (OpenAI Codex native skills)
+    6. Check for ~/.claude/ (user has Claude Code installed)
+    7. Check for ~/.gemini/ (user has Gemini CLI native skills)
+    8. Check for ~/.codex/ (user has OpenAI Codex installed)
+    9. Check for ~/.config/opencode/ (user has OpenCode installed)
+    10. Default to "claude" if ambiguous
 
     Args:
         project_dir: Project directory to check. Uses cwd if None.
@@ -156,6 +177,11 @@ def detect_agent(project_dir: Path | None = None) -> str:
         pass  # Config module not available
 
     project = project_dir or Path.cwd()
+
+    # SKILZ-081: Check parent directory for universal agent pattern
+    parent_agent = _check_parent_skilz(project)
+    if parent_agent:
+        return parent_agent
 
     # Check project-level markers (highest priority)
     if (project / ".claude").exists():
@@ -200,7 +226,8 @@ def detect_agent(project_dir: Path | None = None) -> str:
     except ImportError:
         pass
 
-    # Default to Claude
+    # SKILZ-085: Default to Claude
+    logger.debug("[SKILZ-085] No agent markers found, using default: claude")
     return "claude"
 
 
