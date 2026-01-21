@@ -77,11 +77,13 @@ def copy_skill_files(source_dir: Path, target_dir: Path, verbose: bool = False) 
         if verbose:
             print(f"  Copying {source_dir} -> {target_dir}")
 
+        # SKILZ-089: Exclude .git directory to prevent nested repo issues
         shutil.copytree(
             source_dir,
             target_dir,
             symlinks=True,
             ignore_dangling_symlinks=True,
+            ignore=shutil.ignore_patterns(".git"),
         )
 
     except OSError as e:

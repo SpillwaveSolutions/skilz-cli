@@ -1,6 +1,12 @@
 """Skilz - The universal package manager for AI skills."""
 
-__version__ = "1.7.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("skilz")
+except PackageNotFoundError:
+    __version__ = "0.0.0.dev"
+
 __author__ = "Spillwave"
 
 from skilz.api_client import (
