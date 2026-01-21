@@ -58,7 +58,22 @@ def claude_agent() -> AgentConfig:
 
 @pytest.fixture
 def gemini_agent() -> AgentConfig:
-    """Create a Gemini agent config."""
+    """Create a Gemini agent config with native support (current production config)."""
+    return AgentConfig(
+        name="gemini",
+        display_name="Gemini CLI",
+        home_dir=Path.home() / ".gemini" / "skills",
+        project_dir=Path(".gemini") / "skills",
+        config_files=("GEMINI.md",),
+        supports_home=True,
+        default_mode="copy",
+        native_skill_support="all",
+    )
+
+
+@pytest.fixture
+def gemini_agent_no_native() -> AgentConfig:
+    """Create a Gemini agent config without native support (for testing force_extended)."""
     return AgentConfig(
         name="gemini",
         display_name="Gemini CLI",
@@ -513,13 +528,13 @@ class TestUpdateConfigFileAgentSpecific:
         assert 'skilz read <skill-name>"' in content
         assert "--agent" not in content
 
-    def test_gemini_config_has_agent_flag(
+    def test_gemini_native_config_no_extended_instructions(
         self,
         project_dir: Path,
         skill_ref: SkillReference,
         gemini_agent: AgentConfig,
     ) -> None:
-        """Test that Gemini config file includes --agent gemini."""
+        """Test that Gemini with native support doesn't get extended instructions."""
         config_path = project_dir / "GEMINI.md"
 
         update_config_file(
@@ -532,4 +547,73 @@ class TestUpdateConfigFileAgentSpecific:
 
         content = config_path.read_text()
         assert "--agent gemini" in content
+        # Native support means NO extended instructions
+        assert "Step-by-step process:" not in content
+
+    def test_gemini_no_native_config_has_extended_instructions(
+        self,
+        project_dir: Path,
+        skill_ref: SkillReference,
+        gemini_agent_no_native: AgentConfig,
+    ) -> None:
+        """Test that Gemini without native support gets extended instructions."""
+        config_path = project_dir / "GEMINI.md"
+
+        update_config_file(
+            config_path=config_path,
+            skill=skill_ref,
+            agent_config=gemini_agent_no_native,
+            project_dir=project_dir,
+            create_if_missing=True,
+        )
+
+        content = config_path.read_text()
+        assert "--agent gemini" in content
         assert "Step-by-step process:" in content
+
+
+class TestForceExtendedInstructions:
+    """Tests for force_extended parameter (--force-config behavior)."""
+
+    def test_force_extended_adds_instructions_for_native_agent(
+        self,
+        project_dir: Path,
+        skill_ref: SkillReference,
+        gemini_agent: AgentConfig,
+    ) -> None:
+        """Test that force_extended adds step-by-step instructions even for native agents."""
+        config_path = project_dir / "GEMINI.md"
+
+        # Gemini has native_skill_support="all", but force_extended should add instructions
+        update_config_file(
+            config_path=config_path,
+            skill=skill_ref,
+            agent_config=gemini_agent,
+            project_dir=project_dir,
+            create_if_missing=True,
+            force_extended=True,
+        )
+
+        content = config_path.read_text()
+        assert "--agent gemini" in content
+        # force_extended=True should add extended instructions
+        assert "Step-by-step process:" in content
+
+    def test_generate_usage_template_force_extended(self) -> None:
+        """Test _generate_usage_template with force_extended=True."""
+        # Gemini with native support normally wouldn't get extended instructions
+        result = _generate_usage_template("gemini", "all", force_extended=False)
+        assert "Step-by-step process:" not in result
+
+        # But with force_extended=True, it should
+        result = _generate_usage_template("gemini", "all", force_extended=True)
+        assert "Step-by-step process:" in result
+        assert "--agent gemini" in result
+
+    def test_claude_force_extended_still_no_agent_flag(self) -> None:
+        """Test that Claude still doesn't get --agent flag even with force_extended."""
+        result = _generate_usage_template("claude", "all", force_extended=True)
+        # Claude should never have --agent flag
+        assert "--agent" not in result
+        # But should have extended instructions when forced
+        assert "Step-by-step process:" in result

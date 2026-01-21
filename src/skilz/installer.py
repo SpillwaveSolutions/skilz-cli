@@ -267,6 +267,7 @@ def install_local_skill(
                 agent=resolved_agent if agent else None,
                 verbose=verbose,
                 target_files=target_files,
+                force_extended=force_config,
             )
 
             for result in sync_results:
@@ -567,6 +568,7 @@ def install_skill(
                 agent=resolved_agent if agent else None,
                 verbose=verbose,
                 target_files=target_files,
+                force_extended=force_config,
             )
 
             # Report what was updated

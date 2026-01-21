@@ -19,12 +19,18 @@ SECTION_START = "<!-- SKILLS_TABLE_START -->"
 SECTION_END = "<!-- SKILLS_TABLE_END -->"
 
 
-def _generate_usage_template(agent_name: str, native_support: str) -> str:
+def _generate_usage_template(
+    agent_name: str,
+    native_support: str,
+    force_extended: bool = False,
+) -> str:
     """Generate agent-specific usage template.
 
     Args:
         agent_name: The agent identifier (e.g., "claude", "gemini")
         native_support: The native_skill_support value ("all", "home", "none")
+        force_extended: If True, always include extended step-by-step instructions
+                       (used when --force-config is specified)
 
     Returns:
         Formatted XML usage block with correct invocation command
@@ -35,8 +41,8 @@ def _generate_usage_template(agent_name: str, native_support: str) -> str:
     else:
         invocation = f'Bash("skilz read <skill-name> --agent {agent_name}")'
 
-    # Extended instructions for agents without native support
-    if native_support == "none":
+    # Extended instructions for agents without native support OR when forced
+    if native_support == "none" or force_extended:
         extra_steps = """
 Step-by-step process:
 1. Identify a skill from <available_skills> that matches the user's request
@@ -219,6 +225,7 @@ def _build_skills_section(
     project_dir: Path | None = None,
     agent_name: str = "claude",
     native_support: str = "all",
+    force_extended: bool = False,
 ) -> str:
     """Build the complete skills section content following agentskills.io standard.
 
@@ -227,6 +234,7 @@ def _build_skills_section(
         project_dir: Project directory for calculating relative paths.
         agent_name: The agent identifier for generating correct invocation.
         native_support: The agent's native_skill_support level.
+        force_extended: If True, include extended instructions (--force-config).
 
     Returns:
         Complete section content including markers.
@@ -236,7 +244,7 @@ def _build_skills_section(
         skill_elements.append(format_skill_element(skill, project_dir))
 
     skills_xml = "\n\n".join(skill_elements)
-    usage_template = _generate_usage_template(agent_name, native_support)
+    usage_template = _generate_usage_template(agent_name, native_support, force_extended)
 
     return f"""<skills_system priority="1">
 
@@ -293,6 +301,7 @@ def _merge_skill_into_section(
     project_dir: Path | None = None,
     agent_name: str = "claude",
     native_support: str = "all",
+    force_extended: bool = False,
 ) -> str:
     """Merge a new skill into an existing skills section.
 
@@ -302,6 +311,7 @@ def _merge_skill_into_section(
         project_dir: Project directory for calculating relative paths.
         agent_name: The agent identifier for generating correct invocation.
         native_support: The agent's native_skill_support level.
+        force_extended: If True, include extended instructions (--force-config).
 
     Returns:
         Updated section content.
@@ -336,7 +346,7 @@ def _merge_skill_into_section(
     skill_elements.sort(key=_get_skill_name)
 
     skills_xml = "\n\n".join(skill_elements)
-    usage_template = _generate_usage_template(agent_name, native_support)
+    usage_template = _generate_usage_template(agent_name, native_support, force_extended)
 
     return f"""<skills_system priority="1">
 
@@ -361,6 +371,7 @@ def update_config_file(
     agent_config: AgentConfig,
     project_dir: Path | None = None,
     create_if_missing: bool = True,
+    force_extended: bool = False,
 ) -> ConfigSyncResult:
     """Update a config file with a skill reference.
 
@@ -372,6 +383,7 @@ def update_config_file(
         agent_config: The agent configuration.
         project_dir: Project directory for calculating relative paths.
         create_if_missing: If True, create the config file if it doesn't exist.
+        force_extended: If True, include extended instructions (--force-config).
 
     Returns:
         ConfigSyncResult indicating what happened.
@@ -419,6 +431,7 @@ def update_config_file(
                 project_dir,
                 agent_name=agent_config.name,
                 native_support=agent_config.native_skill_support,
+                force_extended=force_extended,
             )
 
             new_content = (
@@ -432,6 +445,7 @@ def update_config_file(
                 project_dir,
                 agent_name=agent_config.name,
                 native_support=agent_config.native_skill_support,
+                force_extended=force_extended,
             )
             if not content.endswith("\n"):
                 content += "\n"
@@ -467,6 +481,7 @@ def sync_skill_to_configs(
     agent: str | None = None,
     verbose: bool = False,
     target_files: tuple[str, ...] | None = None,  # SKILZ-50: Custom file override
+    force_extended: bool = False,
 ) -> list[ConfigSyncResult]:
     """Sync a skill reference to all relevant config files.
 
@@ -479,6 +494,7 @@ def sync_skill_to_configs(
         target_files: Optional tuple of config file names to update (e.g., ("GEMINI.md",)).
                      If provided, overrides auto-detection and only updates these files.
                      The agent parameter is ignored when target_files is specified.
+        force_extended: If True, include extended instructions (--force-config).
 
     Returns:
         List of ConfigSyncResult for each config file processed.
@@ -533,6 +549,7 @@ def sync_skill_to_configs(
             agent_config=agent_config,
             project_dir=project_dir,
             create_if_missing=(agent is not None),  # Only create if agent specified
+            force_extended=force_extended,
         )
         results.append(result)
 
