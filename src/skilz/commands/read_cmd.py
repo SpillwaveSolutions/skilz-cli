@@ -8,7 +8,18 @@ It follows the agentskills.io standard for skill invocation:
 import argparse
 import sys
 
+from skilz.agents import ExtendedAgentType
 from skilz.scanner import find_installed_skill
+
+# Fallback search order when --agent is not specified
+# Searches directories in order until skill is found
+FALLBACK_SEARCH_ORDER: list[ExtendedAgentType] = [
+    "claude",  # .claude/skills/
+    "universal",  # .skilz/skills/
+    "gemini",  # .skilz/skills/ (gemini uses .skilz for project)
+    "opencode",  # .opencode/skill/ or .skilz/skills/
+    "codex",  # .codex/skills/
+]
 
 
 def cmd_read(args: argparse.Namespace) -> int:
@@ -29,21 +40,44 @@ def cmd_read(args: argparse.Namespace) -> int:
     agent = getattr(args, "agent", None)
     project_level: bool = getattr(args, "project", False)
 
-    # Find the skill
-    skill = find_installed_skill(
-        skill_id_or_name=skill_name,
-        agent=agent,
-        project_level=project_level,
-    )
+    skill = None
 
-    if skill is None:
+    if agent:
+        # Agent specified - search only that agent's directories
+        skill = find_installed_skill(
+            skill_id_or_name=skill_name,
+            agent=agent,
+            project_level=project_level,
+        )
         # Try project-level if user-level not found
-        if not project_level:
+        if skill is None and not project_level:
             skill = find_installed_skill(
                 skill_id_or_name=skill_name,
                 agent=agent,
                 project_level=True,
             )
+    else:
+        # No agent specified - use fallback search across multiple directories
+        # First try user-level for agents that support it
+        for fallback_agent in FALLBACK_SEARCH_ORDER:
+            skill = find_installed_skill(
+                skill_id_or_name=skill_name,
+                agent=fallback_agent,
+                project_level=False,  # Try user-level first
+            )
+            if skill is not None:
+                break
+
+        # If not found at user-level, try project-level
+        if skill is None:
+            for fallback_agent in FALLBACK_SEARCH_ORDER:
+                skill = find_installed_skill(
+                    skill_id_or_name=skill_name,
+                    agent=fallback_agent,
+                    project_level=True,
+                )
+                if skill is not None:
+                    break
 
     if skill is None:
         print(f"Error: Skill '{skill_name}' not found.", file=sys.stderr)

@@ -208,7 +208,7 @@ class TestReadCommand:
             )
 
     def test_read_project_level_fallback(self, mock_skill: InstalledSkill) -> None:
-        """Test that user-level miss falls back to project-level."""
+        """Test that user-level miss falls back to project-level across agents."""
         args = argparse.Namespace(
             skill_name="test-skill",
             agent=None,
@@ -216,14 +216,20 @@ class TestReadCommand:
         )
 
         with patch("skilz.commands.read_cmd.find_installed_skill") as mock_find:
-            # First call (user-level) returns None, second (project-level) returns skill
-            mock_find.side_effect = [None, mock_skill]
+            # With fallback search, we try all agents at user-level first (5 agents),
+            # then all agents at project-level. Return skill on first project-level call.
+            from skilz.commands.read_cmd import FALLBACK_SEARCH_ORDER
+
+            num_agents = len(FALLBACK_SEARCH_ORDER)
+            # All user-level calls return None, first project-level call returns skill
+            mock_find.side_effect = [None] * num_agents + [mock_skill]
 
             result = cmd_read(args)
 
             assert result == 0
-            assert mock_find.call_count == 2
-            # Second call should have project_level=True
+            # Should have tried all user-level agents + 1 project-level agent
+            assert mock_find.call_count == num_agents + 1
+            # Last call should have project_level=True
             _, kwargs = mock_find.call_args
             assert kwargs.get("project_level") is True
 
@@ -280,3 +286,64 @@ class TestCLIIntegration:
         assert args.skill_name == "my-skill"
         assert args.agent == "claude"
         assert args.project is True
+
+
+class TestFallbackSearch:
+    """Tests for fallback directory search in read command."""
+
+    def test_fallback_search_order_defined(self) -> None:
+        """Test that FALLBACK_SEARCH_ORDER is defined and has expected agents."""
+        from skilz.commands.read_cmd import FALLBACK_SEARCH_ORDER
+
+        assert len(FALLBACK_SEARCH_ORDER) > 0
+        assert "claude" in FALLBACK_SEARCH_ORDER
+        assert "universal" in FALLBACK_SEARCH_ORDER
+
+    def test_fallback_prefers_claude_over_universal(self) -> None:
+        """Claude directory should be searched before universal directory."""
+        from skilz.commands.read_cmd import FALLBACK_SEARCH_ORDER
+
+        claude_idx = FALLBACK_SEARCH_ORDER.index("claude")
+        universal_idx = FALLBACK_SEARCH_ORDER.index("universal")
+        assert claude_idx < universal_idx
+
+    def test_fallback_search_finds_skill_in_later_agent(self, mock_skill: InstalledSkill) -> None:
+        """Test that fallback search finds skill in a later agent directory."""
+        args = argparse.Namespace(
+            skill_name="test-skill",
+            agent=None,
+            project=False,
+        )
+
+        with patch("skilz.commands.read_cmd.find_installed_skill") as mock_find:
+            from skilz.commands.read_cmd import FALLBACK_SEARCH_ORDER
+
+            # Skill not found in first few agents, found in 3rd agent
+            mock_find.side_effect = [None, None, mock_skill]
+
+            result = cmd_read(args)
+
+            assert result == 0
+            # Should have called find_installed_skill 3 times
+            assert mock_find.call_count == 3
+            # Third call should be for the 3rd agent in fallback order
+            third_call_args = mock_find.call_args_list[2]
+            assert third_call_args[1]["agent"] == FALLBACK_SEARCH_ORDER[2]
+
+    def test_agent_specified_skips_fallback(self, mock_skill: InstalledSkill) -> None:
+        """Test that specifying --agent skips fallback search."""
+        args = argparse.Namespace(
+            skill_name="test-skill",
+            agent="gemini",
+            project=False,
+        )
+
+        with patch("skilz.commands.read_cmd.find_installed_skill") as mock_find:
+            mock_find.return_value = mock_skill
+
+            result = cmd_read(args)
+
+            assert result == 0
+            # Should only call once with the specified agent
+            assert mock_find.call_count == 1
+            assert mock_find.call_args[1]["agent"] == "gemini"

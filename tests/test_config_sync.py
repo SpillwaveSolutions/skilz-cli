@@ -9,6 +9,8 @@ from skilz.config_sync import (
     SECTION_END,
     SECTION_START,
     SkillReference,
+    _build_skills_section,
+    _generate_usage_template,
     _parse_existing_skills,
     detect_project_config_files,
     format_skill_element,
@@ -399,3 +401,135 @@ class TestAgentSkillsIOFormat:
         assert "<location>" in content
         assert "</location>" in content
         assert "</skill>" in content
+
+
+class TestGenerateUsageTemplate:
+    """Tests for _generate_usage_template function."""
+
+    def test_claude_native_all_no_agent_flag(self) -> None:
+        """Claude with native_skill_support='all' should not have --agent flag."""
+        result = _generate_usage_template("claude", "all")
+        assert 'skilz read <skill-name>"' in result
+        assert "--agent" not in result
+
+    def test_codex_native_all_has_agent_flag(self) -> None:
+        """Codex with native_skill_support='all' should have --agent codex."""
+        result = _generate_usage_template("codex", "all")
+        assert "--agent codex" in result
+
+    def test_gemini_native_none_has_agent_flag(self) -> None:
+        """Gemini with native_skill_support='none' should have --agent gemini."""
+        result = _generate_usage_template("gemini", "none")
+        assert "--agent gemini" in result
+
+    def test_gemini_native_none_has_extended_instructions(self) -> None:
+        """Agents with native_skill_support='none' should have step-by-step process."""
+        result = _generate_usage_template("gemini", "none")
+        assert "Step-by-step process:" in result
+        assert "1. Identify a skill" in result
+
+    def test_opencode_native_home_has_agent_flag(self) -> None:
+        """OpenCode with native_skill_support='home' should have --agent opencode."""
+        result = _generate_usage_template("opencode", "home")
+        assert "--agent opencode" in result
+
+    def test_opencode_native_home_no_extended_instructions(self) -> None:
+        """Agents with native_skill_support='home' should NOT have extended instructions."""
+        result = _generate_usage_template("opencode", "home")
+        assert "Step-by-step process:" not in result
+
+    def test_qwen_native_none_has_extended_instructions(self) -> None:
+        """QWEN with native_skill_support='none' should have extended instructions."""
+        result = _generate_usage_template("qwen", "none")
+        assert "--agent qwen" in result
+        assert "Step-by-step process:" in result
+
+
+class TestBuildSkillsSectionWithAgent:
+    """Tests for _build_skills_section with agent parameters."""
+
+    def test_build_section_claude_no_agent_flag(self, tmp_path: Path) -> None:
+        """Building section for Claude should not include --agent flag."""
+        skill = SkillReference(
+            skill_id="test/skill",
+            skill_name="test-skill",
+            skill_path=tmp_path / "test-skill",
+            description="Test skill",
+        )
+        (tmp_path / "test-skill").mkdir()
+        (tmp_path / "test-skill" / "SKILL.md").write_text("# Test")
+
+        result = _build_skills_section(
+            [skill],
+            project_dir=tmp_path,
+            agent_name="claude",
+            native_support="all",
+        )
+        assert 'skilz read <skill-name>"' in result
+        assert "--agent" not in result
+
+    def test_build_section_gemini_has_agent_flag(self, tmp_path: Path) -> None:
+        """Building section for Gemini should include --agent gemini."""
+        skill = SkillReference(
+            skill_id="test/skill",
+            skill_name="test-skill",
+            skill_path=tmp_path / "test-skill",
+            description="Test skill",
+        )
+        (tmp_path / "test-skill").mkdir()
+        (tmp_path / "test-skill" / "SKILL.md").write_text("# Test")
+
+        result = _build_skills_section(
+            [skill],
+            project_dir=tmp_path,
+            agent_name="gemini",
+            native_support="none",
+        )
+        assert "--agent gemini" in result
+        assert "Step-by-step process:" in result
+
+
+class TestUpdateConfigFileAgentSpecific:
+    """Tests for agent-specific behavior in update_config_file."""
+
+    def test_claude_config_no_agent_flag(
+        self,
+        project_dir: Path,
+        skill_ref: SkillReference,
+        claude_agent: AgentConfig,
+    ) -> None:
+        """Test that Claude config file doesn't include --agent flag."""
+        config_path = project_dir / "CLAUDE.md"
+
+        update_config_file(
+            config_path=config_path,
+            skill=skill_ref,
+            agent_config=claude_agent,
+            project_dir=project_dir,
+            create_if_missing=True,
+        )
+
+        content = config_path.read_text()
+        assert 'skilz read <skill-name>"' in content
+        assert "--agent" not in content
+
+    def test_gemini_config_has_agent_flag(
+        self,
+        project_dir: Path,
+        skill_ref: SkillReference,
+        gemini_agent: AgentConfig,
+    ) -> None:
+        """Test that Gemini config file includes --agent gemini."""
+        config_path = project_dir / "GEMINI.md"
+
+        update_config_file(
+            config_path=config_path,
+            skill=skill_ref,
+            agent_config=gemini_agent,
+            project_dir=project_dir,
+            create_if_missing=True,
+        )
+
+        content = config_path.read_text()
+        assert "--agent gemini" in content
+        assert "Step-by-step process:" in content
