@@ -5,6 +5,26 @@ All notable changes to Skilz CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-01-21
+
+### Changed
+
+- Documentation updates to match current feature set
+  - Updated USER_MANUAL.md from v1.6.0 to v1.9.0
+  - Fixed DEPLOY_PYPI.md version management documentation
+  - Updated key_facts.md with version management notes
+
+### Documentation
+
+- Added version management section to key_facts.md
+- Corrected DEPLOY_PYPI.md to reflect dynamic versioning
+- USER_MANUAL.md now documents 1.7 and 1.8 features:
+  - Gemini native support
+  - NEW/LEGACY/SLUG format support
+  - Universal agent custom config
+  - List command with Agent column
+  - `--all` flag for list command
+
 ## [1.8.0] - 2026-01-09
 
 ### Added

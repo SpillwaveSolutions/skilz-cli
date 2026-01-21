@@ -103,7 +103,7 @@ Skilz uses a comprehensive multi-layer testing approach:
 - [ ] `./scripts/end_to_end.sh` passes (full feature test)
 - [ ] `./scripts/test_rest_marketplace_e2e.sh` passes (live API test)
 - [ ] `./scripts/test_bug_fixes_e2e.sh` passes (regression test)
-- [ ] Version updated in `src/skilz/__init__.py` and `pyproject.toml`
+- [ ] Version updated in `pyproject.toml` (single source of truth)
 - [ ] CHANGELOG.md updated with release notes
 - [ ] GitHub release created and tagged
 
@@ -168,20 +168,26 @@ skilz --version
 
 ## Version Management
 
-The version is defined in `src/skilz/__init__.py`:
+**Single Source of Truth:** `pyproject.toml` (line 7)
 
-```python
-__version__ = "1.2.0"  # Update to new version
-```
-
-And mirrored in `pyproject.toml`:
+The version is defined ONLY in `pyproject.toml`:
 
 ```toml
 [project]
-version = "1.2.0"  # Must match __init__.py
+version = "1.9.0"
 ```
 
-**Before releasing**, update both files to match.
+The Python package reads this dynamically at runtime via `importlib.metadata`:
+
+```python
+# src/skilz/__init__.py
+from importlib.metadata import version
+__version__ = version("skilz")  # Reads from pyproject.toml
+```
+
+**Before releasing**, only update `pyproject.toml`. No other files need version changes.
+
+**Note:** Previous versions required updating both `pyproject.toml` AND `__init__.py`. This was fixed in 1.7 to use dynamic version detection, eliminating version sync issues.
 
 ## Taskfile Commands Reference
 

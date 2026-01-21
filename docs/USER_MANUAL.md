@@ -1,6 +1,6 @@
 # Skilz User Manual
 
-**Version 1.6.0**
+**Version 1.9.0**
 
 Skilz is the universal package manager for AI skills. It installs, manages, and updates skills across multiple AI coding assistants including Claude Code and OpenCode.
 
@@ -172,6 +172,39 @@ skilz install anthropics_skills/theme-factory -v
 If the skill is already installed with the same SHA, Skilz skips the installation:
 ```
 Already installed: anthropics_skills/theme-factory (00756142)
+```
+
+---
+
+### NEW Marketplace Format (NEW in 1.7)
+
+Skilz 1.7+ supports a new intuitive skill ID format that mirrors GitHub's URL structure:
+
+**Supported Formats:**
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| **NEW** | `owner/repo/skill` | Intuitive GitHub-style format |
+| **LEGACY** | `owner_repo/skill` | Original underscore format |
+| **SLUG** | `owner__repo__skill` | Direct Firestore document ID |
+
+**All formats are REST-first** - they try the skillzwave.ai REST API before falling back to GitHub.
+
+**Examples:**
+
+```bash
+# NEW format (recommended)
+skilz install anthropics/skills/algorithmic-art
+
+# LEGACY format (backwards compatible)
+skilz install anthropics_skills/algorithmic-art
+
+# SLUG format (direct Firestore ID)
+skilz install anthropics__skills__algorithmic-art
+
+# Verbose mode shows format detection
+skilz install anthropics/skills/algorithmic-art -v
+# Output: Detected format: NEW, attempting REST lookup...
 ```
 
 ---
@@ -803,11 +836,20 @@ Skilz supports multiple AI coding assistants. Use `--agent` to target a specific
 
 | Agent | Skills Directory | Notes |
 |-------|------------------|-------|
-| `claude` | `~/.claude/skills/` (user) or `.claude/skills/` (project) | Native support |
-| `gemini` | `~/.gemini/skills/` (user) or `.gemini/skills/` (project) | Native support (NEW in 1.7, requires plugin) |
-| `codex` | `~/.codex/skills/` (user) or `.codex/skills/` (project) | Auto-detected from `.codex/` |
-| `opencode` | `~/.config/opencode/skill/` (user) or `.opencode/skill/` (project) | Native support |
-| `universal` | `~/.skilz/skills/` (user) or `.skilz/skills/` (project) | Supports custom config files (NEW in 1.7) |
+| `claude` | `~/.claude/skills/` or `.claude/skills/` | Native support |
+| `codex` | `~/.codex/skills/` or `.codex/skills/` | Native support |
+| `opencode` | `~/.config/opencode/skill/` or `.opencode/skill/` | Native support |
+| `gemini` | `~/.gemini/skills/` or `.gemini/skills/` | Native support (requires plugin) |
+| `copilot` | `.github/skills/` | Project-level only |
+| `cursor` | `.cursor/skills/` | Project-level only |
+| `aider` | `~/.aider/skills/` | User-level |
+| `windsurf` | `~/.windsurf/skills/` | User-level |
+| `qwen` | `~/.qwen/skills/` | User-level |
+| `kimi` | `~/.kimi/skills/` | User-level |
+| `crush` | `~/.crush/skills/` | User-level |
+| `plandex` | `~/.plandex/skills/` | User-level |
+| `zed` | `~/.zed/skills/` | User-level |
+| `universal` | `~/.skilz/skills/` or `.skilz/skills/` | Universal fallback |
 
 **Auto-detection:**
 

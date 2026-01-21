@@ -196,7 +196,7 @@ def install_local_skill(
             )
         elif verbose:
             agent_config = get_registry().get(resolved_agent)
-            project_path = agent_config.project_dir if agent_config else ".skills/skills"
+            project_path = agent_config.project_dir if agent_config else ".skilz/skills"
             print(
                 f"  Note: {get_agent_display_name(resolved_agent)} only supports "
                 f"project-level installation ({project_path}/)"
@@ -336,7 +336,7 @@ def install_skill(
             )
         elif verbose:
             agent_config = get_registry().get(resolved_agent)
-            project_path = agent_config.project_dir if agent_config else ".skills/skills"
+            project_path = agent_config.project_dir if agent_config else ".skilz/skills"
             print(
                 f"  Note: {get_agent_display_name(resolved_agent)} only supports "
                 f"project-level installation ({project_path}/)"

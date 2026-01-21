@@ -41,7 +41,7 @@ def _generate_usage_template(
     else:
         invocation = f'Bash("skilz read <skill-name> --agent {agent_name}")'
 
-    # Extended instructions for agents without native support OR when forced
+    # Extended step-by-step instructions for agents without native support OR when forced
     if native_support == "none" or force_extended:
         extra_steps = """
 Step-by-step process:
@@ -53,6 +53,16 @@ Step-by-step process:
     else:
         extra_steps = ""
 
+    # Usage notes ONLY for agents without native support (not affected by force_extended)
+    if native_support == "none":
+        usage_notes = """
+Usage notes:
+- Only use skills listed in <available_skills> below
+- Do not invoke a skill that is already loaded in your context
+"""
+    else:
+        usage_notes = ""
+
     return f"""<usage>
 When users ask you to perform tasks, check if any of the available skills
 below can help complete the task more effectively.
@@ -61,11 +71,7 @@ How to use skills:
 - Invoke: {invocation}
 - The skill content will load with detailed instructions
 - Base directory provided in output for resolving bundled resources
-{extra_steps}
-Usage notes:
-- Only use skills listed in <available_skills> below
-- Do not invoke a skill that is already loaded in your context
-</usage>"""
+{extra_steps}{usage_notes}</usage>"""
 
 
 @dataclass

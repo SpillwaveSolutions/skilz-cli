@@ -55,6 +55,21 @@ task typecheck     # Run mypy
 
 ---
 
+## Version Management
+
+**Single Source of Truth:** `pyproject.toml` line 7
+
+| File | Role |
+|------|------|
+| `pyproject.toml` | Primary version definition (edit this one) |
+| `src/skilz/__init__.py` | Dynamic detection via `importlib.metadata.version("skilz")` |
+
+**Release Process:** Only update `pyproject.toml`. The Python module automatically reads the version from package metadata at runtime.
+
+**Previous Bug (Fixed in 1.7):** Before dynamic detection, version was hardcoded in both files and they would get out of sync, causing `skilz --version` to show wrong version.
+
+---
+
 ## Important Paths
 
 | Path | Purpose |
@@ -109,13 +124,23 @@ Before any PR:
 
 ## Verification History
 
-### 2025-01-08 - Instructions Verification
-- ✅ Development setup completed successfully (`task install`)
-- ✅ All 620 tests passing with 87% coverage (`task test`, `task coverage`)
-- ✅ Code quality checks passing (lint, format, typecheck via `task check`)
-- ✅ CLI functionality verified (`skilz --version`, `skilz --help`)
-- ✅ Project is in production-ready state (v1.7.0)
+### 2026-01-21 - v1.9.0 Pre-Release
+- ✅ Version bumped to 1.9.0 in pyproject.toml
+- ✅ Documentation updated (USER_MANUAL.md, DEPLOY_PYPI.md)
+- ✅ CHANGELOG.md updated with 1.9.0 entry
+- ✅ All tests passing
+- ✅ Local build verified
+
+### 2025-01-09 - v1.8.0 Release
+- ✅ List command enhancements (Agent column, --all flag)
+- ✅ CLI help discoverability improvements
+- ✅ Visit command URL format fix
+
+### 2025-01-08 - v1.7.0 Release
+- ✅ Gemini CLI native support
+- ✅ NEW/LEGACY/SLUG format support
+- ✅ Universal agent custom config
 
 ---
 
-*Last Updated: 2025-01-08*
+*Last Updated: 2026-01-21*
