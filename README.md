@@ -307,7 +307,7 @@ For complete documentation including troubleshooting and advanced examples, see 
 
 ## Supported Agents
 
-Skilz supports **21+ AI coding agents** from the [AGENTS.md](https://agents.md/) ecosystem.
+Skilz supports **21+ AI coding agents** from the [AGENTS.md](https://agents.md/) ecosystem, including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, Cursor, Aider, Windsurf, Zed AI, RooCode, Devin, and many more.
 
 ### Skill Support Levels
 
@@ -364,7 +364,7 @@ All agents from the [agents.md](https://agents.md/) ecosystem work via `--agent 
 
 **Note:** Universal support works with any agent that reads the AGENTS.md config file format. Skills are installed to `.skilz/skills/` and referenced in the project's AGENTS.md file.
 
-For detailed agent-specific instructions, see the [Comprehensive User Guide](docs/COMPREHENSIVE_USER_GUIDE.md)
+For detailed agent-specific instructions, see the [Supported Agents Guide](docs/SUPPORTED_AGENTS.md) and [Comprehensive User Guide](docs/COMPREHENSIVE_USER_GUIDE.md)
 
 ---
 
