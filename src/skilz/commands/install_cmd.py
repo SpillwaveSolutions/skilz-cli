@@ -68,6 +68,12 @@ def cmd_install(args: argparse.Namespace) -> int:
         git_url = skill_id
         skill_id = None
 
+    # NORMALIZE GITHUB SHORTHAND (owner/repo -> https://github.com/owner/repo)
+    if git_url and not is_git_url(git_url):
+        # If git_url doesn't look like a full URL, assume it's GitHub shorthand
+        if "/" in git_url and not git_url.startswith("/"):
+            git_url = f"https://github.com/{git_url}"
+
     # Validate source - exactly one of skill_id, -f, or -g must be provided
     sources = [s for s in [skill_id, file_path, git_url] if s is not None]
     if len(sources) == 0:

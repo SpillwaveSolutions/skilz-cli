@@ -5,6 +5,45 @@ All notable changes to Skilz CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.4] - 2026-01-21
+
+### Added
+
+- GitHub shorthand URL support for `-g/--git` flag
+  - `skilz install -g owner/repo` now automatically converts to `https://github.com/owner/repo`
+  - Enables easier installation from search results
+  - Example: `skilz install -g tfriedel/claude-office-skills` works without full URL
+
+## [1.9.3] - 2026-01-21
+
+### Fixed
+
+- Fix `skilz search` to return useful results
+  - Changed query from `{query} skill OR skills` to `{query} claude`
+  - Results sorted by stars (descending)
+  - `skilz search docx` now returns 41 results
+  - `skilz search excel` now returns 94 results
+
+## [1.9.2] - 2026-01-21
+
+### Fixed
+
+- Fix OpenCode user-level skills directory path
+  - Was incorrectly using `~/.config/opencode/skills` (plural)
+  - Now correctly uses `~/.config/opencode/skill` (singular)
+  - `skilz list --agent opencode` now finds installed skills
+
+## [1.9.1] - 2026-01-21
+
+### Fixed
+
+- Fix usage notes only shown for agents without native skill support
+  - Usage notes ("Only use skills listed..." ) no longer appear for Claude, OpenCode, Codex, Gemini
+  - `--force-config` adds extended instructions but not usage notes for native agents
+- Fix typo in agent registry: `.skills/skills` → `.skilz/skills`
+  - Affected agents: aider, cursor, windsurf, qwen, crush, kimi, plandex, zed
+  - Skills now correctly install to `.skilz/skills/` for non-native agents
+
 ## [1.9.0] - 2026-01-21
 
 ### Changed

@@ -47,8 +47,8 @@ DEFAULT_AGENT_PATHS: dict[str, dict[str, Path]] = {
         "project": Path(".claude") / "skills",
     },
     "opencode": {
-        "user": Path.home() / ".config" / "opencode" / "skills",
-        "project": Path(".skilz") / "skills",
+        "user": Path.home() / ".config" / "opencode" / "skill",  # singular
+        "project": Path(".opencode") / "skill",  # singular
     },
 }
 
@@ -110,7 +110,7 @@ def get_agent_paths() -> dict[str, dict[str, Path]]:
                 if name == "claude" and claude_home:
                     paths["user"] = claude_home / "skills"
                 elif name == "opencode" and opencode_home:
-                    paths["user"] = opencode_home / "skills"
+                    paths["user"] = opencode_home / "skill"  # singular
                 else:
                     paths["user"] = agent.home_dir
 
@@ -123,7 +123,7 @@ def get_agent_paths() -> dict[str, dict[str, Path]]:
         if claude_home:
             result["claude"]["user"] = claude_home / "skills"
         if opencode_home:
-            result["opencode"]["user"] = opencode_home / "skills"
+            result["opencode"]["user"] = opencode_home / "skill"  # singular
         return result
 
 

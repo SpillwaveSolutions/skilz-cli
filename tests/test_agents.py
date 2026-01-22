@@ -176,7 +176,7 @@ class TestGetSkillsDir:
         """Get OpenCode user skills directory."""
         path = get_skills_dir("opencode", project_level=False)
         assert "opencode" in str(path)
-        assert "skills" in str(path)
+        assert "skill" in str(path)  # singular for opencode
 
     def test_unknown_agent_raises_error(self):
         """Unknown agent raises ValueError."""
@@ -329,7 +329,7 @@ class TestConfigIntegration:
         paths = get_agent_paths()
 
         assert paths["claude"]["user"] == custom_claude / "skills"
-        assert paths["opencode"]["user"] == custom_opencode / "skills"
+        assert paths["opencode"]["user"] == custom_opencode / "skill"  # singular
 
     def test_get_skills_dir_uses_config_paths(self, mock_config_path, tmp_path):
         """get_skills_dir should use config paths for user-level."""

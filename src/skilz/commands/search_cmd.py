@@ -63,7 +63,7 @@ def search_github_skills(
 
     # Strategy: Search for repositories with skill-related topics or names
     try:
-        search_query = f"{query} skill OR skills in:name,description"
+        search_query = f"{query} claude"
 
         # Build jq filter for parsing
         jq_filter = (
@@ -75,6 +75,8 @@ def search_github_skills(
             [
                 "gh",
                 "api",
+                "-X",
+                "GET",
                 "search/repositories",
                 "-f",
                 f"q={search_query}",
