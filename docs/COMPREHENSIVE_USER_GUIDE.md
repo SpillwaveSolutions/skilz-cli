@@ -4,7 +4,7 @@
 
 [![PyPI version](https://badge.fury.io/py/skilz.svg)](https://pypi.org/project/skilz/)
 
-Skilz is like npm or pip, but for AI coding assistants. It lets you install, manage, and share skills across 21+ AI agents from the AGENTS.md ecosystem, including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, Cursor, Aider, Windsurf, Zed AI, RooCode, Devin, and many more.
+Skilz is like npm or pip, but for AI coding assistants. It lets you install, manage, and share skills across 22+ AI agents from the AGENTS.md ecosystem, including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, Cursor, Aider, Windsurf, Zed AI, RooCode, Devin, Google Antigravity, and many more.
 
 **Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
 **Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
@@ -49,7 +49,7 @@ skilz read algorithmic-art
 
 ## Understanding Agents
 
-Skilz supports 21+ AI coding agents from the AGENTS.md ecosystem. Each agent has different capabilities:
+Skilz supports 22+ AI coding agents from the AGENTS.md ecosystem. Each agent has different capabilities:
 
 | Agent | Display Name | Home Support | Native Skills | Default Mode |
 |-------|--------------|--------------|---------------|--------------|

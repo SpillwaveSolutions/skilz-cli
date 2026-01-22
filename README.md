@@ -307,7 +307,7 @@ For complete documentation including troubleshooting and advanced examples, see 
 
 ## Supported Agents
 
-Skilz supports **21+ AI coding agents** from the [AGENTS.md](https://agents.md/) ecosystem, including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, Cursor, Aider, Windsurf, Zed AI, RooCode, Devin, and many more.
+Skilz supports **22+ AI coding agents** from the [AGENTS.md](https://agents.md/) ecosystem, including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, Cursor, Aider, Windsurf, Zed AI, RooCode, Devin, Google Antigravity, and many more.
 
 ### Skill Support Levels
 
@@ -567,7 +567,7 @@ This enables:
 | Private repositories | ✓ | ✗ | ✓ |
 | Version pinning | ✓ | ✗ | Manual |
 | Install manifest | ✓ | ✗ | ✗ |
-| Cross-agent support | ✓ (21+ agents) | ✗ | ✗ |
+| Cross-agent support | ✓ (22+ agents) | ✗ | ✗ |
 | Symlink mode | ✓ | ✗ | ✓ |
 
 ---
@@ -595,7 +595,7 @@ This enables:
 
 ### Phase 6-7 - Multi-Agent Support (Complete)
 
-- [x] 21+ AI agent support via AGENTS.md ecosystem
+- [x] 22+ AI agent support via AGENTS.md ecosystem
 - [x] Universal skills directory (`~/.skilz/skills/`)
 - [x] Copy vs symlink installation modes
 - [x] Config file sync (agentskills.io standard)
@@ -713,7 +713,7 @@ PYTHONPATH=src python -m skilz --version               # Test CLI
 
 **Skilz brings skills to all AI agents via the [AGENTS.md](https://agents.md/) standard.**
 
-Skilz follows the [agentskills.io](https://agentskills.io/) standard for skill format and supports the full AGENTS.md ecosystem of 21+ coding agents.
+Skilz follows the [agentskills.io](https://agentskills.io/) standard for skill format and supports the full AGENTS.md ecosystem of 22+ coding agents.
 
 For Claude Code users:
 - Install skills from any GitHub repository
