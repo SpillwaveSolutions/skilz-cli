@@ -178,7 +178,7 @@ skilz-cli/
 - Local skill installation (`skilz install -f /path`)
 
 ### Phase 6-7: Multi-Agent Support (COMPLETE)
-- 14 AI agent support
+- 22+ AI agent support from AGENTS.md ecosystem
 - Universal skills directory
 - Config file sync
 

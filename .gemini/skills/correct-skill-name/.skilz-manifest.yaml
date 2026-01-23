@@ -1,7 +1,7 @@
-installed_at: '2026-01-22T05:18:22+00:00'
+installed_at: '2026-01-22T23:55:39+00:00'
 skill_id: local/correct-skill-name
 git_repo: local
-skill_path: /private/var/folders/tm/chrvt43s3rbdld20ghw1qtc40000gn/T/tmpgt2y792z/wrong-name-skill
+skill_path: /private/var/folders/tm/chrvt43s3rbdld20ghw1qtc40000gn/T/tmpc6fubrle/wrong-name-skill
 git_sha: local
 skilz_version: 1.9.4
 install_mode: copy

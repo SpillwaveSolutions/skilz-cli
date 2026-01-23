@@ -8,6 +8,8 @@
 
 Skilz installs and manages AI skills (agents and tools) across multiple AI coding assistants. Think `npm install` or `pip install`, but for skills.
 
+Skilz follows the [agentskills.io](https://agentskills.io/) standard and supports the [AGENTS.md](https://agents.md/) ecosystem.
+
 **Built by [Spillwave](https://spillwave.com)** — Leaders in agentic software development.
 
 **Browse skills at [Skillzwave.ai](https://skillzwave.ai)** — The largest agent and agent skills marketplace.
@@ -305,26 +307,64 @@ For complete documentation including troubleshooting and advanced examples, see 
 
 ## Supported Agents
 
-Skilz supports 14 AI coding assistants:
+Skilz supports **22+ AI coding agents** from the [AGENTS.md](https://agents.md/) ecosystem, including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, Cursor, Aider, Windsurf, Zed AI, RooCode, Devin, Google Antigravity, and many more.
 
-| Agent | User-Level | Project-Level | Default Mode |
-|-------|------------|---------------|--------------|
-| Claude Code | `~/.claude/skills/` | `.claude/skills/` | copy |
-| OpenAI Codex | `~/.codex/skills/` | `.codex/skills/` | copy |
-| OpenCode CLI | `~/.config/opencode/skill/` | `.opencode/skill/` | copy |
-| Universal | `~/.skilz/skills/` | `.skilz/skills/` | copy |
-| Gemini CLI | - | `.skilz/skills/` | copy |
-| GitHub Copilot | - | `.github/skills/` | copy |
-| Cursor | - | `.skills/skills/` | copy |
-| Aider | - | `.skills/skills/` | copy |
-| Windsurf | - | `.skills/skills/` | copy |
-| Qwen CLI | - | `.skills/skills/` | copy |
-| Kimi CLI | - | `.skills/skills/` | copy |
-| Crush | - | `.skills/skills/` | copy |
-| Plandex | - | `.skills/skills/` | copy |
-| Zed AI | - | `.skills/skills/` | copy |
+### Skill Support Levels
 
-For detailed agent-specific instructions, see the [Comprehensive User Guide](docs/COMPREHENSIVE_USER_GUIDE.md)
+| Level | Description | Example Agents |
+|-------|-------------|----------------|
+| **Full Support** | Native skill directories at user or project level | Claude Code, OpenCode, Codex |
+| **Project Support** | Project-level installation via `--project` | Cursor, Aider, Gemini CLI |
+| **Universal** | Any AGENTS.md-compatible agent via `--agent universal` | Ona, Amp, Devin, Factory, Jules |
+
+### Full Skill Support (Native Directories)
+
+Agents with dedicated skill directories - skills install to user or project level.
+
+| Agent | User-Level | Project-Level | Notes |
+|-------|------------|---------------|-------|
+| Claude Code | `~/.claude/skills/` | `.claude/skills/` | Uses CLAUDE.md (not AGENTS.md) |
+| OpenCode CLI | `~/.config/opencode/skill/` | `.opencode/skill/` | Reads AGENTS.md |
+| OpenAI Codex | `~/.codex/skills/` | `.codex/skills/` | Reads AGENTS.md |
+| Cursor | - | `.skills/skills/` | Project only |
+| Aider | - | `.skilz/skills/` | Project only |
+| Windsurf | - | `.skilz/skills/` | Project only |
+| Zed AI | - | `.skilz/skills/` | Project only |
+| RooCode | - | `.skilz/skills/` | Project only |
+
+### Project-Only Support
+
+Agents that work with project-level skills via `--project` flag.
+
+| Agent | Project-Level | Config File | Notes |
+|-------|---------------|-------------|-------|
+| Gemini CLI | `.gemini/skills/` | - | Reads AGENTS.md natively |
+| GitHub Copilot | `.github/skills/` | - | Reads AGENTS.md natively |
+| Qwen CLI | `.skilz/skills/` | AGENTS.md | Via universal |
+| Kimi CLI | `.skilz/skills/` | AGENTS.md | Via universal |
+
+### Universal Support (AGENTS.md Compatible)
+
+All agents from the [agents.md](https://agents.md/) ecosystem work via `--agent universal --project`.
+
+| Agent | Provider | Installation Command |
+|-------|----------|---------------------|
+| Ona | - | `skilz install skill --agent universal --project` |
+| Amp | Sourcegraph | `skilz install skill --agent universal --project` |
+| Kilo Code | - | `skilz install skill --agent universal --project` |
+| Devin | Cognition | `skilz install skill --agent universal --project` |
+| Factory | Factory | `skilz install skill --agent universal --project` |
+| Jules | Google | `skilz install skill --agent universal --project` |
+| Phoenix | - | `skilz install skill --agent universal --project` |
+| Goose | - | `skilz install skill --agent universal --project` |
+| Warp | Warp | `skilz install skill --agent universal --project` |
+| VS Code | Microsoft | `skilz install skill --agent universal --project` |
+| Semgrep | Semgrep | `skilz install skill --agent universal --project` |
+| Autopilot | UiPath | `skilz install skill --agent universal --project` |
+
+**Note:** Universal support works with any agent that reads the AGENTS.md config file format. Skills are installed to `.skilz/skills/` and referenced in the project's AGENTS.md file.
+
+For detailed agent-specific instructions, see the [Supported Agents Guide](docs/SUPPORTED_AGENTS.md) and [Comprehensive User Guide](docs/COMPREHENSIVE_USER_GUIDE.md)
 
 ---
 
@@ -527,7 +567,7 @@ This enables:
 | Private repositories | ✓ | ✗ | ✓ |
 | Version pinning | ✓ | ✗ | Manual |
 | Install manifest | ✓ | ✗ | ✗ |
-| Cross-agent support | ✓ (14 agents) | ✗ | ✗ |
+| Cross-agent support | ✓ (22+ agents) | ✗ | ✗ |
 | Symlink mode | ✓ | ✗ | ✓ |
 
 ---
@@ -555,7 +595,7 @@ This enables:
 
 ### Phase 6-7 - Multi-Agent Support (Complete)
 
-- [x] 14 AI agent support (Claude, Codex, Gemini, Copilot, Cursor, Aider, etc.)
+- [x] 22+ AI agent support via AGENTS.md ecosystem
 - [x] Universal skills directory (`~/.skilz/skills/`)
 - [x] Copy vs symlink installation modes
 - [x] Config file sync (agentskills.io standard)
@@ -671,7 +711,9 @@ PYTHONPATH=src python -m skilz --version               # Test CLI
 
 ## Vision
 
-**Skilz brings Anthropic's skills system to all AI agents.**
+**Skilz brings skills to all AI agents via the [AGENTS.md](https://agents.md/) standard.**
+
+Skilz follows the [agentskills.io](https://agentskills.io/) standard for skill format and supports the full AGENTS.md ecosystem of 22+ coding agents.
 
 For Claude Code users:
 - Install skills from any GitHub repository
@@ -680,7 +722,7 @@ For Claude Code users:
 - Version-control skills in your own repositories
 
 For other agents:
-- Universal access to Claude's skills ecosystem
+- Universal access to Claude's skills ecosystem via AGENTS.md
 - Use Anthropic marketplace skills via GitHub
 - Progressive disclosure — load skills on demand
 
