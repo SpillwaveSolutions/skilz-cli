@@ -307,7 +307,7 @@ For complete documentation including troubleshooting and advanced examples, see 
 
 ## Supported Agents
 
-Skilz supports **22+ AI coding agents** from the [AGENTS.md](https://agents.md/) ecosystem, including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, Cursor, Aider, Windsurf, Zed AI, RooCode, Devin, Google Antigravity, and many more.
+Skilz supports **30+ AI coding agents** from the [AGENTS.md](https://agents.md/) ecosystem, including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, Cursor, Aider, Windsurf, Zed AI, RooCode, Devin, Google Antigravity, Qwen Code, OpenHands, Cline, Goose, and many more.
 
 ### Skill Support Levels
 
@@ -323,40 +323,55 @@ Agents with dedicated skill directories - skills install to user or project leve
 
 | Agent | User-Level | Project-Level | Notes |
 |-------|------------|---------------|-------|
+| Gemini CLI | `~/.gemini/skills/` | `.gemini/skills/` | Uses GEMINI.md |
+| OpenCode CLI | `~/.config/opencode/skill/` | `.opencode/skill/` | Reads AGENTS.md (singular path) |
+| OpenHands | `~/.openhands/skills/` | `.openhands/skills/` | Reads AGENTS.md |
 | Claude Code | `~/.claude/skills/` | `.claude/skills/` | Uses CLAUDE.md (not AGENTS.md) |
-| OpenCode CLI | `~/.config/opencode/skill/` | `.opencode/skill/` | Reads AGENTS.md |
+| Cline | `~/.cline/skills/` | `.cline/skills/` | Reads AGENTS.md |
 | OpenAI Codex | `~/.codex/skills/` | `.codex/skills/` | Reads AGENTS.md |
-| Cursor | - | `.skills/skills/` | Project only |
-| Aider | - | `.skilz/skills/` | Project only |
-| Windsurf | - | `.skilz/skills/` | Project only |
-| Zed AI | - | `.skilz/skills/` | Project only |
-| RooCode | - | `.skilz/skills/` | Project only |
+| Cursor | `~/.cursor/skills/` | `.cursor/skills/` | Native support (updated) |
+| Goose | `~/.config/goose/skills/` | `.goose/skills/` | Reads AGENTS.md |
+| Roo Code | `~/.roo/skills/` | `.roo/skills/` | Reads AGENTS.md |
+| Kilo Code | `~/.kilocode/skills/` | `.kilocode/skills/` | Reads AGENTS.md |
+| Trae | `~/.trae/skills/` | `.trae/skills/` | Reads AGENTS.md |
+| Droid | `~/.factory/skills/` | `.factory/skills/` | Reads AGENTS.md |
+| Clawdbot | `~/.clawdbot/skills/` | `skills/` | Unique project path |
+| Kiro CLI | `~/.kiro/skills/` | `.kiro/skills/` | Reads AGENTS.md |
+| Pi | `~/.pi/agent/skills/` | `.pi/skills/` | Reads AGENTS.md |
+| Neovate | `~/.neovate/skills/` | `.neovate/skills/` | Reads AGENTS.md |
+| Antigravity | `~/.gemini/antigravity/skills/` | `.agent/skills/` | Native discovery |
+| Windsurf | `~/.codeium/windsurf/skills/` | `.windsurf/skills/` | Native support (updated) |
+| GitHub Copilot | `~/.copilot/skills/` | `.github/skills/` | Native support (updated) |
+| Qwen Code | `~/.qwen/skills/` | `.qwen/skills/` | Uses QWEN.md |
+| Zencoder | `~/.zencoder/skills/` | `.zencoder/skills/` | Reads AGENTS.md |
+| Amp | `~/.config/agents/skills/` | `.agents/skills/` | Reads AGENTS.md |
+| Qoder | `~/.qoder/skills/` | `.qoder/skills/` | Reads AGENTS.md |
+| Command Code | `~/.commandcode/skills/` | `.commandcode/skills/` | Reads AGENTS.md |
 
-### Project-Only Support
+### Bridged Support (via .skilz/skills/)
 
-Agents that work with project-level skills via `--project` flag.
+Agents that use the universal `.skilz/skills/` directory with config injection.
 
 | Agent | Project-Level | Config File | Notes |
 |-------|---------------|-------------|-------|
-| Gemini CLI | `.gemini/skills/` | - | Reads AGENTS.md natively |
-| GitHub Copilot | `.github/skills/` | - | Reads AGENTS.md natively |
-| Qwen CLI | `.skilz/skills/` | AGENTS.md | Via universal |
-| Kimi CLI | `.skilz/skills/` | AGENTS.md | Via universal |
+| Aider | `.skilz/skills/` | `CONVENTIONS.md` | CLI-first agent |
+| Zed AI | `.skilz/skills/` | `AGENTS.md` | High-performance editor |
+| Crush | `.skilz/skills/` | `AGENTS.md` | - |
+| Kimi CLI | `.skilz/skills/` | `AGENTS.md` | Moonshot AI |
+| Plandex | `.skilz/skills/` | `AGENTS.md` | - |
+| Universal | `.skilz/skills/` | `AGENTS.md` | Fallback for any agent |
 
 ### Universal Support (AGENTS.md Compatible)
 
-All agents from the [agents.md](https://agents.md/) ecosystem work via `--agent universal --project`.
+Any agent can use universal mode via `--agent universal --project`:
 
 | Agent | Provider | Installation Command |
 |-------|----------|---------------------|
 | Ona | - | `skilz install skill --agent universal --project` |
-| Amp | Sourcegraph | `skilz install skill --agent universal --project` |
-| Kilo Code | - | `skilz install skill --agent universal --project` |
 | Devin | Cognition | `skilz install skill --agent universal --project` |
 | Factory | Factory | `skilz install skill --agent universal --project` |
 | Jules | Google | `skilz install skill --agent universal --project` |
 | Phoenix | - | `skilz install skill --agent universal --project` |
-| Goose | - | `skilz install skill --agent universal --project` |
 | Warp | Warp | `skilz install skill --agent universal --project` |
 | VS Code | Microsoft | `skilz install skill --agent universal --project` |
 | Semgrep | Semgrep | `skilz install skill --agent universal --project` |

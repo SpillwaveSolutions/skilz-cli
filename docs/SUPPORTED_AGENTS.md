@@ -4,7 +4,7 @@ Skilz supports **22+ AI coding agents** from the [AGENTS.md](https://agents.md/)
 
 ## Agent Categories
 
-### Full Skill Support (Native Directories)
+### Full Skill Support (Native Agent Directories)
 
 Agents with dedicated skill directories at user or project level.
 
@@ -28,6 +28,27 @@ Agents with dedicated skill directories at user or project level.
 **Description:** OpenAI Codex is a general-purpose code generation model and API that underpins several AI coding experiences. It transforms natural language instructions into code across many languages and performs structured edits on existing codebases.
 **Skill Directory:** `~/.codex/skills/` (user-level), `.codex/skills/` (project-level)
 **Notes:** Reads AGENTS.md natively
+
+
+#### Gemini CLI
+**Provider:** Google
+**Website:** [ai.google.dev](https://ai.google.dev)
+**Description:** Gemini CLI is a command-line client for interacting with Google's Gemini models, including coding workflows and agents. It provides scriptable, model-centric interface for code generation and repository modification.
+**Skill Directory:**  `~/.gemini/skills/` (user-level), `.gemini/skills/` (project-level)
+**Notes:** Requires `experimental.skills` plugin, reads AGENTS.md via `.gemini/settings.json`
+
+#### GitHub Copilot
+**Provider:** GitHub/Microsoft
+**Website:** [github.com/copilot](https://github.com/copilot)
+**Description:** GitHub Copilot represents the autonomous evolution of Copilot, expanding from inline completions to task-oriented multi-file edits. It leverages GitHub's ecosystem for context-aware coding assistance.
+**Skill Directory:** `.github/skills/` (project-level)
+**Notes:** Reads AGENTS.md natively, project only, but native.
+
+
+---
+
+
+### Full support but bridged
 
 #### Cursor
 **Provider:** Anysphere
@@ -64,30 +85,6 @@ Agents with dedicated skill directories at user or project level.
 **Skill Directory:** `.skilz/skills/` (project-level only)
 **Notes:** Project-only installation
 
-### Project-Only Support
-
-Agents that work with project-level skills via `--project` flag.
-
-#### Gemini CLI
-**Provider:** Google
-**Website:** [ai.google.dev](https://ai.google.dev)
-**Description:** Gemini CLI is a command-line client for interacting with Google's Gemini models, including coding workflows and agents. It provides scriptable, model-centric interface for code generation and repository modification.
-**Skill Directory:** `.gemini/skills/` (project-level)
-**Notes:** Requires `experimental.skills` plugin, reads AGENTS.md via `.gemini/settings.json`
-
-#### GitHub Copilot
-**Provider:** GitHub/Microsoft
-**Website:** [github.com/copilot](https://github.com/copilot)
-**Description:** GitHub Copilot represents the autonomous evolution of Copilot, expanding from inline completions to task-oriented multi-file edits. It leverages GitHub's ecosystem for context-aware coding assistance.
-**Skill Directory:** `.github/skills/` (project-level)
-**Notes:** Reads AGENTS.md natively
-
-#### Qwen CLI
-**Provider:** Alibaba Cloud
-**Website:** [qwenlm.ai](https://qwenlm.ai)
-**Description:** Qwen CLI provides AI-assisted coding capabilities with support for multiple programming languages and development workflows.
-**Skill Directory:** `.skilz/skills/` (project-level)
-**Notes:** Via universal agent
 
 #### Kimi CLI
 **Provider:** Moonshot AI
@@ -96,7 +93,11 @@ Agents that work with project-level skills via `--project` flag.
 **Skill Directory:** `.skilz/skills/` (project-level)
 **Notes:** Via universal agent
 
-### Universal Support (AGENTS.md Compatible)
+---
+---
+### Universal Support 
+AGENTS.md Compatible, bridged. 
+These are all project only.
 
 All agents from the AGENTS.md ecosystem work via `--agent universal --project`.
 
@@ -179,6 +180,7 @@ All agents from the AGENTS.md ecosystem work via `--agent universal --project`.
 - OpenAI Codex → `~/.codex/skills/`
 - OpenCode CLI → `~/.config/opencode/skill/`
 - Universal → `~/.skilz/skills/`
+- Gemini CLI → `~/.gemini/skills/`
 
 ### Project-Level Support
 - Gemini CLI → `.gemini/skills/`
