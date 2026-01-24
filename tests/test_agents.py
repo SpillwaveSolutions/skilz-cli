@@ -70,16 +70,16 @@ class TestDetectAgent:
 
         assert agent == "gemini"
 
-    def test_detect_claude_priority_over_gemini(self, temp_dir, monkeypatch):
-        """Claude takes priority over Gemini when both present (SKILZ-49)."""
+    def test_detect_gemini_priority_over_claude(self, temp_dir, monkeypatch):
+        """Gemini takes priority over Claude when both present (Issue #49 popularity order)."""
         # Create both .claude and .gemini in project
         (temp_dir / ".claude").mkdir()
         (temp_dir / ".gemini").mkdir()
 
         agent = detect_agent(temp_dir)
 
-        # Claude should be detected first
-        assert agent == "claude"
+        # Gemini should be detected first (highest priority in Issue #49 table)
+        assert agent == "gemini"
 
     def test_detect_codex_from_project_dir(self, temp_dir, monkeypatch):
         """Detect Codex from .codex in project directory (BUG-001)."""
@@ -356,3 +356,178 @@ class TestConfigIntegration:
         paths = get_agent_paths()
 
         assert paths["claude"]["user"] == env_claude_home / "skills"
+
+
+class TestNewAgentDetection:
+    """Tests for new agent detection (Issues #46, #47, #49)."""
+
+    def test_detect_qwen_from_project_dir(self, temp_dir):
+        """Detect Qwen Code from .qwen in project directory (Issue #46)."""
+        (temp_dir / ".qwen").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "qwen"
+
+    def test_detect_antigravity_from_project_dir(self, temp_dir):
+        """Detect Antigravity from .agent in project directory (Issue #47)."""
+        (temp_dir / ".agent").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "antigravity"
+
+    def test_detect_openhands_from_project_dir(self, temp_dir):
+        """Detect OpenHands from .openhands in project directory (Issue #49)."""
+        (temp_dir / ".openhands").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "openhands"
+
+    def test_detect_cline_from_project_dir(self, temp_dir):
+        """Detect Cline from .cline in project directory (Issue #49)."""
+        (temp_dir / ".cline").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "cline"
+
+    def test_detect_goose_from_project_dir(self, temp_dir):
+        """Detect Goose from .goose in project directory (Issue #49)."""
+        (temp_dir / ".goose").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "goose"
+
+    def test_detect_roo_from_project_dir(self, temp_dir):
+        """Detect Roo Code from .roo in project directory (Issue #49)."""
+        (temp_dir / ".roo").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "roo"
+
+    def test_detect_kilo_from_project_dir(self, temp_dir):
+        """Detect Kilo Code from .kilocode in project directory (Issue #49)."""
+        (temp_dir / ".kilocode").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "kilo"
+
+    def test_detect_trae_from_project_dir(self, temp_dir):
+        """Detect Trae from .trae in project directory (Issue #49)."""
+        (temp_dir / ".trae").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "trae"
+
+    def test_detect_droid_from_project_dir(self, temp_dir):
+        """Detect Droid from .factory in project directory (Issue #49)."""
+        (temp_dir / ".factory").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "droid"
+
+    def test_detect_kiro_cli_from_project_dir(self, temp_dir):
+        """Detect Kiro CLI from .kiro in project directory (Issue #49)."""
+        (temp_dir / ".kiro").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "kiro-cli"
+
+    def test_detect_pi_from_project_dir(self, temp_dir):
+        """Detect Pi from .pi in project directory (Issue #49)."""
+        (temp_dir / ".pi").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "pi"
+
+    def test_detect_neovate_from_project_dir(self, temp_dir):
+        """Detect Neovate from .neovate in project directory (Issue #49)."""
+        (temp_dir / ".neovate").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "neovate"
+
+    def test_detect_windsurf_from_project_dir(self, temp_dir):
+        """Detect Windsurf from .windsurf in project directory (Issue #49)."""
+        (temp_dir / ".windsurf").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "windsurf"
+
+    def test_detect_zencoder_from_project_dir(self, temp_dir):
+        """Detect Zencoder from .zencoder in project directory (Issue #49)."""
+        (temp_dir / ".zencoder").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "zencoder"
+
+    def test_detect_amp_from_project_dir(self, temp_dir):
+        """Detect Amp from .agents in project directory (Issue #49)."""
+        (temp_dir / ".agents").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "amp"
+
+    def test_detect_qoder_from_project_dir(self, temp_dir):
+        """Detect Qoder from .qoder in project directory (Issue #49)."""
+        (temp_dir / ".qoder").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "qoder"
+
+    def test_detect_command_code_from_project_dir(self, temp_dir):
+        """Detect Command Code from .commandcode in project directory (Issue #49)."""
+        (temp_dir / ".commandcode").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "command-code"
+
+    def test_detect_clawdbot_from_skills_dir(self, temp_dir):
+        """Detect Clawdbot from skills/ directory with SKILL.md files (Issue #49)."""
+        skills_dir = temp_dir / "skills"
+        skills_dir.mkdir()
+
+        # Create a skill directory with SKILL.md to simulate Clawdbot
+        skill_dir = skills_dir / "test-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# Test Skill")
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "clawdbot"
+
+    def test_detect_priority_order(self, temp_dir):
+        """Test that detection follows priority order from Issue #49 table."""
+        # Create multiple agent markers - Gemini should win (highest priority)
+        (temp_dir / ".gemini").mkdir()
+        (temp_dir / ".claude").mkdir()
+        (temp_dir / ".qwen").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "gemini"  # Highest priority in Issue #49 table
+
+    def test_detect_opencode_priority(self, temp_dir):
+        """Test that OpenCode has high priority after Gemini."""
+        (temp_dir / ".opencode").mkdir()
+        (temp_dir / ".claude").mkdir()
+        (temp_dir / ".qwen").mkdir()
+
+        agent = detect_agent(temp_dir)
+
+        assert agent == "opencode"  # Second highest priority

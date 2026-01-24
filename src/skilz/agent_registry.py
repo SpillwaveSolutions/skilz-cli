@@ -1,7 +1,7 @@
 """Agent registry for multi-agent CLI support.
 
 This module provides a configurable registry of AI coding assistants,
-enabling support for 14+ agents following the agentskills.io open standard.
+enabling support for 30+ agents following the agentskills.io open standard.
 
 The registry can be customized via ~/.config/skilz/config.json.
 """
@@ -161,10 +161,10 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
         "copilot": AgentConfig(
             name="copilot",
             display_name="GitHub Copilot",
-            home_dir=None,
+            home_dir=Path.home() / ".copilot" / "skills",  # Added global support
             project_dir=Path(".github") / "skills",  # Copilot native skills dir
             config_files=(".github/copilot-instructions.md",),
-            supports_home=False,
+            supports_home=True,  # Changed from False
             default_mode="copy",
             native_skill_support="all",  # Copilot reads .github/skills/ natively
         ),
@@ -181,33 +181,33 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
         "cursor": AgentConfig(
             name="cursor",
             display_name="Cursor",
-            home_dir=None,
-            project_dir=Path(".skilz") / "skills",
+            home_dir=Path.home() / ".cursor" / "skills",  # Added global support
+            project_dir=Path(".cursor") / "skills",  # Changed from .skilz
             config_files=(".cursor/rules/RULES.md", ".cursor/rules/RULE.md"),
-            supports_home=False,
+            supports_home=True,  # Changed from False
             default_mode="copy",
-            native_skill_support="none",
+            native_skill_support="all",  # Changed from none
             uses_folder_rules=True,
         ),
         "windsurf": AgentConfig(
             name="windsurf",
             display_name="Windsurf",
-            home_dir=None,
-            project_dir=Path(".skilz") / "skills",
-            config_files=(),
-            supports_home=False,
+            home_dir=Path.home() / ".codeium" / "windsurf" / "skills",  # Added global support
+            project_dir=Path(".windsurf") / "skills",  # Changed from .skilz
+            config_files=("AGENTS.md",),  # Added config file
+            supports_home=True,  # Changed from False
             default_mode="copy",
-            native_skill_support="none",
+            native_skill_support="all",  # Changed from none
         ),
         "qwen": AgentConfig(
             name="qwen",
-            display_name="Qwen CLI",
-            home_dir=None,
-            project_dir=Path(".skilz") / "skills",
-            config_files=("QWEN.md", "CONTEXT.md"),
-            supports_home=False,
+            display_name="Qwen Code",
+            home_dir=Path.home() / ".qwen" / "skills",  # Added global support
+            project_dir=Path(".qwen") / "skills",  # Changed from .skilz
+            config_files=("QWEN.md",),  # Simplified config files
+            supports_home=True,  # Changed from False
             default_mode="copy",
-            native_skill_support="none",
+            native_skill_support="all",  # Changed from none - Issue #46
         ),
         "crush": AgentConfig(
             name="crush",
@@ -248,6 +248,167 @@ def _create_builtin_agents() -> dict[str, AgentConfig]:
             supports_home=False,
             default_mode="copy",
             native_skill_support="none",
+        ),
+        # NEW AGENTS (Issues #46, #47, #49)
+        "antigravity": AgentConfig(
+            name="antigravity",
+            display_name="Google Antigravity",
+            home_dir=Path.home() / ".gemini" / "antigravity" / "skills",
+            project_dir=Path(".agent") / "skills",
+            config_files=(),  # Native discovery
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "openhands": AgentConfig(
+            name="openhands",
+            display_name="OpenHands",
+            home_dir=Path.home() / ".openhands" / "skills",
+            project_dir=Path(".openhands") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "cline": AgentConfig(
+            name="cline",
+            display_name="Cline",
+            home_dir=Path.home() / ".cline" / "skills",
+            project_dir=Path(".cline") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "goose": AgentConfig(
+            name="goose",
+            display_name="Goose",
+            home_dir=Path.home() / ".config" / "goose" / "skills",
+            project_dir=Path(".goose") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "roo": AgentConfig(
+            name="roo",
+            display_name="Roo Code",
+            home_dir=Path.home() / ".roo" / "skills",
+            project_dir=Path(".roo") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "kilo": AgentConfig(
+            name="kilo",
+            display_name="Kilo Code",
+            home_dir=Path.home() / ".kilocode" / "skills",
+            project_dir=Path(".kilocode") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "trae": AgentConfig(
+            name="trae",
+            display_name="Trae",
+            home_dir=Path.home() / ".trae" / "skills",
+            project_dir=Path(".trae") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "droid": AgentConfig(
+            name="droid",
+            display_name="Droid",
+            home_dir=Path.home() / ".factory" / "skills",
+            project_dir=Path(".factory") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "clawdbot": AgentConfig(
+            name="clawdbot",
+            display_name="Clawdbot",
+            home_dir=Path.home() / ".clawdbot" / "skills",
+            project_dir=Path("skills"),  # Unique: project root skills/
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "kiro-cli": AgentConfig(
+            name="kiro-cli",
+            display_name="Kiro CLI",
+            home_dir=Path.home() / ".kiro" / "skills",
+            project_dir=Path(".kiro") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "pi": AgentConfig(
+            name="pi",
+            display_name="Pi",
+            home_dir=Path.home() / ".pi" / "agent" / "skills",
+            project_dir=Path(".pi") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "neovate": AgentConfig(
+            name="neovate",
+            display_name="Neovate",
+            home_dir=Path.home() / ".neovate" / "skills",
+            project_dir=Path(".neovate") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "zencoder": AgentConfig(
+            name="zencoder",
+            display_name="Zencoder",
+            home_dir=Path.home() / ".zencoder" / "skills",
+            project_dir=Path(".zencoder") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "amp": AgentConfig(
+            name="amp",
+            display_name="Amp",
+            home_dir=Path.home() / ".config" / "agents" / "skills",
+            project_dir=Path(".agents") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "qoder": AgentConfig(
+            name="qoder",
+            display_name="Qoder",
+            home_dir=Path.home() / ".qoder" / "skills",
+            project_dir=Path(".qoder") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
+        ),
+        "command-code": AgentConfig(
+            name="command-code",
+            display_name="Command Code",
+            home_dir=Path.home() / ".commandcode" / "skills",
+            project_dir=Path(".commandcode") / "skills",
+            config_files=("AGENTS.md",),
+            supports_home=True,
+            default_mode="copy",
+            native_skill_support="all",
         ),
         "universal": AgentConfig(
             name="universal",

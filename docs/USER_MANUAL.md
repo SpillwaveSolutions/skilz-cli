@@ -1,8 +1,8 @@
 # Skilz User Manual
 
-**Version 1.9.0**
+**Version 1.10.0**
 
-Skilz is the universal package manager for AI skills. It installs, manages, and updates skills across multiple AI coding assistants including Claude Code and OpenCode.
+Skilz is the universal package manager for AI skills. It installs, manages, and updates skills across 30+ AI coding assistants including Claude Code, OpenCode, Gemini CLI, OpenHands, Cline, Goose, Roo Code, GitHub Copilot, Cursor, Windsurf, and many more.
 
 **Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
 **Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
@@ -128,7 +128,7 @@ skilz install <skill-id> [options]
 **Options:**
 | Option | Description |
 |--------|-------------|
-| `--agent {claude,opencode}` | Target agent. Auto-detected if not specified. |
+| `--agent {gemini,opencode,openhands,claude,cline,codex,goose,roo,kilo,trae,droid,clawdbot,kiro-cli,pi,neovate,antigravity,cursor,windsurf,copilot,qwen,zencoder,amp,qoder,command-code,universal,aider,zed,crush,kimi,plandex}` | Target agent. Auto-detected if not specified. |
 | `--project` | Install to project directory instead of user directory |
 | `-f, --file PATH` | Install from local filesystem path |
 | `-g, --git URL` | Install from Git repository URL |
@@ -145,6 +145,9 @@ skilz install anthropics_skills/theme-factory
 # Install for specific agent
 skilz install anthropics_skills/theme-factory --agent claude
 skilz install anthropics_skills/theme-factory --agent opencode
+skilz install anthropics_skills/theme-factory --agent gemini
+skilz install anthropics_skills/theme-factory --agent openhands
+skilz install anthropics_skills/theme-factory --agent cline
 
 # Install from local filesystem
 skilz install -f ~/.claude/skills/design-doc-mermaid --project --agent gemini
@@ -282,7 +285,7 @@ skilz list [options]
 **Options:**
 | Option | Description |
 |--------|-------------|
-| `--agent {claude,opencode,...}` | Filter by agent type |
+| `--agent {gemini,opencode,openhands,claude,cline,...}` | Filter by agent type |
 | `--project` | List project-level skills instead of user-level |
 | `--all` | Scan all agents (default: top 5) |
 | `--json` | Output as JSON (for scripting) |
@@ -362,7 +365,7 @@ skilz update [skill-id] [options]
 **Options:**
 | Option | Description |
 |--------|-------------|
-| `--agent {claude,opencode}` | Filter by agent type |
+| `--agent {gemini,opencode,openhands,claude,cline,...}` | Filter by agent type |
 | `--project` | Update project-level skills instead of user-level |
 | `--dry-run` | Show what would be updated without making changes |
 | `-v, --verbose` | Show detailed output |
@@ -428,7 +431,7 @@ skilz rm <skill-id> [options]  # Unix-style alias
 **Options:**
 | Option | Description |
 |--------|-------------|
-| `--agent {claude,opencode}` | Filter by agent type |
+| `--agent {gemini,opencode,openhands,claude,cline,...}` | Filter by agent type |
 | `--project` | Uninstall from project-level instead of user-level |
 | `-y, --yes` | Skip confirmation prompt |
 | `-v, --verbose` | Show detailed output |
@@ -866,9 +869,12 @@ If you don't specify `--agent`, Skilz auto-detects based on:
 **Installing to multiple agents:**
 
 ```bash
-# Install to both agents
+# Install to multiple agents
 skilz install plantuml --agent claude
 skilz install plantuml --agent opencode
+skilz install plantuml --agent gemini
+skilz install plantuml --agent openhands
+skilz install plantuml --agent cline
 ```
 
 ### Gemini CLI Support (NEW in 1.7)
@@ -1455,19 +1461,30 @@ No skills installed.
 
 
 
-# Install a skill to user's skills opencode
-```
+# Install a skill to user's skills for different agents
+```bash
+# OpenCode CLI
 skilz install anthropics_skills/algorithmic-art --agent opencode
 skilz list --agent opencode
-ls  ~/.config/opencode/skills/algorithmic-art
+ls ~/.config/opencode/skill/algorithmic-art
 
+# Gemini CLI
+skilz install anthropics_skills/algorithmic-art --agent gemini
+skilz list --agent gemini
+ls ~/.gemini/skills/algorithmic-art
+
+# OpenHands
+skilz install anthropics_skills/algorithmic-art --agent openhands
+skilz list --agent openhands
+ls ~/.openhands/skills/algorithmic-art
 ```
 
+# Remove a skill from user's skills
 
-# Remove a skill from user's skills opencode
-
-```
+```bash
 skilz remove anthropics_skills/algorithmic-art --agent opencode
+skilz remove anthropics_skills/algorithmic-art --agent gemini
+skilz remove anthropics_skills/algorithmic-art --agent openhands
 ls  ~/.config/opencode/skills/algorithmic-art
 skilz list --agent opencode
 ```

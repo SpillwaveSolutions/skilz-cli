@@ -116,11 +116,12 @@ class TestAgentConfig:
 class TestBuiltinAgents:
     """Tests for built-in agent definitions."""
 
-    def test_all_14_agents_present(self):
-        """All 14 built-in agents are defined."""
+    def test_all_30_plus_agents_present(self):
+        """All 30+ built-in agents are defined (updated for Issues #46, #47, #49)."""
         agents = get_builtin_agents()
 
-        expected_agents = [
+        # Original agents
+        original_agents = [
             "claude",
             "opencode",
             "codex",
@@ -137,9 +138,36 @@ class TestBuiltinAgents:
             "universal",
         ]
 
-        assert len(agents) == 14
-        for agent in expected_agents:
-            assert agent in agents, f"Missing agent: {agent}"
+        # New agents from Issues #46, #47, #49
+        new_agents = [
+            "antigravity",  # Issue #47
+            "openhands",
+            "cline",
+            "goose",
+            "roo",
+            "kilo",
+            "trae",
+            "droid",  # Issue #49
+            "clawdbot",
+            "kiro-cli",
+            "pi",
+            "neovate",
+            "zencoder",
+            "amp",
+            "qoder",
+            "command-code",  # Issue #49
+        ]
+
+        # Verify all original agents are still present
+        for agent in original_agents:
+            assert agent in agents, f"Original agent '{agent}' missing"
+
+        # Verify all new agents are present
+        for agent in new_agents:
+            assert agent in agents, f"New agent '{agent}' missing"
+
+        assert len(agents) >= 30  # Updated for new agents
+        # All agents should be present (checked above), f"Missing agent: {agent}"
 
     def test_claude_config(self):
         """Claude agent has correct configuration."""
@@ -196,15 +224,15 @@ class TestBuiltinAgents:
         assert universal.native_skill_support == "none"  # Not native
 
     def test_copilot_native_support(self):
-        """Copilot should have native skill support (SKILZ-54)."""
+        """Copilot should have native skill support with global support (updated for Issue #49)."""
         agents = get_builtin_agents()
         copilot = agents["copilot"]
 
         assert copilot.name == "copilot"
         assert copilot.display_name == "GitHub Copilot"
-        assert copilot.home_dir is None  # No home dir support
+        assert copilot.home_dir == Path.home() / ".copilot" / "skills"  # Added global support
         assert copilot.project_dir == Path(".github") / "skills"  # Native location
-        assert copilot.supports_home is False
+        assert copilot.supports_home is True  # Updated for Issue #49
         assert copilot.default_mode == "copy"
         assert copilot.native_skill_support == "all"  # Skip config sync
 
@@ -231,7 +259,7 @@ class TestAgentRegistry:
         registry = AgentRegistry()
 
         agents = registry.list_agents()
-        assert len(agents) == 14
+        assert len(agents) >= 30  # Updated for new agents (Issues #46, #47, #49)
         assert "claude" in agents
         assert "gemini" in agents
 
@@ -528,6 +556,227 @@ class TestModuleSingleton:
         choices = get_agent_choices()
 
         assert isinstance(choices, list)
-        assert len(choices) == 14
+        assert len(choices) >= 30  # Updated for new agents
         assert "claude" in choices
         assert "gemini" in choices
+
+
+class TestNewAgents:
+    """Tests for new agents added in Issues #46, #47, #49."""
+
+    def test_qwen_agent_config(self):
+        """Test Qwen Code agent configuration (Issue #46)."""
+        registry = AgentRegistry()
+        agent = registry.get("qwen")
+
+        assert agent is not None
+        assert agent.display_name == "Qwen Code"
+        assert agent.project_dir == Path(".qwen") / "skills"
+        assert agent.home_dir == Path.home() / ".qwen" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+        assert "QWEN.md" in agent.config_files
+
+    def test_antigravity_agent_config(self):
+        """Test Antigravity agent configuration (Issue #47)."""
+        registry = AgentRegistry()
+        agent = registry.get("antigravity")
+
+        assert agent is not None
+        assert agent.display_name == "Google Antigravity"
+        assert agent.project_dir == Path(".agent") / "skills"
+        assert agent.home_dir == Path.home() / ".gemini" / "antigravity" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+        assert agent.config_files == ()  # Native discovery
+
+    def test_openhands_agent_config(self):
+        """Test OpenHands agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("openhands")
+
+        assert agent is not None
+        assert agent.display_name == "OpenHands"
+        assert agent.project_dir == Path(".openhands") / "skills"
+        assert agent.home_dir == Path.home() / ".openhands" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_cline_agent_config(self):
+        """Test Cline agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("cline")
+
+        assert agent is not None
+        assert agent.display_name == "Cline"
+        assert agent.project_dir == Path(".cline") / "skills"
+        assert agent.home_dir == Path.home() / ".cline" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_goose_agent_config(self):
+        """Test Goose agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("goose")
+
+        assert agent is not None
+        assert agent.display_name == "Goose"
+        assert agent.project_dir == Path(".goose") / "skills"
+        assert agent.home_dir == Path.home() / ".config" / "goose" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_roo_agent_config(self):
+        """Test Roo Code agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("roo")
+
+        assert agent is not None
+        assert agent.display_name == "Roo Code"
+        assert agent.project_dir == Path(".roo") / "skills"
+        assert agent.home_dir == Path.home() / ".roo" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_kilo_agent_config(self):
+        """Test Kilo Code agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("kilo")
+
+        assert agent is not None
+        assert agent.display_name == "Kilo Code"
+        assert agent.project_dir == Path(".kilocode") / "skills"
+        assert agent.home_dir == Path.home() / ".kilocode" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_trae_agent_config(self):
+        """Test Trae agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("trae")
+
+        assert agent is not None
+        assert agent.display_name == "Trae"
+        assert agent.project_dir == Path(".trae") / "skills"
+        assert agent.home_dir == Path.home() / ".trae" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_droid_agent_config(self):
+        """Test Droid agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("droid")
+
+        assert agent is not None
+        assert agent.display_name == "Droid"
+        assert agent.project_dir == Path(".factory") / "skills"
+        assert agent.home_dir == Path.home() / ".factory" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_clawdbot_agent_config(self):
+        """Test Clawdbot agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("clawdbot")
+
+        assert agent is not None
+        assert agent.display_name == "Clawdbot"
+        assert agent.project_dir == Path("skills")  # Unique: project root
+        assert agent.home_dir == Path.home() / ".clawdbot" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_kiro_cli_agent_config(self):
+        """Test Kiro CLI agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("kiro-cli")
+
+        assert agent is not None
+        assert agent.display_name == "Kiro CLI"
+        assert agent.project_dir == Path(".kiro") / "skills"
+        assert agent.home_dir == Path.home() / ".kiro" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_pi_agent_config(self):
+        """Test Pi agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("pi")
+
+        assert agent is not None
+        assert agent.display_name == "Pi"
+        assert agent.project_dir == Path(".pi") / "skills"
+        assert agent.home_dir == Path.home() / ".pi" / "agent" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_neovate_agent_config(self):
+        """Test Neovate agent configuration (Issue #49)."""
+        registry = AgentRegistry()
+        agent = registry.get("neovate")
+
+        assert agent is not None
+        assert agent.display_name == "Neovate"
+        assert agent.project_dir == Path(".neovate") / "skills"
+        assert agent.home_dir == Path.home() / ".neovate" / "skills"
+        assert agent.supports_home is True
+        assert agent.native_skill_support == "all"
+
+    def test_updated_agents_have_native_support(self):
+        """Test that updated agents now have native support."""
+        registry = AgentRegistry()
+
+        # Test Cursor (updated from bridged to native)
+        cursor = registry.get("cursor")
+        assert cursor is not None
+        assert cursor.project_dir == Path(".cursor") / "skills"
+        assert cursor.home_dir == Path.home() / ".cursor" / "skills"
+        assert cursor.supports_home is True
+        assert cursor.native_skill_support == "all"
+
+        # Test Windsurf (updated from bridged to native)
+        windsurf = registry.get("windsurf")
+        assert windsurf is not None
+        assert windsurf.project_dir == Path(".windsurf") / "skills"
+        assert windsurf.home_dir == Path.home() / ".codeium" / "windsurf" / "skills"
+        assert windsurf.supports_home is True
+        assert windsurf.native_skill_support == "all"
+
+        # Test GitHub Copilot (added global support)
+        copilot = registry.get("copilot")
+        assert copilot is not None
+        assert copilot.project_dir == Path(".github") / "skills"
+        assert copilot.home_dir == Path.home() / ".copilot" / "skills"
+        assert copilot.supports_home is True
+        assert copilot.native_skill_support == "all"
+
+    def test_all_new_agents_are_registered(self):
+        """Test that all new agents from Issues #46, #47, #49 are registered."""
+        registry = AgentRegistry()
+        agents = registry.list_agents()
+
+        # New agents from the issues
+        new_agents = [
+            "antigravity",  # Issue #47
+            "openhands",
+            "cline",
+            "goose",
+            "roo",
+            "kilo",
+            "trae",
+            "droid",  # Issue #49
+            "clawdbot",
+            "kiro-cli",
+            "pi",
+            "neovate",
+            "zencoder",
+            "amp",
+            "qoder",
+            "command-code",  # Issue #49
+        ]
+
+        for agent_name in new_agents:
+            assert agent_name in agents, f"Agent '{agent_name}' not found in registry"
+
+        # Verify total count is at least 30
+        assert len(agents) >= 30, f"Expected at least 30 agents, got {len(agents)}"

@@ -4,7 +4,7 @@
 
 [![PyPI version](https://badge.fury.io/py/skilz.svg)](https://pypi.org/project/skilz/)
 
-Skilz is like npm or pip, but for AI coding assistants. It lets you install, manage, and share skills across 22+ AI agents from the AGENTS.md ecosystem, including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, Cursor, Aider, Windsurf, Zed AI, RooCode, Devin, Google Antigravity, and many more.
+Skilz is like npm or pip, but for AI coding assistants. It lets you install, manage, and share skills across 30+ AI agents from the AGENTS.md ecosystem, including Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, Cursor, Aider, Windsurf, Zed AI, OpenHands, Cline, Goose, Roo Code, Google Antigravity, and many more.
 
 **Browse skills:** [skillzwave.ai](https://skillzwave.ai) — The largest agent and agent skills marketplace
 **Built by:** [Spillwave](https://spillwave.com) — Leaders in agentic software development
@@ -49,35 +49,51 @@ skilz read algorithmic-art
 
 ## Understanding Agents
 
-Skilz supports 22+ AI coding agents from the AGENTS.md ecosystem. Each agent has different capabilities:
+Skilz supports 30+ AI coding agents from the AGENTS.md ecosystem. Each agent has different capabilities:
 
 | Agent | Display Name | Home Support | Native Skills | Default Mode |
 |-------|--------------|--------------|---------------|--------------|
-| `claude` | Claude Code | ✅ Yes | All | copy |
-| `codex` | OpenAI Codex | ✅ Yes | All | copy |
+| `gemini` | Gemini CLI | ✅ Yes | All | copy |
 | `opencode` | OpenCode CLI | ✅ Yes | All | copy |
+| `openhands` | OpenHands | ✅ Yes | All | copy |
+| `claude` | Claude Code | ✅ Yes | All | copy |
+| `cline` | Cline | ✅ Yes | All | copy |
+| `codex` | OpenAI Codex | ✅ Yes | All | copy |
+| `goose` | Goose | ✅ Yes | All | copy |
+| `roo` | Roo Code | ✅ Yes | All | copy |
+| `kilo` | Kilo Code | ✅ Yes | All | copy |
+| `trae` | Trae | ✅ Yes | All | copy |
+| `droid` | Droid | ✅ Yes | All | copy |
+| `clawdbot` | Clawdbot | ✅ Yes | All | copy |
+| `kiro-cli` | Kiro CLI | ✅ Yes | All | copy |
+| `pi` | Pi | ✅ Yes | All | copy |
+| `neovate` | Neovate | ✅ Yes | All | copy |
+| `antigravity` | Google Antigravity | ✅ Yes | All | copy |
+| `cursor` | Cursor | ✅ Yes | All | copy |
+| `windsurf` | Windsurf | ✅ Yes | All | copy |
+| `copilot` | GitHub Copilot | ✅ Yes | All | copy |
+| `qwen` | Qwen Code | ✅ Yes | All | copy |
+| `zencoder` | Zencoder | ✅ Yes | All | copy |
+| `amp` | Amp | ✅ Yes | All | copy |
+| `qoder` | Qoder | ✅ Yes | All | copy |
+| `command-code` | Command Code | ✅ Yes | All | copy |
 | `universal` | Universal (Skilz) | ✅ Yes | None | copy |
-| `gemini` | Gemini CLI | ❌ No | None | copy |
-| `copilot` | GitHub Copilot | ❌ No | None | copy |
-| `cursor` | Cursor | ❌ No | None | copy |
 | `aider` | Aider | ❌ No | None | copy |
-| `windsurf` | Windsurf | ❌ No | None | copy |
-| `qwen` | Qwen CLI | ❌ No | None | copy |
-| `kimi` | Kimi CLI | ❌ No | None | copy |
-| `crush` | Crush | ❌ No | None | copy |
-| `plandex` | Plandex | ❌ No | None | copy |
 | `zed` | Zed AI | ❌ No | None | copy |
+| `crush` | Crush | ❌ No | None | copy |
+| `kimi` | Kimi CLI | ❌ No | None | copy |
+| `plandex` | Plandex | ❌ No | None | copy |
 
 ### What "Home Support" Means
 
-- **Home Support = Yes**: Skills can be installed at the user level (`~/.claude/skills/`) and are available across all projects
+- **Home Support = Yes**: Skills can be installed at the user level (e.g., `~/.claude/skills/`, `~/.gemini/skills/`) and are available across all projects
 - **Home Support = No**: Skills must be installed per-project (in the current working directory)
 
 ### What "Native Skills" Means
 
-- **All**: Agent has built-in skill loading (like Claude Code's `/skill` command)
+- **All**: Agent has built-in skill loading and reads skills natively from their dedicated directories
 - **Home only**: Agent loads skills from home directory only
-- **None**: Agent needs config file injection to discover skills
+- **None**: Agent needs config file injection to discover skills (uses universal bridge)
 
 ---
 
@@ -113,8 +129,11 @@ skilz install spillwave/plantuml --symlink
 | GitHub Copilot | **Copy** (workspace sandboxed) |
 | Claude Code | Copy or Symlink (both work) |
 | OpenAI Codex | Copy or Symlink (both work) |
-| Aider, Cursor, etc. | **Copy** (safer default) |
-| Disk space constrained + Claude | **Symlink** |
+| OpenCode CLI | Copy or Symlink (both work) |
+| OpenHands | Copy or Symlink (both work) |
+| Cline, Goose, Roo, etc. | **Copy** (safer default) |
+| Aider, Cursor, Windsurf | **Copy** (safer default) |
+| Disk space constrained + Native agents | **Symlink** |
 
 ---
 

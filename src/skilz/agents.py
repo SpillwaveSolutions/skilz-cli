@@ -4,7 +4,7 @@ This module provides backward-compatible functions for agent detection
 and path resolution. It delegates to the agent_registry module for the
 actual agent configurations.
 
-Supports 14+ AI coding assistants following the agentskills.io standard.
+Supports 30+ AI coding assistants following the agentskills.io standard.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ AgentType = Literal["claude", "opencode"]
 
 # Extended agent type including all supported agents
 ExtendedAgentType = Literal[
+    # Original agents
     "claude",
     "opencode",
     "codex",
@@ -38,6 +39,23 @@ ExtendedAgentType = Literal[
     "plandex",
     "zed",
     "universal",
+    # New agents (Issues #46, #47, #49)
+    "antigravity",
+    "openhands",
+    "cline",
+    "goose",
+    "roo",
+    "kilo",
+    "trae",
+    "droid",
+    "clawdbot",
+    "kiro-cli",
+    "pi",
+    "neovate",
+    "zencoder",
+    "amp",
+    "qoder",
+    "command-code",
 ]
 
 # Default agent paths (used as fallback when registry unavailable)
@@ -184,14 +202,82 @@ def detect_agent(project_dir: Path | None = None) -> str:
         return parent_agent
 
     # Check project-level markers (highest priority)
-    if (project / ".claude").exists():
-        return "claude"
-
+    # Order by popularity/usage from Issue #49 table
     if (project / ".gemini").exists():
         return "gemini"
 
+    if (project / ".opencode").exists():
+        return "opencode"
+
+    if (project / ".openhands").exists():
+        return "openhands"
+
+    if (project / ".claude").exists():
+        return "claude"
+
+    if (project / ".cline").exists():
+        return "cline"
+
     if (project / ".codex").exists():
         return "codex"
+
+    if (project / ".cursor").exists():
+        return "cursor"
+
+    if (project / ".goose").exists():
+        return "goose"
+
+    if (project / ".roo").exists():
+        return "roo"
+
+    if (project / ".kilocode").exists():
+        return "kilo"
+
+    if (project / ".trae").exists():
+        return "trae"
+
+    if (project / ".factory").exists():
+        return "droid"
+
+    if (project / ".kiro").exists():
+        return "kiro-cli"
+
+    if (project / ".pi").exists():
+        return "pi"
+
+    if (project / ".neovate").exists():
+        return "neovate"
+
+    if (project / ".agent").exists():
+        return "antigravity"
+
+    if (project / ".windsurf").exists():
+        return "windsurf"
+
+    if (project / ".github").exists():
+        return "copilot"
+
+    if (project / ".qwen").exists():
+        return "qwen"
+
+    if (project / ".zencoder").exists():
+        return "zencoder"
+
+    if (project / ".agents").exists():
+        return "amp"
+
+    if (project / ".qoder").exists():
+        return "qoder"
+
+    if (project / ".commandcode").exists():
+        return "command-code"
+
+    # Special case: Clawdbot uses skills/ at project root
+    if (project / "skills").exists() and (project / "skills").is_dir():
+        # Check if it looks like a Clawdbot skills dir
+        skills_dir = project / "skills"
+        if any((skills_dir / d / "SKILL.md").exists() for d in skills_dir.iterdir() if d.is_dir()):
+            return "clawdbot"
 
     # Check user-level markers (use Path.home() at detection time, not cached)
     if (Path.home() / ".claude").exists():
