@@ -167,7 +167,7 @@ class TestGeminiAutoDetection:
         assert agent == "gemini"
 
     def test_gemini_priority_over_claude(self, tmp_path, monkeypatch):
-        """Ensure Gemini takes priority over Claude when both present (Issue #49 popularity order)."""
+        """Ensure Gemini takes priority over Claude when both present (Issue #49 order)."""
         # Setup: Create project with both Claude and Gemini
         project_dir = tmp_path / "project"
         project_dir.mkdir()

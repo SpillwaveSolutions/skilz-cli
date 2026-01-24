@@ -1,9 +1,6 @@
 """Integration tests for new agents added in Issues #46, #47, #49."""
 
-from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 from skilz.agents import detect_agent
 from skilz.installer import install_local_skill
