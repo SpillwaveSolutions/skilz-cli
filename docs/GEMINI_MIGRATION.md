@@ -1,7 +1,7 @@
 # Gemini CLI Migration Guide
 
-**Version:** Skilz 1.7.0  
-**Date:** January 8, 2026
+**Version:** Skilz 1.10.0 (Guide covers features introduced in 1.7.0)
+**Date:** January 2026
 
 ---
 

@@ -1,5 +1,7 @@
 # Universal Agent Guide
 
+**Version:** Skilz 1.10.0
+
 ## Overview
 
 The **Universal Agent** is a special agent type in Skilz that provides maximum flexibility for skill management. Unlike native agents (Claude, Gemini, Codex) that have specific directory structures and behaviors, the universal agent lets you:

@@ -1,0 +1,25 @@
+# Wiki Mapping for skilz-cli
+# Maps source files to GitHub Wiki page names (without .md extension)
+# Sync with: git clone https://github.com/SpillwaveSolutions/skilz-cli.wiki.git
+#
+# Usage: Copy source files to wiki directory with renamed filenames
+# Example: README.md → Home.md
+
+core:
+  README.md: "Home"
+
+docs:
+  docs/USER_MANUAL.md: "User-Manual"
+  docs/COMPREHENSIVE_USER_GUIDE.md: "Comprehensive-User-Guide"
+  docs/SUPPORTED_AGENTS.md: "Supported-Agents"
+  docs/GEMINI_MIGRATION.md: "Gemini-Migration-Guide"
+  docs/UNIVERSAL_AGENT_GUIDE.md: "Universal-Agent-Guide"
+  docs/DEPLOY_PYPI.md: "Deploy-PyPI"
+
+project:
+  CHANGELOG.md: "Changelog"
+
+notes:
+  docs/project_notes/key_facts.md: "Key-Facts"
+  docs/project_notes/decisions.md: "Architectural-Decisions"
+  docs/project_notes/bugs.md: "Known-Issues"
