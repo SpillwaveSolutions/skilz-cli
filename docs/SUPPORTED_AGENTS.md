@@ -1,5 +1,7 @@
 # Supported AI Coding Agents
 
+**Version:** Skilz 1.10.0
+
 Skilz supports **30+ AI coding agents** from the [AGENTS.md](https://agents.md/) ecosystem, following the [agentskills.io](https://agentskills.io/) standard for skill format and installation.
 
 ## Agent Categories

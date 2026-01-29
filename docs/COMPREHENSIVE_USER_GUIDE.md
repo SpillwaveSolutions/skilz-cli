@@ -263,17 +263,17 @@ skilz install spillwave/plantuml --agent gemini  # Always project-level
 | `claude` | `~/.claude/skills/` | `.claude/skills/` |
 | `codex` | `~/.codex/skills/` | `.codex/skills/` |
 | `opencode` | `~/.config/opencode/skill/` | `.opencode/skill/` |
+| `gemini` | `~/.gemini/skills/` | `.gemini/skills/` |
+| `copilot` | `~/.copilot/skills/` | `.github/skills/` |
+| `cursor` | `~/.cursor/skills/` | `.cursor/skills/` |
+| `qwen` | `~/.qwen/skills/` | `.qwen/skills/` |
+| `windsurf` | `~/.codeium/windsurf/skills/` | `.windsurf/skills/` |
 | `universal` | `~/.skilz/skills/` | `.skilz/skills/` |
-| `gemini` | _(not supported)_ | `.skilz/skills/` |
-| `copilot` | _(not supported)_ | `.github/skills/` |
-| `cursor` | _(not supported)_ | `.skills/skills/` |
-| `aider` | _(not supported)_ | `.skills/skills/` |
-| `qwen` | _(not supported)_ | `.skills/skills/` |
-| `windsurf` | _(not supported)_ | `.skills/skills/` |
-| `kimi` | _(not supported)_ | `.skills/skills/` |
-| `crush` | _(not supported)_ | `.skills/skills/` |
-| `plandex` | _(not supported)_ | `.skills/skills/` |
-| `zed` | _(not supported)_ | `.skills/skills/` |
+| `aider` | _(not supported)_ | `.skilz/skills/` |
+| `kimi` | _(not supported)_ | `.skilz/skills/` |
+| `crush` | _(not supported)_ | `.skilz/skills/` |
+| `plandex` | _(not supported)_ | `.skilz/skills/` |
+| `zed` | _(not supported)_ | `.skilz/skills/` |
 
 ---
 
@@ -822,4 +822,4 @@ skilz install <skill> --agent gemini
 
 ---
 
-_This guide covers Skilz CLI v1.2.0+. For the latest updates, see the [GitHub repository](https://github.com/SpillwaveSolutions/skilz-cli)._
+_This guide covers Skilz CLI v1.10.0. For the latest updates, see the [GitHub repository](https://github.com/SpillwaveSolutions/skilz-cli)._
