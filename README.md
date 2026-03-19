@@ -39,10 +39,10 @@ pip install skilz
 
 ```bash
 # Install directly from GitHub (latest development version)
-pip install git+https://github.com/spillwave/skilz-cli.git
+pip install git+https://github.com/SpillwaveSolutions/skilz-cli.git
 
 # Or clone and install
-git clone https://github.com/spillwave/skilz-cli.git
+git clone https://github.com/SpillwaveSolutions/skilz-cli.git
 cd skilz-cli
 pip install .
 ```
@@ -50,7 +50,7 @@ pip install .
 ### Development Setup
 
 ```bash
-git clone https://github.com/spillwave/skilz-cli.git
+git clone https://github.com/SpillwaveSolutions/skilz-cli.git
 cd skilz-cli
 pip install -e ".[dev]"
 ```
